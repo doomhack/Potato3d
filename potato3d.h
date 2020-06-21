@@ -1,10 +1,8 @@
 #ifndef POTATO3D
 #define POTATO3D
 
-namespace P3D
-{
-    #include "common.h"
-    #include "render.h"
-}
+#include "common.h"
+#include "render.h"
+#include "object3d.h"
 
 #endif

@@ -1,8 +1,24 @@
 #include "mainwindow.h"
 
+#include <QtCore>
+#include <QtGui>
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
+    this->resize(1360, 720);
+    this->update();
+
+    fpsTimer.start();
+
+    frameBufferImage = QImage(screenWidth, screenHeight, QImage::Format::Format_RGB32);
+
+    object3d = new P3D::Object3d();
+
+    object3d->Setup(screenWidth, screenHeight, 54, 5, 1024, (P3D::pixel*)frameBufferImage.bits());
+
+    P3D::Model3d* runway = LoadObjFile("://models/runway.obj", "://models/runway.mtl");
+    object3d->AddModel(runway);
 }
 
 MainWindow::~MainWindow()
@@ -10,10 +26,88 @@ MainWindow::~MainWindow()
 
 }
 
-bool Object3d::LoadFromObjFile(QString objFile, QString mtlFile)
+void MainWindow::paintEvent(QPaintEvent *event)
 {
-    this->pos.x = 1024;
-    this->pos.z = 1024;
+    static unsigned int frameCount = 0;
+    static unsigned int currentFps = 0;
+
+    object3d->RenderScene();
+
+    QPainter p(this);
+
+    p.drawImage(this->rect(), frameBufferImage);
+
+    frameCount++;
+
+    unsigned int elapsed = fpsTimer.elapsed();
+
+    if(elapsed > 1000)
+    {
+        currentFps = qRound((double)frameCount / ((double)elapsed / 1000.0));
+        frameCount = 0;
+        fpsTimer.restart();
+    }
+
+    p.drawText(32,32, QString("FPS: %1").arg(currentFps));
+
+    this->update();
+}
+
+void MainWindow::keyPressEvent(QKeyEvent *event)
+{
+    if(event->key() == Qt::Key_Left)
+    {
+        object3d->GetCameraAngle().y += 2;
+    }
+    else if(event->key() == Qt::Key_Right)
+    {
+        object3d->GetCameraAngle().y -= 2;
+    }
+    else if(event->key() == Qt::Key_Up)
+    {
+        P3D::V3<P3D::fp> camAngle = object3d->GetCameraAngle();
+
+        float angleYRad = qDegreesToRadians(camAngle.y);
+
+        P3D::V3<P3D::fp> d((float)-(qSin(angleYRad) *10), 0, (float)-(qCos(angleYRad) *10));
+
+        object3d->GetCameraPos() += d;
+    }
+    else if(event->key() == Qt::Key_Down)
+    {
+        P3D::V3<P3D::fp> camAngle = object3d->GetCameraAngle();
+
+        float angleYRad = qDegreesToRadians(camAngle.y);
+
+        P3D::V3<P3D::fp> d((float)-(qSin(angleYRad) *10), 0, (float)-(qCos(angleYRad) *10));
+
+        object3d->GetCameraPos() -= d;
+    }
+    else if(event->key() == Qt::Key_Z)
+    {
+        object3d->GetCameraAngle().x += 1;
+    }
+    else if(event->key() == Qt::Key_X)
+    {
+        object3d->GetCameraAngle().x -= 1;
+    }
+    else if(event->key() == Qt::Key_Q)
+    {
+        object3d->GetCameraPos().y += 1;
+    }
+    else if(event->key() == Qt::Key_W)
+    {
+        object3d->GetCameraPos().y -= 1;
+    }
+
+}
+
+P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
+{
+    P3D::Model3d* model = new P3D::Model3d();
+
+    model->pos.x = 0;
+    model->pos.z = 0;
 
     QFile f(objFile);
 
@@ -35,7 +129,7 @@ bool Object3d::LoadFromObjFile(QString objFile, QString mtlFile)
 
     QString currMtlName;
 
-    QMap<QString, Texture*> textureMap;
+    QMap<QString, P3D::Texture*> textureMap;
     QMap<QString, QRgb> textureColors;
 
 
@@ -74,17 +168,17 @@ bool Object3d::LoadFromObjFile(QString objFile, QString mtlFile)
 
             if(currMtlName.length())
             {
-                Texture* t = new Texture();
+                P3D::Texture* t = new P3D::Texture();
 
-                t->texture = new QImage(":/models/VRML/" + lastBit);
+                QImage* image = new QImage("://models/" + lastBit);
 
-                if(!t->texture->isNull())
+                if(!image->isNull())
                 {
                     textureMap[currMtlName] = t;
-                    t->width = t->texture->width();
-                    t->height = t->texture->height();
+                    t->width = image->width();
+                    t->height = image->height();
 
-                    t->pixels = (const QRgb*)t->texture->constBits();
+                    t->pixels = (const QRgb*)image->constBits();
                 }
 
 
@@ -93,18 +187,13 @@ bool Object3d::LoadFromObjFile(QString objFile, QString mtlFile)
         }
     }
 
-
-
-
-
-
     QStringList lines = objFileText.split("\n");
 
-    QList<P3D::V3<fp>> vertexes;
-    QList<P3D::V2<fp>> uvs;
+    QList<P3D::V3<P3D::fp>> vertexes;
+    QList<P3D::V2<P3D::fp>> uvs;
 
 
-    Mesh3d* currentMesh = new Mesh3d();
+    P3D::Mesh3d* currentMesh = new P3D::Mesh3d();
     currentMesh->color = Qt::lightGray;
 
 
@@ -121,11 +210,11 @@ bool Object3d::LoadFromObjFile(QString objFile, QString mtlFile)
         //Vertex
         if(elements[0] == "v")
         {
-            fp x = elements[1].toFloat();
-            fp y = elements[2].toFloat();
-            fp z = elements[3].toFloat();
+            P3D::fp x = elements[1].toFloat();
+            P3D::fp y = elements[2].toFloat();
+            P3D::fp z = elements[3].toFloat();
 
-            vertexes.append(P3D::V3<fp>(x, y, z));
+            vertexes.append(P3D::V3<P3D::fp>(x, y, z));
         }
 
         if(elements[0] == "vt")
@@ -133,13 +222,13 @@ bool Object3d::LoadFromObjFile(QString objFile, QString mtlFile)
             float u = elements[1].toFloat();
             float v = elements[2].toFloat();
 
-            uvs.append(P3D::V2<fp>(u, v));
+            uvs.append(P3D::V2<P3D::fp>(u, v));
         }
 
         //Face
         if(elements[0] == "f")
         {
-            Triangle3d t3d;
+            P3D::Triangle3d* t3d = new P3D::Triangle3d();
 
             for(int t = 0; t < 3; t++)
             {
@@ -147,20 +236,20 @@ bool Object3d::LoadFromObjFile(QString objFile, QString mtlFile)
 
                 QStringList vtx_elelments = tri.split("/");
 
-                t3d.verts[t].pos = vertexes.at(vtx_elelments[0].toInt() - 1);
-                t3d.verts[t].uv = uvs.at(vtx_elelments[1].toInt() - 1);
+                t3d->verts[t].pos = vertexes.at(vtx_elelments[0].toInt() - 1);
+                t3d->verts[t].uv = uvs.at(vtx_elelments[1].toInt() - 1);
             }
 
-            currentMesh->tris.append(t3d);
+            currentMesh->tris.push_back(t3d);
         }
 
         if(elements[0] == "usemtl")
         {
-            if(currentMesh->tris.length())
+            if(currentMesh->tris.size())
             {
                 //Start new mesh when texture changes.
-                this->mesh.append(currentMesh);
-                currentMesh = new Mesh3d();
+                model->mesh.push_back(currentMesh);
+                currentMesh = new P3D::Mesh3d();
                 currentMesh->color = Qt::lightGray;
             }
 
@@ -169,9 +258,9 @@ bool Object3d::LoadFromObjFile(QString objFile, QString mtlFile)
         }
     }
 
-    if(currentMesh->tris.length())
-        this->mesh.append(currentMesh);
+    if(currentMesh->tris.size())
+        model->mesh.push_back(currentMesh);
 
-    return true;
+    return model;
 }
 

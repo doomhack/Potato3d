@@ -3,22 +3,27 @@
 
 #include "3dmaths/f3dmath.h"
 
-//#define USE_FLOAT
-#define FB_32BIT //RGBX888 framebuffer format.
+namespace P3D
+{
 
-#define PERSPECTIVE_CORRECT
+    //#define USE_FLOAT
+    #define FB_32BIT //RGBX888 framebuffer format.
 
-#ifdef FB_32BIT
-    typedef unsigned int pixel;
-#else
-    typedef unsigned short pixel;
-#endif
+    #define PERSPECTIVE_CORRECT
+
+    #ifdef FB_32BIT
+        typedef unsigned int pixel;
+    #else
+        typedef unsigned short pixel;
+    #endif
 
 
-#ifdef USE_FLOAT
-    typedef float fp;
-#else
-    typedef FP fp;
-#endif
+    #ifdef USE_FLOAT
+        typedef float fp;
+    #else
+        typedef FP fp;
+    #endif
+
+}
 
 #endif // COMMON_H

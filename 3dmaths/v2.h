@@ -3,77 +3,79 @@
 
 #include "fp.h"
 
-template <class T> class V2
+namespace P3D
 {
-public:
-    T x,y;
-
-    V2(T x, T y) : x(x), y(y) {}
-    V2() {}
-    ~V2() {}
-
-    V2& operator=(const V2& r)
+    template <class T> class V2
     {
-        x = r.x;
-        y = r.y;
+    public:
+        T x,y;
 
-        return *this;
-    }
+        V2(T x, T y) : x(x), y(y) {}
+        V2() {}
+        ~V2() {}
 
-    V2 operator+(const V2& r)
-    {
-        V2 v(x,y);
-        return v+=r;
-    }
+        constexpr V2& operator=(const V2& r)
+        {
+            x = r.x;
+            y = r.y;
 
-    V2 operator-(const V2& r)
-    {
-        V2 v(x,y);
-        return v-=r;
-    }
+            return *this;
+        }
 
-    V2 operator*(const V2& r)
-    {
-        V2 v(x,y);
-        return v*=r;
-    }
+        constexpr V2 operator+(const V2& r) const
+        {
+            V2 v(x,y);
+            return v+=r;
+        }
 
-    V2 operator*(const T& r)
-    {
-        V2 v(x,y);
+        constexpr V2 operator-(const V2& r) const
+        {
+            V2 v(x,y);
+            return v-=r;
+        }
 
-        v.x *= r;
-        v.y *= r;
+        const V2 operator*(const V2& r) const
+        {
+            V2 v(x,y);
+            return v*=r;
+        }
 
-        return v;
-    }
+        constexpr V2 operator*(const T& r) const
+        {
+            V2 v(x,y);
 
-    V2& operator+=(const V2& r)
-    {
-        x += r.x;
-        y += r.y;
-        return *this;
-    }
+            v.x *= r;
+            v.y *= r;
 
-    V2& operator-=(const V2& r)
-    {
-        x -= r.x;
-        y -= r.y;
-        return *this;
-    }
+            return v;
+        }
 
-    V2& operator*=(const V2& r)
-    {
-        x *= r.x;
-        y *= r.y;
-        return *this;
-    }
-};
+        constexpr V2& operator+=(const V2& r)
+        {
+            x += r.x;
+            y += r.y;
+            return *this;
+        }
 
-typedef V2<float> V2F;
-typedef V2<double> V2D;
-typedef V2<FP> V2FP;
+        constexpr V2& operator-=(const V2& r)
+        {
+            x -= r.x;
+            y -= r.y;
+            return *this;
+        }
 
+        constexpr V2& operator*=(const V2& r)
+        {
+            x *= r.x;
+            y *= r.y;
+            return *this;
+        }
+    };
 
+    typedef V2<float> V2F;
+    typedef V2<double> V2D;
+    typedef V2<FP> V2FP;
+
+}
 #endif // V2_H
 

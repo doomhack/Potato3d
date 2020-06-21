@@ -18,7 +18,6 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
     ../object3d.cpp \
     ../render.cpp \
-    ../tempstuff.cpp \
     main.cpp \
     mainwindow.cpp
 
@@ -35,10 +34,12 @@ HEADERS += \
     ../potato3d.h \
     ../render.h \
     ../rtypes.h \
-    ../tempstuff.h \
     mainwindow.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+RESOURCES += \
+    Resources.qrc

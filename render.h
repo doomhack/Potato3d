@@ -4,99 +4,116 @@
 #include "common.h"
 #include "rtypes.h"
 
-typedef struct TriEdgeTrace
+namespace P3D
 {
-    fp x_left, x_right;
-    fp z_left, z_right;
-    fp w_left, w_right;
-    fp u_left, u_right;
-    fp v_left, v_right;
-} TriDrawState;
 
-typedef struct TriDrawPos
-{
-    fp z;
-    fp w;
-    fp u;
-    fp v;
-} TriDrawPos;
+    typedef struct TriEdgeTrace
+    {
+        fp x_left, x_right;
+        fp z_left, z_right;
+        fp w_left, w_right;
+        fp u_left, u_right;
+        fp v_left, v_right;
+    } TriDrawState;
 
-typedef enum MatrixType
-{
-    Model,
-    View,
-    Projection
-} MatrixType;
+    typedef struct TriDrawPos
+    {
+        fp z;
+        fp w;
+        fp u;
+        fp v;
+    } TriDrawPos;
 
-class Render
-{
-public:
-    explicit Render();
+    typedef enum MatrixType
+    {
+        Model,
+        View,
+        Projection
+    } MatrixType;
 
-    bool Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov = 54, fp zNear = 5, fp zFar = 1024, pixel* framebuffer = nullptr, fp* zBuffer = nullptr);
+    typedef enum RenderFlags
+    {
+        NoFlags = 0u,
+        PerspectiveCorrect = 1u,
+        Alpha = 2u,
+        NoBackfaceCull = 4u,
+    } RenderFlags;
 
-    void BeginFrame();
-    void EndFrame();
-    void BeginObject();
-    void EndObject();
+    class Render
+    {
+    public:
+        explicit Render();
 
-    void ClearFramebuffer(pixel color, bool zBuffer);
+        bool Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov = 54, fp zNear = 5, fp zFar = 1024, pixel* framebuffer = nullptr, fp* zBuffer = nullptr);
 
-    void UpdateTransformMatrix();
-    void UpdateViewProjectionMatrix();
+        void BeginFrame();
+        void EndFrame();
+        void BeginObject();
+        void EndObject();
 
+        void ClearFramebuffer(pixel color, bool zBuffer);
 
-    void DrawTriangle(const Triangle3d* tri, Texture *texture, pixel color);
-
-    M4<fp>& GetMatrix(MatrixType matrix);
-
-    void SetFramebuffer(pixel* frameBuffer);
-
-private:
-    void DrawTriangleClip(Vertex2d clipSpacePoints[], Texture *texture, pixel color);
-    void DrawTriangleCull(Vertex2d clipSpacePoints[], Texture *texture, pixel color);
-
-    fp GetLineIntersection(fp v1, fp v2, const fp pos);
+        void UpdateTransformMatrix();
+        void UpdateViewProjectionMatrix();
 
 
-    void DrawTriangleSplit(Vertex2d points[], Texture* texture);
-    void DrawTriangleTop(Vertex2d points[3], Texture* texture);
-    void DrawTriangleBottom(Vertex2d points[3], Texture* texture);
+        void DrawTriangle(const Triangle3d* tri, const Texture *texture, const pixel color, const RenderFlags flags);
 
-    void DrawTriangleSplit(Vertex2d points[], pixel color);
-    void DrawTriangleTop(Vertex2d points[3], pixel color);
-    void DrawTriangleBottom(Vertex2d points[3], pixel color);
+        M4<fp>& GetMatrix(MatrixType matrix);
 
-    void DrawTriangleScanline(int y, TriEdgeTrace& pos, Texture* texture);
-    void DrawTriangleScanline(int y, TriEdgeTrace& pos, pixel color);
+        void SetFramebuffer(pixel* frameBuffer);
+        pixel* GetFramebuffer();
 
+    private:
+        void DrawTriangleClip(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags);
+        void DrawTriangleCull(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags);
 
-    void SortPointsByY(Vertex2d points[3]);
-
-    Vertex2d TransformVertex(const Vertex3d* vertex);
-    bool IsTriangleFrontface(Vertex2d screenSpacePoints[3]);
-    bool IsTriangleOnScreen(Vertex2d screenSpacePoints[3]);
-
-    int fracToY(fp frac);
-    int fracToX(fp frac);
+        fp GetLineIntersection(fp v1, fp v2, const fp pos);
 
 
+        void DrawTriangleSplitPerspectiveCorrect(Vertex2d points[], const Texture *texture, const RenderFlags flags);
+        void DrawTriangleTopPerspectiveCorrect(const Vertex2d points[], const Texture *texture, const RenderFlags flags);
+        void DrawTriangleBottomPerspectiveCorrect(const Vertex2d points[3], const Texture* texture, const RenderFlags flags);
+        void DrawTriangleScanlinePerspectiveCorrect(int y, const TriEdgeTrace &pos, const Texture *texture, const RenderFlags flags);
 
-    pixel* frameBuffer;
-    fp* zBuffer;
-    V2<int> fbSize;
+        void DrawTriangleSplitLinear(const Vertex2d points[], const Texture *texture, const RenderFlags flags);
+        void DrawTriangleTopLinear(const Vertex2d points[], const Texture *texture, const RenderFlags flags);
+        void DrawTriangleBottomLinear(const Vertex2d points[3], const Texture* texture, const RenderFlags flags);
+        void DrawTriangleScanlineLinear(int y, const TriEdgeTrace &pos, const Texture *texture, const RenderFlags flags);
 
-    fp zNear;
-    fp zFar;
+        void DrawTriangleSplitFlat(const Vertex2d points[], const pixel color, const RenderFlags flags);
+        void DrawTriangleTopFlat(const Vertex2d points[], const pixel color, const RenderFlags flags);
+        void DrawTriangleBottomFlat(const Vertex2d points[3], const pixel color, const RenderFlags flags);
+        void DrawTriangleScanlineFlat(int y, const TriEdgeTrace& pos, const pixel color, const RenderFlags flags);
 
-    M4<fp> modelMatrix;
-    M4<fp> viewMatrix;
+        void SortPointsByY(Vertex2d points[]);
+
+        Vertex2d TransformVertex(const Vertex3d* vertex);
+        bool IsTriangleFrontface(const Vertex2d screenSpacePoints[]);
+        bool IsTriangleOnScreen(const Vertex2d screenSpacePoints[]);
+
+        int fracToY(fp frac);
+        int fracToX(fp frac);
 
 
-    M4<fp> projectionMatrix;
-    M4<fp> viewProjectionMatrix; //P*V
 
-    M4<fp> transformMatrix; //P*V*M
-};
+        pixel* frameBuffer;
+        fp* zBuffer;
+        V2<int> fbSize;
+
+        fp zNear;
+        fp zFar;
+
+        M4<fp> modelMatrix;
+        M4<fp> viewMatrix;
+
+
+        M4<fp> projectionMatrix;
+        M4<fp> viewProjectionMatrix; //P*V
+
+        M4<fp> transformMatrix; //P*V*M
+    };
+
+}
 
 #endif // RENDER_H
