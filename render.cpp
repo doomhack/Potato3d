@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "render.h"
 
 Render::Render()
@@ -80,17 +81,17 @@ void Render::ClearFramebuffer(pixel color, bool zBuffer)
 
 void Render::UpdateTransformMatrix()
 {
-    if(viewProjectionMatrix.ResetFlag(P3D::MatrixFlags::Updated) | modelMatrix.ResetFlag(P3D::MatrixFlags::Updated))
+    if(viewProjectionMatrix.ResetFlag(MatrixFlags::Updated) | modelMatrix.ResetFlag(MatrixFlags::Updated))
         transformMatrix = viewProjectionMatrix * modelMatrix;
 }
 
 void Render::UpdateViewProjectionMatrix()
 {
-    if(projectionMatrix.ResetFlag(P3D::MatrixFlags::Updated) | viewMatrix.ResetFlag(P3D::MatrixFlags::Updated))
+    if(projectionMatrix.ResetFlag(MatrixFlags::Updated) | viewMatrix.ResetFlag(MatrixFlags::Updated))
         viewProjectionMatrix = projectionMatrix * viewMatrix;
 }
 
-P3D::M4<fp>& Render::GetMatrix(MatrixType matrix)
+M4<fp>& Render::GetMatrix(MatrixType matrix)
 {
     switch(matrix)
     {
@@ -110,6 +111,11 @@ void Render::SetFramebuffer(pixel* frameBuffer)
     this->frameBuffer = frameBuffer;
 }
 
+pixel* Render::GetFramebuffer()
+{
+    return this->frameBuffer;
+}
+
 void Render::DrawTriangle(const Triangle3d* tri, Texture* texture, pixel color)
 {
     Vertex2d clipSpacePoints[3];
@@ -126,11 +132,11 @@ void Render::DrawTriangle(const Triangle3d* tri, Texture* texture, pixel color)
 
 Vertex2d Render::TransformVertex(const Vertex3d* vertex)
 {
-    P3D::V4<fp> p = transformMatrix * vertex->pos;
+    V4<fp> p = transformMatrix * vertex->pos;
 
     Vertex2d screenspace;
 
-    screenspace.pos = P3D::V4<fp>
+    screenspace.pos = V4<fp>
     (
         p.x,
         p.y,
@@ -215,13 +221,13 @@ void Render::DrawTriangleClip(Vertex2d clipSpacePoints[], Texture *texture, pixe
 
             Vertex2d newVx;
 
-            newVx.pos.x = P3D::lerp(clipSpacePoints[i].pos.x, clipSpacePoints[i2].pos.x, frac);
-            newVx.pos.y = P3D::lerp(clipSpacePoints[i].pos.y, clipSpacePoints[i2].pos.y, frac);
-            newVx.pos.z = P3D::lerp(clipSpacePoints[i].pos.z, clipSpacePoints[i2].pos.z, frac);
+            newVx.pos.x = pLerp(clipSpacePoints[i].pos.x, clipSpacePoints[i2].pos.x, frac);
+            newVx.pos.y = pLerp(clipSpacePoints[i].pos.y, clipSpacePoints[i2].pos.y, frac);
+            newVx.pos.z = pLerp(clipSpacePoints[i].pos.z, clipSpacePoints[i2].pos.z, frac);
             newVx.pos.w = wClip;
 
-            newVx.uv.x = P3D::lerp(clipSpacePoints[i].uv.x, clipSpacePoints[i2].uv.x, frac);
-            newVx.uv.y = P3D::lerp(clipSpacePoints[i].uv.y, clipSpacePoints[i2].uv.y, frac);
+            newVx.uv.x = pLerp(clipSpacePoints[i].uv.x, clipSpacePoints[i2].uv.x, frac);
+            newVx.uv.y = pLerp(clipSpacePoints[i].uv.y, clipSpacePoints[i2].uv.y, frac);
 
             outputVx[vp] = newVx;
             vp++;
@@ -237,10 +243,6 @@ void Render::DrawTriangleClip(Vertex2d clipSpacePoints[], Texture *texture, pixe
         DrawTriangleCull(outputVx, texture, color);
         outputVx[1] = outputVx[0];
         DrawTriangleCull(&outputVx[1], texture, color);
-    }
-    else
-    {
-        qDebug() << "Got" << vp << "vertexes. Thats not right!";
     }
 }
 
@@ -381,14 +383,14 @@ void Render::DrawTriangleSplit(Vertex2d points[], Texture* texture)
         triangle[1] = points[1];
 
         //x pos
-        triangle[2].pos.x = P3D::lerp(points[0].pos.x, points[2].pos.x, splitFrac);
+        triangle[2].pos.x = pLerp(points[0].pos.x, points[2].pos.x, splitFrac);
         triangle[2].pos.y = points[1].pos.y;
-        triangle[2].pos.z = P3D::lerp(points[0].pos.z, points[2].pos.z, splitFrac);
-        triangle[2].pos.w = P3D::lerp(points[0].pos.w, points[2].pos.w, splitFrac);
+        triangle[2].pos.z = pLerp(points[0].pos.z, points[2].pos.z, splitFrac);
+        triangle[2].pos.w = pLerp(points[0].pos.w, points[2].pos.w, splitFrac);
 
         //uv coords.
-        triangle[2].uv.x = P3D::lerp(points[0].uv.x, points[2].uv.x, splitFrac);
-        triangle[2].uv.y = P3D::lerp(points[0].uv.y, points[2].uv.y, splitFrac);
+        triangle[2].uv.x = pLerp(points[0].uv.x, points[2].uv.x, splitFrac);
+        triangle[2].uv.y = pLerp(points[0].uv.y, points[2].uv.y, splitFrac);
 
         triangle[3] = points[2];
 
@@ -423,9 +425,9 @@ void Render::DrawTriangleSplit(Vertex2d points[], pixel color)
         triangle[1] = points[1];
 
         //x pos
-        triangle[2].pos.x = P3D::lerp(points[0].pos.x, points[2].pos.x, splitFrac);
+        triangle[2].pos.x = pLerp(points[0].pos.x, points[2].pos.x, splitFrac);
         triangle[2].pos.y = points[1].pos.y;
-        triangle[2].pos.z = P3D::lerp(points[0].pos.z, points[2].pos.z, splitFrac);
+        triangle[2].pos.z = pLerp(points[0].pos.z, points[2].pos.z, splitFrac);
 
         triangle[3] = points[2];
 
@@ -481,20 +483,20 @@ void Render::DrawTriangleTop(Vertex2d points[], Texture* texture)
 
         fp yFrac = yFracScaled / yFracScale;
 
-        pos.x_left = P3D::lerp(top->pos.x, left->pos.x, yFrac);
-        pos.x_right = P3D::lerp(top->pos.x, right->pos.x, yFrac);
+        pos.x_left = pLerp(top->pos.x, left->pos.x, yFrac);
+        pos.x_right = pLerp(top->pos.x, right->pos.x, yFrac);
 
-        pos.z_left = P3D::lerp(top->pos.z, left->pos.z, yFrac);
-        pos.z_right = P3D::lerp(top->pos.z, right->pos.z, yFrac);
+        pos.z_left = pLerp(top->pos.z, left->pos.z, yFrac);
+        pos.z_right = pLerp(top->pos.z, right->pos.z, yFrac);
 
-        pos.w_left = P3D::lerp(top->pos.w, left->pos.w, yFrac);
-        pos.w_right = P3D::lerp(top->pos.w, right->pos.w, yFrac);
+        pos.w_left = pLerp(top->pos.w, left->pos.w, yFrac);
+        pos.w_right = pLerp(top->pos.w, right->pos.w, yFrac);
 
-        pos.u_left = P3D::lerp(top->uv.x, left->uv.x, yFrac);
-        pos.u_right = P3D::lerp(top->uv.x, right->uv.x, yFrac);
+        pos.u_left = pLerp(top->uv.x, left->uv.x, yFrac);
+        pos.u_right = pLerp(top->uv.x, right->uv.x, yFrac);
 
-        pos.v_left = P3D::lerp(top->uv.y, left->uv.y, yFrac);
-        pos.v_right = P3D::lerp(top->uv.y, right->uv.y, yFrac);
+        pos.v_left = pLerp(top->uv.y, left->uv.y, yFrac);
+        pos.v_right = pLerp(top->uv.y, right->uv.y, yFrac);
     }
     else
     {
@@ -520,20 +522,20 @@ void Render::DrawTriangleTop(Vertex2d points[], Texture* texture)
 
         fp yFrac = yFracScaled / yFracScale;
 
-        pos.x_left = P3D::lerp(top->pos.x, left->pos.x, yFrac);
-        pos.x_right = P3D::lerp(top->pos.x, right->pos.x, yFrac);
+        pos.x_left = pLerp(top->pos.x, left->pos.x, yFrac);
+        pos.x_right = pLerp(top->pos.x, right->pos.x, yFrac);
 
-        pos.z_left = P3D::lerp(top->pos.z, left->pos.z, yFrac);
-        pos.z_right = P3D::lerp(top->pos.z, right->pos.z, yFrac);
+        pos.z_left = pLerp(top->pos.z, left->pos.z, yFrac);
+        pos.z_right = pLerp(top->pos.z, right->pos.z, yFrac);
 
-        pos.w_left = P3D::lerp(top->pos.w, left->pos.w, yFrac);
-        pos.w_right = P3D::lerp(top->pos.w, right->pos.w, yFrac);
+        pos.w_left = pLerp(top->pos.w, left->pos.w, yFrac);
+        pos.w_right = pLerp(top->pos.w, right->pos.w, yFrac);
 
-        pos.u_left = P3D::lerp(top->uv.x, left->uv.x, yFrac);
-        pos.u_right = P3D::lerp(top->uv.x, right->uv.x, yFrac);
+        pos.u_left = pLerp(top->uv.x, left->uv.x, yFrac);
+        pos.u_right = pLerp(top->uv.x, right->uv.x, yFrac);
 
-        pos.v_left = P3D::lerp(top->uv.y, left->uv.y, yFrac);
-        pos.v_right = P3D::lerp(top->uv.y, right->uv.y, yFrac);
+        pos.v_left = pLerp(top->uv.y, left->uv.y, yFrac);
+        pos.v_right = pLerp(top->uv.y, right->uv.y, yFrac);
     }
 }
 
@@ -569,11 +571,11 @@ void Render::DrawTriangleTop(Vertex2d points[], pixel color)
 
         fp yFrac = yFracScaled / yFracScale;
 
-        pos.x_left = P3D::lerp(top->pos.x, left->pos.x, yFrac);
-        pos.x_right = P3D::lerp(top->pos.x, right->pos.x, yFrac);
+        pos.x_left = pLerp(top->pos.x, left->pos.x, yFrac);
+        pos.x_right = pLerp(top->pos.x, right->pos.x, yFrac);
 
-        pos.z_left = P3D::lerp(top->pos.z, left->pos.z, yFrac);
-        pos.z_right = P3D::lerp(top->pos.z, right->pos.z, yFrac);
+        pos.z_left = pLerp(top->pos.z, left->pos.z, yFrac);
+        pos.z_right = pLerp(top->pos.z, right->pos.z, yFrac);
     }
     else
     {
@@ -595,11 +597,11 @@ void Render::DrawTriangleTop(Vertex2d points[], pixel color)
 
         fp yFrac = yFracScaled / yFracScale;
 
-        pos.x_left = P3D::lerp(top->pos.x, left->pos.x, yFrac);
-        pos.x_right = P3D::lerp(top->pos.x, right->pos.x, yFrac);
+        pos.x_left = pLerp(top->pos.x, left->pos.x, yFrac);
+        pos.x_right = pLerp(top->pos.x, right->pos.x, yFrac);
 
-        pos.z_left = P3D::lerp(top->pos.z, left->pos.z, yFrac);
-        pos.z_right = P3D::lerp(top->pos.z, right->pos.z, yFrac);
+        pos.z_left = pLerp(top->pos.z, left->pos.z, yFrac);
+        pos.z_right = pLerp(top->pos.z, right->pos.z, yFrac);
     }
 }
 
@@ -636,20 +638,20 @@ void Render::DrawTriangleBottom(Vertex2d points[], Texture* texture)
 
         fp yFrac = yFracScaled / yFracScale;
 
-        pos.x_left = P3D::lerp(bottom->pos.x, left->pos.x, yFrac);
-        pos.x_right = P3D::lerp(bottom->pos.x, right->pos.x, yFrac);
+        pos.x_left = pLerp(bottom->pos.x, left->pos.x, yFrac);
+        pos.x_right = pLerp(bottom->pos.x, right->pos.x, yFrac);
 
-        pos.z_left = P3D::lerp(bottom->pos.z, left->pos.z, yFrac);
-        pos.z_right = P3D::lerp(bottom->pos.z, right->pos.z, yFrac);
+        pos.z_left = pLerp(bottom->pos.z, left->pos.z, yFrac);
+        pos.z_right = pLerp(bottom->pos.z, right->pos.z, yFrac);
 
-        pos.w_left = P3D::lerp(bottom->pos.w, left->pos.w, yFrac);
-        pos.w_right = P3D::lerp(bottom->pos.w, right->pos.w, yFrac);
+        pos.w_left = pLerp(bottom->pos.w, left->pos.w, yFrac);
+        pos.w_right = pLerp(bottom->pos.w, right->pos.w, yFrac);
 
-        pos.u_left = P3D::lerp(bottom->uv.x, left->uv.x, yFrac);
-        pos.u_right = P3D::lerp(bottom->uv.x, right->uv.x, yFrac);
+        pos.u_left = pLerp(bottom->uv.x, left->uv.x, yFrac);
+        pos.u_right = pLerp(bottom->uv.x, right->uv.x, yFrac);
 
-        pos.v_left = P3D::lerp(bottom->uv.y, left->uv.y, yFrac);
-        pos.v_right = P3D::lerp(bottom->uv.y, right->uv.y, yFrac);
+        pos.v_left = pLerp(bottom->uv.y, left->uv.y, yFrac);
+        pos.v_right = pLerp(bottom->uv.y, right->uv.y, yFrac);
     }
     else
     {
@@ -675,20 +677,20 @@ void Render::DrawTriangleBottom(Vertex2d points[], Texture* texture)
 
         fp yFrac = yFracScaled / yFracScale;
 
-        pos.x_left = P3D::lerp(bottom->pos.x, left->pos.x, yFrac);
-        pos.x_right = P3D::lerp(bottom->pos.x, right->pos.x, yFrac);
+        pos.x_left = pLerp(bottom->pos.x, left->pos.x, yFrac);
+        pos.x_right = pLerp(bottom->pos.x, right->pos.x, yFrac);
 
-        pos.z_left = P3D::lerp(bottom->pos.z, left->pos.z, yFrac);
-        pos.z_right = P3D::lerp(bottom->pos.z, right->pos.z, yFrac);
+        pos.z_left = pLerp(bottom->pos.z, left->pos.z, yFrac);
+        pos.z_right = pLerp(bottom->pos.z, right->pos.z, yFrac);
 
-        pos.w_left = P3D::lerp(bottom->pos.w, left->pos.w, yFrac);
-        pos.w_right = P3D::lerp(bottom->pos.w, right->pos.w, yFrac);
+        pos.w_left = pLerp(bottom->pos.w, left->pos.w, yFrac);
+        pos.w_right = pLerp(bottom->pos.w, right->pos.w, yFrac);
 
-        pos.u_left = P3D::lerp(bottom->uv.x, left->uv.x, yFrac);
-        pos.u_right = P3D::lerp(bottom->uv.x, right->uv.x, yFrac);
+        pos.u_left = pLerp(bottom->uv.x, left->uv.x, yFrac);
+        pos.u_right = pLerp(bottom->uv.x, right->uv.x, yFrac);
 
-        pos.v_left = P3D::lerp(bottom->uv.y, left->uv.y, yFrac);
-        pos.v_right = P3D::lerp(bottom->uv.y, right->uv.y, yFrac);
+        pos.v_left = pLerp(bottom->uv.y, left->uv.y, yFrac);
+        pos.v_right = pLerp(bottom->uv.y, right->uv.y, yFrac);
     }
 }
 
@@ -725,11 +727,11 @@ void Render::DrawTriangleBottom(Vertex2d points[], pixel color)
 
         fp yFrac = yFracScaled / yFracScale;
 
-        pos.x_left = P3D::lerp(bottom->pos.x, left->pos.x, yFrac);
-        pos.x_right = P3D::lerp(bottom->pos.x, right->pos.x, yFrac);
+        pos.x_left = pLerp(bottom->pos.x, left->pos.x, yFrac);
+        pos.x_right = pLerp(bottom->pos.x, right->pos.x, yFrac);
 
-        pos.z_left = P3D::lerp(bottom->pos.z, left->pos.z, yFrac);
-        pos.z_right = P3D::lerp(bottom->pos.z, right->pos.z, yFrac);
+        pos.z_left = pLerp(bottom->pos.z, left->pos.z, yFrac);
+        pos.z_right = pLerp(bottom->pos.z, right->pos.z, yFrac);
     }
     else
     {
@@ -751,11 +753,11 @@ void Render::DrawTriangleBottom(Vertex2d points[], pixel color)
 
         fp yFrac = yFracScaled / yFracScale;
 
-        pos.x_left = P3D::lerp(bottom->pos.x, left->pos.x, yFrac);
-        pos.x_right = P3D::lerp(bottom->pos.x, right->pos.x, yFrac);
+        pos.x_left = pLerp(bottom->pos.x, left->pos.x, yFrac);
+        pos.x_right = pLerp(bottom->pos.x, right->pos.x, yFrac);
 
-        pos.z_left = P3D::lerp(bottom->pos.z, left->pos.z, yFrac);
-        pos.z_right = P3D::lerp(bottom->pos.z, right->pos.z, yFrac);
+        pos.z_left = pLerp(bottom->pos.z, left->pos.z, yFrac);
+        pos.z_right = pLerp(bottom->pos.z, right->pos.z, yFrac);
     }
 }
 
@@ -783,10 +785,10 @@ void Render::DrawTriangleScanline(int y, TriEdgeTrace& pos, Texture* texture)
 
         fp xFrac = xFracScaled / xFracScale;
 
-        sl_pos.z = P3D::lerp(pos.z_left, pos.z_right, xFrac);
-        sl_pos.w = P3D::lerp(pos.w_left, pos.w_right, xFrac);
-        sl_pos.u = P3D::lerp(pos.u_left, pos.u_right, xFrac);
-        sl_pos.v = P3D::lerp(pos.v_left, pos.v_right, xFrac);
+        sl_pos.z = pLerp(pos.z_left, pos.z_right, xFrac);
+        sl_pos.w = pLerp(pos.w_left, pos.w_right, xFrac);
+        sl_pos.u = pLerp(pos.u_left, pos.u_right, xFrac);
+        sl_pos.v = pLerp(pos.v_left, pos.v_right, xFrac);
     }
     else
     {
@@ -803,7 +805,7 @@ void Render::DrawTriangleScanline(int y, TriEdgeTrace& pos, Texture* texture)
 
     int buffOffset = ((y * fbSize.x) + x_start);
     fp* zb = &zBuffer[buffOffset];
-    QRgb* fb = &frameBuffer[buffOffset];
+    pixel* fb = &frameBuffer[buffOffset];
 
     for(int x = x_start; x <= x_end; x++)
     {
@@ -831,10 +833,10 @@ void Render::DrawTriangleScanline(int y, TriEdgeTrace& pos, Texture* texture)
 
         fp xFrac = xFracScaled / xFracScale;
 
-        sl_pos.z = P3D::lerp(pos.z_left, pos.z_right, xFrac);
-        sl_pos.w = P3D::lerp(pos.w_left, pos.w_right, xFrac);
-        sl_pos.u = P3D::lerp(pos.u_left, pos.u_right, xFrac);
-        sl_pos.v = P3D::lerp(pos.v_left, pos.v_right, xFrac);
+        sl_pos.z = pLerp(pos.z_left, pos.z_right, xFrac);
+        sl_pos.w = pLerp(pos.w_left, pos.w_right, xFrac);
+        sl_pos.u = pLerp(pos.u_left, pos.u_right, xFrac);
+        sl_pos.v = pLerp(pos.v_left, pos.v_right, xFrac);
     }
 }
 
@@ -863,7 +865,7 @@ void Render::DrawTriangleScanline(int y, TriEdgeTrace& pos, pixel color)
 
         fp xFrac = xFracScaled / xFracScale;
 
-        zPos = P3D::lerp(pos.z_left, pos.z_right, xFrac);
+        zPos = pLerp(pos.z_left, pos.z_right, xFrac);
     }
     else
     {
@@ -876,7 +878,7 @@ void Render::DrawTriangleScanline(int y, TriEdgeTrace& pos, pixel color)
 
     int buffOffset = ((y * fbSize.x) + x_start);
     fp* zb = &zBuffer[buffOffset];
-    QRgb* fb = &frameBuffer[buffOffset];
+    pixel* fb = &frameBuffer[buffOffset];
 
 
     for(int i = x_start; i <= x_end; i++)
@@ -892,7 +894,7 @@ void Render::DrawTriangleScanline(int y, TriEdgeTrace& pos, pixel color)
         fb++;
 
         fp xFrac = xFracScaled / xFracScale;
-        zPos = P3D::lerp(pos.z_left, pos.z_right, xFrac);
+        zPos = pLerp(pos.z_left, pos.z_right, xFrac);
 
     }
 }
@@ -907,10 +909,10 @@ int Render::fracToY(fp frac)
 #else
     int sy = y.intMul(fbSize.y);
 
-    if(sy < P3D::FP::min())
-        return P3D::FP::min();
-    else if(sy > P3D::FP::max())
-        return P3D::FP::max();
+    if(sy < FP::min())
+        return FP::min();
+    else if(sy > FP::max())
+        return FP::max();
 #endif
 
     return sy;
@@ -925,10 +927,10 @@ int Render::fracToX(fp frac)
 #else
     int sx = x.intMul(fbSize.x);
 
-    if(sx < P3D::FP::min())
-        return P3D::FP::min();
-    else if(sx > P3D::FP::max())
-        return P3D::FP::max();
+    if(sx < FP::min())
+        return FP::min();
+    else if(sx > FP::max())
+        return FP::max();
 #endif
 
     return sx;

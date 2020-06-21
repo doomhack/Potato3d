@@ -10,5 +10,11 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+
+
+
+
+    bool LoadFromObjFile(QString objFile, QString mtlFile);
+
 };
 #endif // MAINWINDOW_H

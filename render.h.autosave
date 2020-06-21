@@ -51,6 +51,7 @@ public:
     M4<fp>& GetMatrix(MatrixType matrix);
 
     void SetFramebuffer(pixel* frameBuffer);
+    pixel* GetFramebuffer();
 
 private:
     void DrawTriangleClip(Vertex2d clipSpacePoints[], Texture *texture, pixel color);

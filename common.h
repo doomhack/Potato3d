@@ -18,7 +18,7 @@
 #ifdef USE_FLOAT
     typedef float fp;
 #else
-    typedef P3D::FP fp;
+    typedef FP fp;
 #endif
 
 #endif // COMMON_H

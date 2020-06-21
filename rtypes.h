@@ -1,6 +1,9 @@
 #ifndef RTYPES_H
 #define RTYPES_H
 
+#include "common.h"
+#include "3dmaths/f3dmath.h"
+
 class Vertex3d
 {
 public:

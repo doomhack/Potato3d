@@ -4,7 +4,7 @@
 #include "fp.h"
 
 template <class T>
-constexpr inline T lerp(T a, T b, T frac)
+constexpr inline T pLerp(T a, T b, T frac)
 {
 
 #ifdef FAST_LERP
@@ -17,13 +17,13 @@ constexpr inline T lerp(T a, T b, T frac)
 }
 
 template <class T>
-constexpr inline int round(T val)
+constexpr inline int pRound(T val)
 {
     return val + T(0.5);
 }
 
 template <>
-inline int round(FP val)
+inline int pRound(FP val)
 {
     return val + (FP(1) >> 1u);
 }
