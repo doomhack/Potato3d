@@ -7,13 +7,43 @@
 
 #define M_PI (3.14159265358979323846)
 
+typedef enum MatrixFlags
+{
+    Updated = 1u
+} MatrixFlags;
+
 template <class T> class M4
 {
 public:
-    explicit M4() {}
+    explicit M4()   {SetFlag(Updated);}
+
+    bool GetFlag(MatrixFlags flag)
+    {
+        return (flags & flag) > 0;
+    }
+
+    void SetFlag(MatrixFlags flag)
+    {
+        flags |= flag;
+    }
+
+    void UnSetFlag(MatrixFlags flag)
+    {
+        flags &= ~flag;
+    }
+
+    bool ResetFlag(MatrixFlags flag)
+    {
+        bool isSet = GetFlag(flag);
+        UnSetFlag(flag);
+
+        return isSet;
+    }
 
     void setToIdentity()
     {
+        SetFlag(Updated);
+
         m[0][0] = 1;
         m[0][1] = 0;
         m[0][2] = 0;
@@ -34,6 +64,8 @@ public:
 
     M4& operator+=(const M4& other)
     {
+        SetFlag(Updated);
+
         m[0][0] += other.m[0][0];
         m[0][1] += other.m[0][1];
         m[0][2] += other.m[0][2];
@@ -55,6 +87,8 @@ public:
 
     M4& operator-=(const M4& other)
     {
+        SetFlag(Updated);
+
         m[0][0] -= other.m[0][0];
         m[0][1] -= other.m[0][1];
         m[0][2] -= other.m[0][2];
@@ -76,6 +110,8 @@ public:
 
     M4& operator*=(const M4& other)
     {
+        SetFlag(Updated);
+
         T m0, m1, m2;
         m0 = m[0][0] * other.m[0][0]
                 + m[1][0] * other.m[0][1]
@@ -258,6 +294,8 @@ public:
 
     void translate(const V3<T>& vector)
     {
+        SetFlag(Updated);
+
         T vx = vector.x;
         T vy = vector.y;
         T vz = vector.z;
@@ -272,6 +310,8 @@ public:
     {
         if (angle == 0)
             return;
+
+        SetFlag(Updated);
 
         T c, s;
 
@@ -317,6 +357,8 @@ public:
         if (angle == 0)
             return;
 
+        SetFlag(Updated);
+
         T c, s;
 
         if (angle == 90 || angle == -270)
@@ -358,6 +400,8 @@ public:
     {
         if (angle == 0)
             return;
+
+        SetFlag(Updated);
 
         T c, s;
 
@@ -401,6 +445,8 @@ public:
         if (nearPlane == farPlane || aspectRatio == 0)
             return;
 
+        SetFlag(Updated);
+
         // Construct the projection.
         M4 m;
         T radians = d2r(verticalAngle / 2);
@@ -442,6 +488,8 @@ private:
     {
         return degrees * T((float)M_PI/180);
     }
+
+    unsigned int flags;
 };
 
 typedef M4<float> M4F;

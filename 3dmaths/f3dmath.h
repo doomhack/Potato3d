@@ -1,5 +1,5 @@
-#ifndef F3DMATH_H
-#define F3DMATH_H
+#ifndef P3DMATH_H
+#define P3DMATH_H
 
 #include <cmath>
 
@@ -13,4 +13,4 @@ namespace P3D
     #include "utils.h"
 }
 
-#endif // F3DMATH_H
+#endif // P3DMATH_H
