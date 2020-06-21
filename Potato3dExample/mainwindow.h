@@ -24,6 +24,8 @@ private:
     P3D::Model3d* LoadObjFile(QString objFile, QString mtlFile);
 
     QElapsedTimer fpsTimer;
+    QElapsedTimer renderTimer;
+
 
     P3D::Object3d* object3d;
 

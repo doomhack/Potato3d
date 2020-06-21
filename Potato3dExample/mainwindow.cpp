@@ -33,7 +33,14 @@ void MainWindow::paintEvent(QPaintEvent *event)
     static unsigned int frameCount = 0;
     static unsigned int currentFps = 0;
 
+    static double aveRtime = 0;
+    static unsigned int rTime = 0;
+
+    renderTimer.restart();
+
     object3d->RenderScene();
+
+    rTime += renderTimer.elapsed();
 
     QPainter p(this);
 
@@ -46,11 +53,19 @@ void MainWindow::paintEvent(QPaintEvent *event)
     if(elapsed > 1000)
     {
         currentFps = qRound((double)frameCount / ((double)elapsed / 1000.0));
+
+        aveRtime = (double)rTime / (double)frameCount;
+
+        rTime = 0;
         frameCount = 0;
         fpsTimer.restart();
     }
 
+    p.setPen(Qt::yellow);
+
     p.drawText(32,32, QString("FPS: %1").arg(currentFps));
+    p.drawText(32,48, QString("Ave Render Time: %1ms").arg(aveRtime));
+
 
     this->update();
 }

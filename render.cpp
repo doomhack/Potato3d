@@ -992,12 +992,13 @@ namespace P3D
         int x_end = pos.x_right;
 
         fp inv_width = 0;
-        const fp xFracScale = 1024;
+        const unsigned int xFracShift = 10;
+
         fp xFracScaled;
 
         if(x_start < x_end)
         {
-            inv_width = fp(xFracScale)/(x_end - x_start);
+            inv_width = fp(1 << xFracShift)/(x_end - x_start);
         }
 
         if(x_start < 0)
@@ -1005,7 +1006,7 @@ namespace P3D
             xFracScaled = (fp(-x_start) * inv_width);
             x_start = 0;
 
-            fp xFrac = xFracScaled / xFracScale;
+            fp xFrac = xFracScaled >> xFracShift;
 
             sl_pos.z = pLerp(pos.z_left, pos.z_right, xFrac);
             sl_pos.w = pLerp(pos.w_left, pos.w_right, xFrac);
@@ -1049,7 +1050,7 @@ namespace P3D
             zb++;
             fb++;
 
-            fp xFrac = xFracScaled / xFracScale;
+            fp xFrac = xFracScaled >> xFracShift;
 
             sl_pos.z = pLerp(pos.z_left, pos.z_right, xFrac);
             sl_pos.w = pLerp(pos.w_left, pos.w_right, xFrac);
@@ -1066,12 +1067,12 @@ namespace P3D
         int x_end = pos.x_right;
 
         fp inv_width = 0;
-        const fp xFracScale = 1024;
+        const unsigned int xFracShift = 10;
         fp xFracScaled;
 
         if(x_start < x_end)
         {
-            inv_width = fp(xFracScale)/(x_end - x_start);
+            inv_width = fp(1 << xFracShift)/(x_end - x_start);
         }
 
         if(x_start < 0)
@@ -1079,7 +1080,7 @@ namespace P3D
             xFracScaled = (fp(-x_start) * inv_width);
             x_start = 0;
 
-            fp xFrac = xFracScaled / xFracScale;
+            fp xFrac = xFracScaled >> xFracShift;
 
             sl_pos.z = pLerp(pos.z_left, pos.z_right, xFrac);
             sl_pos.u = pLerp(pos.u_left, pos.u_right, xFrac);
@@ -1119,7 +1120,7 @@ namespace P3D
             zb++;
             fb++;
 
-            fp xFrac = xFracScaled / xFracScale;
+            fp xFrac = xFracScaled >> xFracShift;
 
             sl_pos.z = pLerp(pos.z_left, pos.z_right, xFrac);
             sl_pos.u = pLerp(pos.u_left, pos.u_right, xFrac);
@@ -1135,12 +1136,12 @@ namespace P3D
         int x_end = pos.x_right;
 
         fp inv_width = 0;
-        const fp xFracScale = 1024;
+        const unsigned int xFracShift = 10;
         fp xFracScaled;
 
         if(x_start < x_end)
         {
-            inv_width = fp(xFracScale)/(x_end - x_start);
+            inv_width = fp(1 << xFracShift)/(x_end - x_start);
         }
         else if(x_start > x_end)
             return;
@@ -1150,7 +1151,7 @@ namespace P3D
             xFracScaled = (fp(-x_start) * inv_width);
             x_start = 0;
 
-            fp xFrac = xFracScaled / xFracScale;
+            fp xFrac = xFracScaled >> xFracShift;
 
             zPos = pLerp(pos.z_left, pos.z_right, xFrac);
         }
@@ -1180,7 +1181,7 @@ namespace P3D
             zb++;
             fb++;
 
-            fp xFrac = xFracScaled / xFracScale;
+            fp xFrac = xFracScaled >> xFracShift;
             zPos = pLerp(pos.z_left, pos.z_right, xFrac);
 
         }
