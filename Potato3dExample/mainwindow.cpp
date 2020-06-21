@@ -57,47 +57,47 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 {
     if(event->key() == Qt::Key_Left)
     {
-        object3d->GetCameraAngle().y += 2;
+        object3d->CameraAngle().y += 2;
     }
     else if(event->key() == Qt::Key_Right)
     {
-        object3d->GetCameraAngle().y -= 2;
+        object3d->CameraAngle().y -= 2;
     }
     else if(event->key() == Qt::Key_Up)
     {
-        P3D::V3<P3D::fp> camAngle = object3d->GetCameraAngle();
+        P3D::V3<P3D::fp> camAngle = object3d->CameraAngle();
 
         float angleYRad = qDegreesToRadians(camAngle.y);
 
         P3D::V3<P3D::fp> d((float)-(qSin(angleYRad) *10), 0, (float)-(qCos(angleYRad) *10));
 
-        object3d->GetCameraPos() += d;
+        object3d->CameraPos() += d;
     }
     else if(event->key() == Qt::Key_Down)
     {
-        P3D::V3<P3D::fp> camAngle = object3d->GetCameraAngle();
+        P3D::V3<P3D::fp> camAngle = object3d->CameraAngle();
 
         float angleYRad = qDegreesToRadians(camAngle.y);
 
         P3D::V3<P3D::fp> d((float)-(qSin(angleYRad) *10), 0, (float)-(qCos(angleYRad) *10));
 
-        object3d->GetCameraPos() -= d;
+        object3d->CameraPos() -= d;
     }
     else if(event->key() == Qt::Key_Z)
     {
-        object3d->GetCameraAngle().x += 1;
+        object3d->CameraAngle().x += 1;
     }
     else if(event->key() == Qt::Key_X)
     {
-        object3d->GetCameraAngle().x -= 1;
+        object3d->CameraAngle().x -= 1;
     }
     else if(event->key() == Qt::Key_Q)
     {
-        object3d->GetCameraPos().y += 1;
+        object3d->CameraPos().y += 1;
     }
     else if(event->key() == Qt::Key_W)
     {
-        object3d->GetCameraPos().y -= 1;
+        object3d->CameraPos().y -= 1;
     }
 
 }

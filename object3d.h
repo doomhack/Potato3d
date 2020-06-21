@@ -33,11 +33,8 @@ namespace P3D
 
         bool Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov = 54, fp zNear = 5, fp zFar = 1024, pixel* framebuffer = nullptr, fp* zBuffer = nullptr);
 
-        V3<fp>& GetCameraPos();
-        void SetCameraPos(const V3<fp> pos);
-
-        V3<fp>& GetCameraAngle();
-        void SetCameraAngle(const V3<fp> rot);
+        V3<fp>& CameraPos();
+        V3<fp>& CameraAngle();
 
         void RenderScene();
 

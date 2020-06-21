@@ -20,24 +20,14 @@ namespace P3D
         return render->Setup(screenWidth, screenHeight, hFov, zNear, zFar, framebuffer, zBuffer);
     }
 
-    V3<fp>& Object3d::GetCameraPos()
+    V3<fp>& Object3d::CameraPos()
     {
         return cameraPos;
     }
 
-    void P3D::Object3d::SetCameraPos(const V3<fp> pos)
-    {
-        cameraPos = pos;
-    }
-
-    V3<fp>& Object3d::GetCameraAngle()
+    V3<fp>& Object3d::CameraAngle()
     {
         return cameraAngle;
-    }
-
-    void Object3d::SetCameraAngle(const V3<fp> rot)
-    {
-        cameraAngle = rot;
     }
 
     void Object3d::RenderScene()

@@ -298,7 +298,14 @@ namespace P3D
             screenSpacePoints[i].pos.x = fracToX(screenSpacePoints[i].pos.x);
             screenSpacePoints[i].pos.y = fracToY(screenSpacePoints[i].pos.y);
 
-            screenSpacePoints[i].uv = clipSpacePoints[i].uv;
+            //screenSpacePoints[i].uv = clipSpacePoints[i].uv;
+
+
+            if(texture)
+            {
+                screenSpacePoints[i].uv.x = clipSpacePoints[i].uv.x * (int)texture->width;
+                screenSpacePoints[i].uv.y = fp((int)texture->height) - (clipSpacePoints[i].uv.y * (int)texture->height);
+            }
         }
 
         //Backface cull here.
@@ -315,7 +322,7 @@ namespace P3D
         SortPointsByY(screenSpacePoints);
 
         if(texture)
-        {
+        {            
             if(flags & PerspectiveCorrect)
                 DrawTriangleSplitPerspectiveCorrect(screenSpacePoints, texture, flags);
             else
@@ -1028,9 +1035,8 @@ namespace P3D
             {
                 fp invw = fp(1) / sl_pos.w;
 
-                int tx = ((sl_pos.u * fp((int)texture->width)) * invw);
-                int ty = fp((int)texture->height) - ((sl_pos.v * fp((int)texture->height)) * invw);
-
+                int tx = sl_pos.u * invw;
+                int ty = sl_pos.v * invw;
 
                 tx = tx & (texture->width - 1);
                 ty = ty & (texture->height - 1);
@@ -1099,8 +1105,8 @@ namespace P3D
         {
             if(sl_pos.z < *zb)
             {
-                int tx = sl_pos.u * (int)texture->width;
-                int ty = (fp(1)-sl_pos.v) * (int)texture->height;
+                int tx = sl_pos.u;
+                int ty = sl_pos.v;
 
                 tx = tx & (texture->width - 1);
                 ty = ty & (texture->height - 1);
