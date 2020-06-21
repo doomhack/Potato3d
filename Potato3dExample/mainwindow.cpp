@@ -17,6 +17,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     object3d->Setup(screenWidth, screenHeight, 54, 5, 1024, (P3D::pixel*)frameBufferImage.bits());
 
+    object3d->SetBackgroundColor(qRgb(0,255,255));
+
     P3D::Model3d* runway = LoadObjFile("://models/runway.obj", "://models/runway.mtl");
     object3d->AddModel(runway);
 }

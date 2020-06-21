@@ -32,7 +32,7 @@ namespace P3D
 
     void Object3d::RenderScene()
     {
-        render->ClearFramebuffer(0, true);
+        render->ClearFramebuffer(backgroundColor, true);
 
         M4<fp>& viewMatrix = render->GetMatrix(MatrixType::View);
 
@@ -88,5 +88,10 @@ namespace P3D
     void Object3d::AddModel(const Model3d* model)
     {
         models.push_back(model);
+    }
+
+    void Object3d::SetBackgroundColor(pixel color)
+    {
+        backgroundColor = color;
     }
 }

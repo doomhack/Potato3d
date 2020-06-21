@@ -40,6 +40,8 @@ namespace P3D
 
         void AddModel(const Model3d* model);
 
+        void SetBackgroundColor(pixel color);
+
     private:
 
         void DrawModel(const Model3d* model);
@@ -51,6 +53,7 @@ namespace P3D
 
         V3<fp> cameraPos = V3<fp>(0,0,0);
         V3<fp> cameraAngle = V3<fp>(0,0,0);
+        pixel backgroundColor = 0;
     };
 }
 
