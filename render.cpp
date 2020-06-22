@@ -295,12 +295,6 @@ namespace P3D
         {
             screenSpacePoints[i].pos = clipSpacePoints[i].pos.ToScreenSpace();
 
-            screenSpacePoints[i].pos.x = fracToX(screenSpacePoints[i].pos.x);
-            screenSpacePoints[i].pos.y = fracToY(screenSpacePoints[i].pos.y);
-
-            //screenSpacePoints[i].uv = clipSpacePoints[i].uv;
-
-
             if(texture)
             {
                 screenSpacePoints[i].uv.x = clipSpacePoints[i].uv.x * (int)texture->width;
@@ -319,6 +313,12 @@ namespace P3D
         if(!IsTriangleOnScreen(screenSpacePoints))
             return;
 
+        for(int i = 0; i < 3; i++)
+        {
+            screenSpacePoints[i].pos.x = fracToX(screenSpacePoints[i].pos.x);
+            screenSpacePoints[i].pos.y = fracToY(screenSpacePoints[i].pos.y);
+        }
+
         SortPointsByY(screenSpacePoints);
 
         if(texture)
@@ -334,23 +334,23 @@ namespace P3D
 
     bool Render::IsTriangleFrontface(const Vertex2d screenSpacePoints[])
     {
-        int x1 = ((int)screenSpacePoints[0].pos.x - (int)screenSpacePoints[1].pos.x);
-        int y1 = ((int)screenSpacePoints[0].pos.y - (int)screenSpacePoints[1].pos.y);
+        fp x1 = (screenSpacePoints[0].pos.x - screenSpacePoints[1].pos.x);
+        fp y1 = (screenSpacePoints[1].pos.y - screenSpacePoints[0].pos.y);
 
-        int x2 = ((int)screenSpacePoints[1].pos.x - (int)screenSpacePoints[2].pos.x);
-        int y2 = ((int)screenSpacePoints[1].pos.y - (int)screenSpacePoints[2].pos.y);
+        fp x2 = (screenSpacePoints[1].pos.x - screenSpacePoints[2].pos.x);
+        fp y2 = (screenSpacePoints[2].pos.y - screenSpacePoints[1].pos.y);
 
         return ((x1 * y2) - (y1 * x2)) > 0;
     }
 
     bool Render::IsTriangleOnScreen(const Vertex2d screenSpacePoints[])
     {
-        int lowx = fbSize.x, highx = -1, lowy = fbSize.y, highy = -1;
+        fp lowx = 1, highx = -1, lowy = 1, highy = -1;
 
         for(int i = 0; i < 3; i++)
         {
-            int x = screenSpacePoints[i].pos.x;
-            int y = screenSpacePoints[i].pos.y;
+            fp x = screenSpacePoints[i].pos.x;
+            fp y = screenSpacePoints[i].pos.y;
 
             if(x < lowx)
                 lowx = x;
@@ -365,10 +365,10 @@ namespace P3D
                 highy = y;
         }
 
-        if(lowx == highx || lowy == highy)
+        if((lowx >= 1) || (highx <= -1) || (lowy >= 1) || (highy < -1))
             return false;
 
-        if((lowx >= fbSize.x) || (highx < 0) || (lowy >= fbSize.y) || (highy < 0))
+        if(lowx >= highx || lowy >= highy)
             return false;
 
         return true;
@@ -529,34 +529,34 @@ namespace P3D
             right = &points[1];
         }
 
-        const fp yFracScale = 1024;
-        fp inv_height = (fp(yFracScale)/(points[1].pos.y - points[0].pos.y));
-        fp yFracScaled = inv_height;
+        if((top->pos.x >= fbSize.x && left->pos.x >= fbSize.x) || (right->pos.x < 0 && top->pos.x < 0))
+            return;
 
         int yStart = top->pos.y;
         int yEnd = left->pos.y;
+
+        if(yEnd < 0 || yStart > fbSize.y)
+            return;
+
+        fp inv_height = 0;
+
+        if(yEnd > yStart)
+            inv_height = (fp(1 << yFracShift)/(yEnd - yStart));
+
+        fp yFracScaled;
 
         if(yStart < 0)
         {
             yFracScaled = (fp(-yStart) * inv_height);
             yStart = 0;
 
-            fp yFrac = yFracScaled / yFracScale;
+#ifndef USE_FLOAT
+            fp yFrac = yFracScaled >> yFracShift;
+#else
+            fp yFrac = yFracScaled / (1 << yFracShift);
+#endif
 
-            pos.x_left = pLerp(top->pos.x, left->pos.x, yFrac);
-            pos.x_right = pLerp(top->pos.x, right->pos.x, yFrac);
-
-            pos.z_left = pLerp(top->pos.z, left->pos.z, yFrac);
-            pos.z_right = pLerp(top->pos.z, right->pos.z, yFrac);
-
-            pos.w_left = pLerp(top->pos.w, left->pos.w, yFrac);
-            pos.w_right = pLerp(top->pos.w, right->pos.w, yFrac);
-
-            pos.u_left = pLerp(top->uv.x, left->uv.x, yFrac);
-            pos.u_right = pLerp(top->uv.x, right->uv.x, yFrac);
-
-            pos.v_left = pLerp(top->uv.y, left->uv.y, yFrac);
-            pos.v_right = pLerp(top->uv.y, right->uv.y, yFrac);
+            LerpVertexXZWUV(pos, *left, *right, *top, yFrac);
         }
         else
         {
@@ -575,27 +575,16 @@ namespace P3D
 
         for (int y = yStart; y <= yEnd; y++)
         {
-
             DrawTriangleScanlinePerspectiveCorrect(y, pos, texture, flags);
 
             yFracScaled += inv_height;
 
-            fp yFrac = yFracScaled / yFracScale;
-
-            pos.x_left = pLerp(top->pos.x, left->pos.x, yFrac);
-            pos.x_right = pLerp(top->pos.x, right->pos.x, yFrac);
-
-            pos.z_left = pLerp(top->pos.z, left->pos.z, yFrac);
-            pos.z_right = pLerp(top->pos.z, right->pos.z, yFrac);
-
-            pos.w_left = pLerp(top->pos.w, left->pos.w, yFrac);
-            pos.w_right = pLerp(top->pos.w, right->pos.w, yFrac);
-
-            pos.u_left = pLerp(top->uv.x, left->uv.x, yFrac);
-            pos.u_right = pLerp(top->uv.x, right->uv.x, yFrac);
-
-            pos.v_left = pLerp(top->uv.y, left->uv.y, yFrac);
-            pos.v_right = pLerp(top->uv.y, right->uv.y, yFrac);
+#ifndef USE_FLOAT
+            fp yFrac = yFracScaled >> yFracShift;
+#else
+            fp yFrac = yFracScaled / (1 << yFracShift);
+#endif
+            LerpVertexXZWUV(pos, *left, *right, *top, yFrac);
         }
     }
 
@@ -617,31 +606,34 @@ namespace P3D
             right = &points[1];
         }
 
-        const fp yFracScale = 1024;
-        fp inv_height = (fp(yFracScale)/(points[1].pos.y - points[0].pos.y));
-        fp yFracScaled = inv_height;
+        if((top->pos.x >= fbSize.x && left->pos.x >= fbSize.x) || (right->pos.x < 0 && top->pos.x < 0))
+            return;
 
         int yStart = top->pos.y;
         int yEnd = left->pos.y;
+
+        if(yEnd < 0 || yStart > fbSize.y)
+            return;
+
+        fp inv_height = 0;
+
+        if(yEnd > yStart)
+            inv_height = (fp(1 << yFracShift)/(yEnd - yStart));
+
+        fp yFracScaled;
 
         if(yStart < 0)
         {
             yFracScaled = (fp(-yStart) * inv_height);
             yStart = 0;
 
-            fp yFrac = yFracScaled / yFracScale;
+#ifndef USE_FLOAT
+            fp yFrac = yFracScaled >> yFracShift;
+#else
+            fp yFrac = yFracScaled / (1 << yFracShift);
+#endif
 
-            pos.x_left = pLerp(top->pos.x, left->pos.x, yFrac);
-            pos.x_right = pLerp(top->pos.x, right->pos.x, yFrac);
-
-            pos.z_left = pLerp(top->pos.z, left->pos.z, yFrac);
-            pos.z_right = pLerp(top->pos.z, right->pos.z, yFrac);
-
-            pos.u_left = pLerp(top->uv.x, left->uv.x, yFrac);
-            pos.u_right = pLerp(top->uv.x, right->uv.x, yFrac);
-
-            pos.v_left = pLerp(top->uv.y, left->uv.y, yFrac);
-            pos.v_right = pLerp(top->uv.y, right->uv.y, yFrac);
+            LerpVertexXZUV(pos, *left, *right, *top, yFrac);
         }
         else
         {
@@ -659,24 +651,16 @@ namespace P3D
 
         for (int y = yStart; y <= yEnd; y++)
         {
-
             DrawTriangleScanlineLinear(y, pos, texture, flags);
 
             yFracScaled += inv_height;
 
-            fp yFrac = yFracScaled / yFracScale;
-
-            pos.x_left = pLerp(top->pos.x, left->pos.x, yFrac);
-            pos.x_right = pLerp(top->pos.x, right->pos.x, yFrac);
-
-            pos.z_left = pLerp(top->pos.z, left->pos.z, yFrac);
-            pos.z_right = pLerp(top->pos.z, right->pos.z, yFrac);
-
-            pos.u_left = pLerp(top->uv.x, left->uv.x, yFrac);
-            pos.u_right = pLerp(top->uv.x, right->uv.x, yFrac);
-
-            pos.v_left = pLerp(top->uv.y, left->uv.y, yFrac);
-            pos.v_right = pLerp(top->uv.y, right->uv.y, yFrac);
+#ifndef USE_FLOAT
+            fp yFrac = yFracScaled >> yFracShift;
+#else
+            fp yFrac = yFracScaled / (1 << yFracShift);
+#endif
+            LerpVertexXZUV(pos, *left, *right, *top, yFrac);
         }
     }
 
@@ -698,25 +682,34 @@ namespace P3D
             right = &points[1];
         }
 
-        const fp yFracScale = 1024;
-        fp inv_height = (fp(yFracScale)/(points[1].pos.y - points[0].pos.y));
-        fp yFracScaled = inv_height;
+        if((top->pos.x >= fbSize.x && left->pos.x >= fbSize.x) || (right->pos.x < 0 && top->pos.x < 0))
+            return;
 
         int yStart = top->pos.y;
         int yEnd = left->pos.y;
+
+        if(yEnd < 0 || yStart > fbSize.y)
+            return;
+
+        fp inv_height = 0;
+
+        if(yEnd > yStart)
+            inv_height = (fp(1 << yFracShift)/(yEnd - yStart));
+
+        fp yFracScaled;
 
         if(yStart < 0)
         {
             yFracScaled = (fp(-yStart) * inv_height);
             yStart = 0;
 
-            fp yFrac = yFracScaled / yFracScale;
+#ifndef USE_FLOAT
+            fp yFrac = yFracScaled >> yFracShift;
+#else
+            fp yFrac = yFracScaled / (1 << yFracShift);
+#endif
 
-            pos.x_left = pLerp(top->pos.x, left->pos.x, yFrac);
-            pos.x_right = pLerp(top->pos.x, right->pos.x, yFrac);
-
-            pos.z_left = pLerp(top->pos.z, left->pos.z, yFrac);
-            pos.z_right = pLerp(top->pos.z, right->pos.z, yFrac);
+            LerpVertexXZ(pos, *left, *right, *top, yFrac);
         }
         else
         {
@@ -731,18 +724,16 @@ namespace P3D
 
         for (int y = yStart; y <= yEnd; y++)
         {
-
             DrawTriangleScanlineFlat(y, pos, color, flags);
 
             yFracScaled += inv_height;
 
-            fp yFrac = yFracScaled / yFracScale;
-
-            pos.x_left = pLerp(top->pos.x, left->pos.x, yFrac);
-            pos.x_right = pLerp(top->pos.x, right->pos.x, yFrac);
-
-            pos.z_left = pLerp(top->pos.z, left->pos.z, yFrac);
-            pos.z_right = pLerp(top->pos.z, right->pos.z, yFrac);
+#ifndef USE_FLOAT
+            fp yFrac = yFracScaled >> yFracShift;
+#else
+            fp yFrac = yFracScaled / (1 << yFracShift);
+#endif
+            LerpVertexXZ(pos, *left, *right, *top, yFrac);
         }
     }
 
@@ -764,35 +755,31 @@ namespace P3D
             right = &points[0];
         }
 
-        const fp yFracScale = 1024;
-        fp inv_height = (fp(yFracScale)/(bottom->pos.y - left->pos.y));
-
-        fp yFracScaled;
+        if((bottom->pos.x >= fbSize.x && left->pos.x >= fbSize.x) || (right->pos.x < 0 && bottom->pos.x < 0))
+            return;
 
         int yStart = bottom->pos.y;
         int yEnd = left->pos.y;
+
+        if(yStart < 0 || yEnd >= fbSize.y)
+            return;
+
+        fp inv_height = (fp(1 << yFracShift)/(bottom->pos.y - left->pos.y));
+
+        fp yFracScaled;
 
         if(yStart >= fbSize.y)
         {
             yFracScaled = (fp(yStart-(fbSize.y-1)) * inv_height);
             yStart = fbSize.y-1;
 
-            fp yFrac = yFracScaled / yFracScale;
+#ifndef USE_FLOAT
+            fp yFrac = yFracScaled >> yFracShift;
+#else
+            fp yFrac = yFracScaled / (1 << yFracShift);
+#endif
 
-            pos.x_left = pLerp(bottom->pos.x, left->pos.x, yFrac);
-            pos.x_right = pLerp(bottom->pos.x, right->pos.x, yFrac);
-
-            pos.z_left = pLerp(bottom->pos.z, left->pos.z, yFrac);
-            pos.z_right = pLerp(bottom->pos.z, right->pos.z, yFrac);
-
-            pos.w_left = pLerp(bottom->pos.w, left->pos.w, yFrac);
-            pos.w_right = pLerp(bottom->pos.w, right->pos.w, yFrac);
-
-            pos.u_left = pLerp(bottom->uv.x, left->uv.x, yFrac);
-            pos.u_right = pLerp(bottom->uv.x, right->uv.x, yFrac);
-
-            pos.v_left = pLerp(bottom->uv.y, left->uv.y, yFrac);
-            pos.v_right = pLerp(bottom->uv.y, right->uv.y, yFrac);
+            LerpVertexXZWUV(pos, *left, *right, *bottom, yFrac);
         }
         else
         {
@@ -816,22 +803,12 @@ namespace P3D
 
             yFracScaled += inv_height;
 
-            fp yFrac = yFracScaled / yFracScale;
-
-            pos.x_left = pLerp(bottom->pos.x, left->pos.x, yFrac);
-            pos.x_right = pLerp(bottom->pos.x, right->pos.x, yFrac);
-
-            pos.z_left = pLerp(bottom->pos.z, left->pos.z, yFrac);
-            pos.z_right = pLerp(bottom->pos.z, right->pos.z, yFrac);
-
-            pos.w_left = pLerp(bottom->pos.w, left->pos.w, yFrac);
-            pos.w_right = pLerp(bottom->pos.w, right->pos.w, yFrac);
-
-            pos.u_left = pLerp(bottom->uv.x, left->uv.x, yFrac);
-            pos.u_right = pLerp(bottom->uv.x, right->uv.x, yFrac);
-
-            pos.v_left = pLerp(bottom->uv.y, left->uv.y, yFrac);
-            pos.v_right = pLerp(bottom->uv.y, right->uv.y, yFrac);
+#ifndef USE_FLOAT
+            fp yFrac = yFracScaled >> yFracShift;
+#else
+            fp yFrac = yFracScaled / (1 << yFracShift);
+#endif
+            LerpVertexXZWUV(pos, *left, *right, *bottom, yFrac);
         }
     }
 
@@ -853,32 +830,31 @@ namespace P3D
             right = &points[0];
         }
 
-        const fp yFracScale = 1024;
-        fp inv_height = (fp(yFracScale)/(bottom->pos.y - left->pos.y));
-
-        fp yFracScaled;
+        if((bottom->pos.x >= fbSize.x && left->pos.x >= fbSize.x) || (right->pos.x < 0 && bottom->pos.x < 0))
+            return;
 
         int yStart = bottom->pos.y;
         int yEnd = left->pos.y;
+
+        if(yStart < 0 || yEnd >= fbSize.y)
+            return;
+
+        fp inv_height = (fp(1 << yFracShift)/(bottom->pos.y - left->pos.y));
+
+        fp yFracScaled;
 
         if(yStart >= fbSize.y)
         {
             yFracScaled = (fp(yStart-(fbSize.y-1)) * inv_height);
             yStart = fbSize.y-1;
 
-            fp yFrac = yFracScaled / yFracScale;
+#ifndef USE_FLOAT
+            fp yFrac = yFracScaled >> yFracShift;
+#else
+            fp yFrac = yFracScaled / (1 << yFracShift);
+#endif
 
-            pos.x_left = pLerp(bottom->pos.x, left->pos.x, yFrac);
-            pos.x_right = pLerp(bottom->pos.x, right->pos.x, yFrac);
-
-            pos.z_left = pLerp(bottom->pos.z, left->pos.z, yFrac);
-            pos.z_right = pLerp(bottom->pos.z, right->pos.z, yFrac);
-
-            pos.u_left = pLerp(bottom->uv.x, left->uv.x, yFrac);
-            pos.u_right = pLerp(bottom->uv.x, right->uv.x, yFrac);
-
-            pos.v_left = pLerp(bottom->uv.y, left->uv.y, yFrac);
-            pos.v_right = pLerp(bottom->uv.y, right->uv.y, yFrac);
+            LerpVertexXZUV(pos, *left, *right, *bottom, yFrac);
         }
         else
         {
@@ -901,19 +877,12 @@ namespace P3D
 
             yFracScaled += inv_height;
 
-            fp yFrac = yFracScaled / yFracScale;
-
-            pos.x_left = pLerp(bottom->pos.x, left->pos.x, yFrac);
-            pos.x_right = pLerp(bottom->pos.x, right->pos.x, yFrac);
-
-            pos.z_left = pLerp(bottom->pos.z, left->pos.z, yFrac);
-            pos.z_right = pLerp(bottom->pos.z, right->pos.z, yFrac);
-
-            pos.u_left = pLerp(bottom->uv.x, left->uv.x, yFrac);
-            pos.u_right = pLerp(bottom->uv.x, right->uv.x, yFrac);
-
-            pos.v_left = pLerp(bottom->uv.y, left->uv.y, yFrac);
-            pos.v_right = pLerp(bottom->uv.y, right->uv.y, yFrac);
+#ifndef USE_FLOAT
+            fp yFrac = yFracScaled >> yFracShift;
+#else
+            fp yFrac = yFracScaled / (1 << yFracShift);
+#endif
+            LerpVertexXZUV(pos, *left, *right, *bottom, yFrac);
         }
     }
 
@@ -935,26 +904,31 @@ namespace P3D
             right = &points[0];
         }
 
-        const fp yFracScale = 1024;
-        fp inv_height = (fp(yFracScale)/(bottom->pos.y - left->pos.y));
-
-        fp yFracScaled;
+        if((bottom->pos.x >= fbSize.x && left->pos.x >= fbSize.x) || (right->pos.x < 0 && bottom->pos.x < 0))
+            return;
 
         int yStart = bottom->pos.y;
         int yEnd = left->pos.y;
+
+        if(yStart < 0 || yEnd >= fbSize.y)
+            return;
+
+        fp inv_height = (fp(1 << yFracShift)/(bottom->pos.y - left->pos.y));
+
+        fp yFracScaled;
 
         if(yStart >= fbSize.y)
         {
             yFracScaled = (fp(yStart-(fbSize.y-1)) * inv_height);
             yStart = fbSize.y-1;
 
-            fp yFrac = yFracScaled / yFracScale;
+#ifndef USE_FLOAT
+            fp yFrac = yFracScaled >> yFracShift;
+#else
+            fp yFrac = yFracScaled / (1 << yFracShift);
+#endif
 
-            pos.x_left = pLerp(bottom->pos.x, left->pos.x, yFrac);
-            pos.x_right = pLerp(bottom->pos.x, right->pos.x, yFrac);
-
-            pos.z_left = pLerp(bottom->pos.z, left->pos.z, yFrac);
-            pos.z_right = pLerp(bottom->pos.z, right->pos.z, yFrac);
+            LerpVertexXZ(pos, *left, *right, *bottom, yFrac);
         }
         else
         {
@@ -974,13 +948,12 @@ namespace P3D
 
             yFracScaled += inv_height;
 
-            fp yFrac = yFracScaled / yFracScale;
-
-            pos.x_left = pLerp(bottom->pos.x, left->pos.x, yFrac);
-            pos.x_right = pLerp(bottom->pos.x, right->pos.x, yFrac);
-
-            pos.z_left = pLerp(bottom->pos.z, left->pos.z, yFrac);
-            pos.z_right = pLerp(bottom->pos.z, right->pos.z, yFrac);
+#ifndef USE_FLOAT
+            fp yFrac = yFracScaled >> yFracShift;
+#else
+            fp yFrac = yFracScaled / (1 << yFracShift);
+#endif
+            LerpVertexXZ(pos, *left, *right, *bottom, yFrac);
         }
     }
 
@@ -991,15 +964,17 @@ namespace P3D
         int x_start = pos.x_left;
         int x_end = pos.x_right;
 
-        fp inv_width = 0;
-        const unsigned int xFracShift = 10;
+        if(x_end < 0 || x_start > fbSize.x)
+            return;
 
-        fp xFracScaled;
+        fp inv_width = 0;
 
         if(x_start < x_end)
         {
             inv_width = fp(1 << xFracShift)/(x_end - x_start);
         }
+
+        fp xFracScaled;
 
         if(x_start < 0)
         {
@@ -1012,10 +987,7 @@ namespace P3D
             fp xFrac = xFracScaled / (1 << xFracShift);
 #endif
 
-            sl_pos.z = pLerp(pos.z_left, pos.z_right, xFrac);
-            sl_pos.w = pLerp(pos.w_left, pos.w_right, xFrac);
-            sl_pos.u = pLerp(pos.u_left, pos.u_right, xFrac);
-            sl_pos.v = pLerp(pos.v_left, pos.v_right, xFrac);
+            LerpEdgeZWUV(sl_pos, pos, xFrac);
         }
         else
         {
@@ -1060,10 +1032,8 @@ namespace P3D
 #else
             fp xFrac = xFracScaled / (1 << xFracShift);
 #endif
-            sl_pos.z = pLerp(pos.z_left, pos.z_right, xFrac);
-            sl_pos.w = pLerp(pos.w_left, pos.w_right, xFrac);
-            sl_pos.u = pLerp(pos.u_left, pos.u_right, xFrac);
-            sl_pos.v = pLerp(pos.v_left, pos.v_right, xFrac);
+
+            LerpEdgeZWUV(sl_pos, pos, xFrac);
         }
     }
 
@@ -1074,14 +1044,17 @@ namespace P3D
         int x_start = pos.x_left;
         int x_end = pos.x_right;
 
+        if(x_end < 0 || x_start > fbSize.x)
+            return;
+
         fp inv_width = 0;
-        const unsigned int xFracShift = 10;
-        fp xFracScaled;
 
         if(x_start < x_end)
         {
             inv_width = fp(1 << xFracShift)/(x_end - x_start);
         }
+
+        fp xFracScaled;
 
         if(x_start < 0)
         {
@@ -1094,9 +1067,7 @@ namespace P3D
             fp xFrac = xFracScaled / (1 << xFracShift);
 #endif
 
-            sl_pos.z = pLerp(pos.z_left, pos.z_right, xFrac);
-            sl_pos.u = pLerp(pos.u_left, pos.u_right, xFrac);
-            sl_pos.v = pLerp(pos.v_left, pos.v_right, xFrac);
+            LerpEdgeZUV(sl_pos, pos, xFrac);
         }
         else
         {
@@ -1139,29 +1110,28 @@ namespace P3D
             fp xFrac = xFracScaled / (1 << xFracShift);
 #endif
 
-            sl_pos.z = pLerp(pos.z_left, pos.z_right, xFrac);
-            sl_pos.u = pLerp(pos.u_left, pos.u_right, xFrac);
-            sl_pos.v = pLerp(pos.v_left, pos.v_right, xFrac);
+            LerpEdgeZUV(sl_pos, pos, xFrac);
         }
     }
 
     void Render::DrawTriangleScanlineFlat(int y, const TriEdgeTrace& pos, const pixel color, const RenderFlags flags)
     {
-        fp zPos;
+        fp z_pos;
 
         int x_start = pos.x_left;
         int x_end = pos.x_right;
 
+        if(x_end < 0 || x_start > fbSize.x)
+            return;
+
         fp inv_width = 0;
-        const unsigned int xFracShift = 10;
-        fp xFracScaled;
 
         if(x_start < x_end)
         {
             inv_width = fp(1 << xFracShift)/(x_end - x_start);
         }
-        else if(x_start > x_end)
-            return;
+
+        fp xFracScaled;
 
         if(x_start < 0)
         {
@@ -1174,11 +1144,11 @@ namespace P3D
             fp xFrac = xFracScaled / (1 << xFracShift);
 #endif
 
-            zPos = pLerp(pos.z_left, pos.z_right, xFrac);
+            z_pos = pLerp(pos.z_left, pos.z_right, xFrac);
         }
         else
         {
-            zPos = pos.z_left;
+            z_pos = pos.z_left;
             xFracScaled = 0;
         }
 
@@ -1189,62 +1159,119 @@ namespace P3D
         fp* zb = &zBuffer[buffOffset];
         pixel* fb = &frameBuffer[buffOffset];
 
-
-        for(int i = x_start; i <= x_end; i++)
+        for(int x = x_start; x <= x_end; x++)
         {
-            if(zPos < *zb)
+            if(z_pos < *zb)
             {
                 *fb = color;
-                *zb = zPos;
+                *zb = z_pos;
             }
 
             xFracScaled += inv_width;
             zb++;
             fb++;
 
+
 #ifndef USE_FLOAT
             fp xFrac = xFracScaled >> xFracShift;
 #else
             fp xFrac = xFracScaled / (1 << xFracShift);
 #endif
-            zPos = pLerp(pos.z_left, pos.z_right, xFrac);
 
+            z_pos = pLerp(pos.z_left, pos.z_right, xFrac);
         }
+    }
+
+    void Render::LerpEdgeZWUV(TriDrawPos& out, const TriEdgeTrace& edge, fp frac)
+    {
+        out.z = pLerp(edge.z_left, edge.z_right, frac);
+        out.w = pLerp(edge.w_left, edge.w_right, frac);
+        out.u = pLerp(edge.u_left, edge.u_right, frac);
+        out.v = pLerp(edge.v_left, edge.v_right, frac);
+    }
+
+    void Render::LerpEdgeZUV(TriDrawPos& out, const TriEdgeTrace &edge, fp frac)
+    {
+        out.z = pLerp(edge.z_left, edge.z_right, frac);
+        out.u = pLerp(edge.u_left, edge.u_right, frac);
+        out.v = pLerp(edge.v_left, edge.v_right, frac);
+    }
+
+    void Render::LerpVertexXZWUV(TriEdgeTrace& out, const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, fp frac)
+    {
+        out.x_left = pLerp(other.pos.x, left.pos.x, frac);
+        out.x_right = pLerp(other.pos.x, right.pos.x, frac);
+
+        out.z_left = pLerp(other.pos.z, left.pos.z, frac);
+        out.z_right = pLerp(other.pos.z, right.pos.z, frac);
+
+        out.w_left = pLerp(other.pos.w, left.pos.w, frac);
+        out.w_right = pLerp(other.pos.w, right.pos.w, frac);
+
+        out.u_left = pLerp(other.uv.x, left.uv.x, frac);
+        out.u_right = pLerp(other.uv.x, right.uv.x, frac);
+
+        out.v_left = pLerp(other.uv.y, left.uv.y, frac);
+        out.v_right = pLerp(other.uv.y, right.uv.y, frac);
+    }
+
+    void Render::LerpVertexXZUV(TriEdgeTrace& out, const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, fp frac)
+    {
+        out.x_left = pLerp(other.pos.x, left.pos.x, frac);
+        out.x_right = pLerp(other.pos.x, right.pos.x, frac);
+
+        out.z_left = pLerp(other.pos.z, left.pos.z, frac);
+        out.z_right = pLerp(other.pos.z, right.pos.z, frac);
+
+        out.u_left = pLerp(other.uv.x, left.uv.x, frac);
+        out.u_right = pLerp(other.uv.x, right.uv.x, frac);
+
+        out.v_left = pLerp(other.uv.y, left.uv.y, frac);
+        out.v_right = pLerp(other.uv.y, right.uv.y, frac);
+    }
+
+    void Render::LerpVertexXZ(TriEdgeTrace& out, const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, fp frac)
+    {
+        out.x_left = pLerp(other.pos.x, left.pos.x, frac);
+        out.x_right = pLerp(other.pos.x, right.pos.x, frac);
+
+        out.z_left = pLerp(other.pos.z, left.pos.z, frac);
+        out.z_right = pLerp(other.pos.z, right.pos.z, frac);
     }
 
 
     int Render::fracToY(fp frac)
     {
-        fp y = fp(1)-((frac + fp(1)) / fp(2));
+        fp y = fp(2)-(frac + fp(1));
 
-    #ifdef USE_FLOAT
-        int sy = y * fbSize.y;
-    #else
-        int sy = y.intMul(fbSize.y);
+#ifdef USE_FLOAT
+        int sy = (y * fbSize.y) / 2;
+#else
+        int sy = y.intMul(fbSize.y) >> 1;
 
         if(sy < FP::min())
             return FP::min();
         else if(sy > FP::max())
             return FP::max();
-    #endif
+#endif
 
         return sy;
     }
 
     int Render::fracToX(fp frac)
     {
-        fp x = (frac + fp(1)) / fp(2);
+        fp x = frac + fp(1);
 
-    #ifdef USE_FLOAT
-        int sx = x * fbSize.x;
-    #else
-        int sx = x.intMul(fbSize.x);
+#ifdef USE_FLOAT
+        int sx = (x * fbSize.x) / 2;
+#else
+        int sx = x.intMul(fbSize.x) >> 1;
 
         if(sx < FP::min())
             return FP::min();
         else if(sx > FP::max())
             return FP::max();
-    #endif
+#endif
 
         return sx;
     }

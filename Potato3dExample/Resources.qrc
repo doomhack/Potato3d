@@ -6,5 +6,7 @@
         <file>models/tempImgEd0195.bmp</file>
         <file>models/temple.mtl</file>
         <file>models/temple.obj</file>
+        <file>models/temple2.mtl</file>
+        <file>models/temple2.obj</file>
     </qresource>
 </RCC>

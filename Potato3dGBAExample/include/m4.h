@@ -442,7 +442,7 @@ namespace P3D
             return;
         }
 
-        constexpr void perspective(T verticalAngle, T aspectRatio, T nearPlane, T farPlane)
+        void perspective(T verticalAngle, T aspectRatio, T nearPlane, T farPlane)
         {
             // Bail out if the projection volume is zero-sized.
             if (nearPlane == farPlane || aspectRatio == 0)

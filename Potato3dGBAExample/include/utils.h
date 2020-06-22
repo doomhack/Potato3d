@@ -9,7 +9,7 @@ namespace P3D
     constexpr inline T pLerp(T a, T b, T frac)
     {
 
-    #ifdef FAST_LERP
+    #ifndef FAST_LERP
         return a + frac * (b - a);
     #else
         T ifrac = T(1) - frac;

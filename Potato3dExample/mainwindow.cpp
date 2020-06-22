@@ -3,8 +3,6 @@
 #include <QtCore>
 #include <QtGui>
 
-#include "models/model.h"
-
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
@@ -21,17 +19,17 @@ MainWindow::MainWindow(QWidget *parent)
 
     object3d = new P3D::Object3d();
 
-    object3d->Setup(screenWidth, screenHeight, 54, 5, 1024, (P3D::pixel*)frameBufferImage.bits());
+    object3d->Setup(screenWidth, screenHeight, 54, 50, 1024, (P3D::pixel*)frameBufferImage.bits());
 
     object3d->SetBackgroundColor(qRgb(0,255,255));
 
-    //P3D::Model3d* runway = LoadObjFile("://models/temple.obj", "://models/temple.mtl");
-    //object3d->AddModel(runway);
+    P3D::Model3d* runway = LoadObjFile("://models/temple.obj", "://models/temple.mtl");
+    object3d->AddModel(runway);
 
     //SaveModel(runway);
 
-    P3D::Model3d* runway = LoadM3dData(modeldata);
-    object3d->AddModel(runway);
+    //P3D::Model3d* runway = LoadM3dData(modeldata);
+    //object3d->AddModel(runway);
 
 }
 
@@ -364,9 +362,15 @@ void MainWindow::SaveModel(P3D::Model3d* model)
 
             for(unsigned int k = 0; k < ft.width * ft.height; k++)
             {
-                P3D::pixel p = mesh->texture->pixels[k];
+                QRgb p8 = mesh->texture->pixels[k];
 
-                buffer.write((const char*)&p, sizeof(unsigned short));
+                unsigned int r = qRed(p8);
+                unsigned int g = qGreen(p8);
+                unsigned int b = qBlue(p8);
+
+                P3D::pixel p5 = RGB8(r,g,b);
+
+                buffer.write((const char*)&p5, sizeof(unsigned short));
             }
         }
     }

@@ -2,6 +2,7 @@
 #define FP_H
 
 #include <limits>
+#include <iostream>
 
 
 //#define OVERFLOW_CHECK
@@ -44,7 +45,7 @@ namespace P3D
 
             if(r < min() || r > max())
             {
-                //std::cout << "int assign overflow: " <<  r;
+                std::cout << "int assign overflow: " <<  r;
             }
     #endif
             n = (r << fracbits);   return *this;
@@ -56,7 +57,7 @@ namespace P3D
 
             if(r < min() || r > max())
             {
-                //std::cout << "float assign overflow: " <<  r;
+                std::cout << "float assign overflow: " <<  r;
             }
     #endif
 
@@ -76,7 +77,7 @@ namespace P3D
 
             if(tmp < std::numeric_limits<int>::min() || tmp > std::numeric_limits<int>::max())
             {
-                //std::cout << "addition overflow: " <<  r.i() << this->i();
+                std::cout << "addition overflow: " <<  r.i() << this->i();
             }
     #endif
 
@@ -96,7 +97,7 @@ namespace P3D
 
             if(tmp < std::numeric_limits<int>::min() || tmp > std::numeric_limits<int>::max())
             {
-                //std::cout << "subtraction overflow: " <<  r.i() << this->i();
+                std::cout << "subtraction overflow: " <<  r.i() << this->i();
             }
     #endif
 
@@ -127,7 +128,7 @@ namespace P3D
 
             if(tmp < std::numeric_limits<int>::min() || tmp > std::numeric_limits<int>::max())
             {
-                //std::cout << "multiply overflow: " <<  r.i() << this->i() << r.i() * this->i();
+                std::cout << "multiply overflow: " <<  r.i() << this->i() << r.i() * this->i();
             }
     #endif
 
@@ -147,7 +148,7 @@ namespace P3D
 
             if(tmp < std::numeric_limits<int>::min() || tmp > std::numeric_limits<int>::max())
             {
-                //std::cout << "divide overflow: " <<  r.i() << this->i();
+                std::cout << "divide overflow: " <<  r.i() << this->i();
             }
     #endif
 
@@ -166,7 +167,7 @@ namespace P3D
 
             if(tmp < std::numeric_limits<int>::min() || tmp > std::numeric_limits<int>::max())
             {
-                //std::cout << "divide overflow: " <<  r.i() << this->i();
+                std::cout << "divide overflow: " <<  r.i() << this->i();
             }
     #endif
             n = (int)tmp;

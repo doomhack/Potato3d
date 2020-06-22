@@ -5,9 +5,40 @@
 
 
 //#define OVERFLOW_CHECK
+extern "C" unsigned int udiv64_arm (unsigned int a, unsigned int b, unsigned int c);
 
 namespace P3D
 {
+    template <class T>
+    constexpr inline T div(T a, T b)
+    {
+        return (a * (1 << 16)) / b;
+    }
+
+    template<>
+    inline int div(int a, int b)
+    {
+    #ifndef __arm__
+        return (int)(long long int)a << 16 / b;
+    #else
+
+
+        int sign = (a^b) < 0; /* different signs */
+
+        a = a<0 ? -a:a;
+        b = b<0 ? -b:b;
+
+        unsigned int l = (a << 16);
+        unsigned int h = (a >> 16);
+
+        int q = udiv64_arm (h,l,b);
+        if (sign)
+            q = -q;
+
+        return q;
+    #endif
+    }
+
     class FP
     {
     public:
@@ -139,42 +170,27 @@ namespace P3D
         constexpr FP& operator*=(const float& r)      {return *this*=FP(r);}
 
         //Divide
-        constexpr FP operator/(const FP& r) const
+        FP operator/(const FP& r) const
         {
-            long long int tmp = (((long long int)n << fracbits) / r.n);
-
-    #ifdef OVERFLOW_CHECK
-
-            if(tmp < std::numeric_limits<int>::min() || tmp > std::numeric_limits<int>::max())
-            {
-                //std::cout << "divide overflow: " <<  r.i() << this->i();
-            }
-    #endif
+            int tmp = div(n, r.n);
 
             FP v(r); v.n = (int)tmp;
             return v;
         }
 
-        constexpr FP operator/(const int r) const       {FP v(r);   return *this/v;}
-        constexpr FP operator/(const float r) const     {FP v(r);   return *this/v;}
+        FP operator/(const int r) const       {FP v(r);   return *this/v;}
+        FP operator/(const float r) const     {FP v(r);   return *this/v;}
 
-        constexpr FP& operator/=(const FP& r)
+        FP& operator/=(const FP& r)
         {
-            long long int tmp = (((long long int)n << fracbits) / r.n);
+            int tmp = div(n, r.n);
 
-    #ifdef OVERFLOW_CHECK
-
-            if(tmp < std::numeric_limits<int>::min() || tmp > std::numeric_limits<int>::max())
-            {
-                //std::cout << "divide overflow: " <<  r.i() << this->i();
-            }
-    #endif
             n = (int)tmp;
             return *this;
         }
 
-        constexpr FP& operator/=(const int& r)              {return *this/=FP(r);}
-        constexpr FP& operator/=(const float& r)            {return *this/=FP(r);}
+        FP& operator/=(const int& r)              {return *this/=FP(r);}
+        FP& operator/=(const float& r)            {return *this/=FP(r);}
 
         //Equality
         constexpr bool operator==(const FP& r) const        {return n == r.n;}

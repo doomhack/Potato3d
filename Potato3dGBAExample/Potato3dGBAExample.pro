@@ -11,12 +11,13 @@ INCLUDEPATH += "C:\devkitPro\libgba\include"
 SOURCES += \
     source/main.cpp \
     source/model.cpp \
-    source/object3d.cpp \
+    source/object3d.iwram.cpp \
     source/render.iwram.cpp
 
 
 DISTFILES += \
-    Makefile
+    Makefile \
+    source/fixeddiv.s
 
 HEADERS += \
     include/common.h \

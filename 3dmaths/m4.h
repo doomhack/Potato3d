@@ -5,8 +5,6 @@
 #include "v3.h"
 #include "v4.h"
 
-#define M_PI (3.14159265358979323846)
-
 namespace P3D
 {
 
@@ -452,18 +450,20 @@ namespace P3D
 
             // Construct the projection.
             M4 m;
-            T radians = d2r(verticalAngle / 2);
-            T sine = std::sin(radians);
+            float radians = d2r(verticalAngle / 2);
+            float sine = std::sin(radians);
 
             if (sine == 0)
                 return;
 
-            T cosRads = std::cos(radians);
+            float cosRads = std::cos(radians);
 
-            T cotan = (cosRads / sine);
-            T clip = farPlane - nearPlane;
+            float cotan = (cosRads / sine);
+            float clip = farPlane - nearPlane;
+            float clip2 = -(nearPlane + farPlane) / clip;
+            float clip3 = -(2.0f * (float)nearPlane * (float)farPlane) / clip;
 
-            m.m[0][0] = cotan / aspectRatio;
+            m.m[0][0] = (cotan / (float)aspectRatio);
             m.m[1][0] = 0;
             m.m[2][0] = 0;
             m.m[3][0] = 0;
@@ -473,8 +473,8 @@ namespace P3D
             m.m[3][1] = 0;
             m.m[0][2] = 0;
             m.m[1][2] = 0;
-            m.m[2][2] = -(nearPlane + farPlane) / clip;
-            m.m[3][2] = -(T(2) * nearPlane * farPlane) / clip;
+            m.m[2][2] = clip2;
+            m.m[3][2] = clip3;
             m.m[0][3] = 0;
             m.m[1][3] = 0;
             m.m[2][3] = -1;
@@ -489,7 +489,10 @@ namespace P3D
 
         constexpr T d2r(T degrees) const
         {
-            return degrees * T((float)M_PI/180);
+            const T pi((3.14159265358979323846f));
+
+            return (degrees * pi) / 180;
+            //return degrees * T((float)M_PI/180);
         }
 
         unsigned int flags;

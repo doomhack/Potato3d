@@ -103,7 +103,7 @@ namespace P3D
             return ((x * r.y) - (y * r.x));
         }
 
-        constexpr V4<T> ToScreenSpace() const
+        V4<T> ToScreenSpace() const
         {
             if (w == T(1))
                 return V4<T>(x, y, z, w);

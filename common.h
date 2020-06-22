@@ -7,9 +7,9 @@ namespace P3D
 {
 
     //#define USE_FLOAT
-    //#define FB_32BIT //RGBX888 framebuffer format.
+    #define FB_32BIT //RGBX888 framebuffer format.
 
-    #define PERSPECTIVE_CORRECT
+    #define FAST_LERP
 
     #ifdef FB_32BIT
         typedef unsigned int pixel;

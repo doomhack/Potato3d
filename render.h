@@ -92,6 +92,15 @@ namespace P3D
         bool IsTriangleFrontface(const Vertex2d screenSpacePoints[]);
         bool IsTriangleOnScreen(const Vertex2d screenSpacePoints[]);
 
+        void LerpEdgeZWUV(TriDrawPos& out, const TriEdgeTrace &edge, fp frac);
+        void LerpEdgeZUV(TriDrawPos& out, const TriEdgeTrace &edge, fp frac);
+
+        void LerpVertexXZWUV(TriEdgeTrace& out, const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, fp frac);
+        void LerpVertexXZUV(TriEdgeTrace& out, const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, fp frac);
+        void LerpVertexXZ(TriEdgeTrace& out, const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, fp frac);
+
+
+
         int fracToY(fp frac);
         int fracToX(fp frac);
 
@@ -112,6 +121,10 @@ namespace P3D
         M4<fp> viewProjectionMatrix; //P*V
 
         M4<fp> transformMatrix; //P*V*M
+
+        const unsigned int xFracShift = 10;
+        const unsigned int yFracShift = 10;
+
     };
 
 }
