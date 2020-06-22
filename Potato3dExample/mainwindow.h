@@ -23,6 +23,13 @@ private:
 
     P3D::Model3d* LoadObjFile(QString objFile, QString mtlFile);
 
+    P3D::Model3d* LoadM3dData(const unsigned char *data);
+
+
+    void SaveModel(P3D::Model3d* model);
+    void SaveBytesAsCFile(QByteArray& bytes, QString file);
+
+
     QElapsedTimer fpsTimer;
     QElapsedTimer renderTimer;
 

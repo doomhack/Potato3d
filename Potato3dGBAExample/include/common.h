@@ -1,7 +1,7 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#include "3dmaths/f3dmath.h"
+#include "f3dmath.h"
 
 namespace P3D
 {

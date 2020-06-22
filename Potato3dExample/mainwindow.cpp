@@ -3,6 +3,8 @@
 #include <QtCore>
 #include <QtGui>
 
+#include "models/model.h"
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
@@ -11,7 +13,11 @@ MainWindow::MainWindow(QWidget *parent)
 
     fpsTimer.start();
 
+#ifdef FB_32BIT
     frameBufferImage = QImage(screenWidth, screenHeight, QImage::Format::Format_RGB32);
+#else
+    frameBufferImage = QImage(screenWidth, screenHeight, QImage::Format::Format_RGB555);
+#endif
 
     object3d = new P3D::Object3d();
 
@@ -19,8 +25,14 @@ MainWindow::MainWindow(QWidget *parent)
 
     object3d->SetBackgroundColor(qRgb(0,255,255));
 
-    P3D::Model3d* runway = LoadObjFile("://models/temple.obj", "://models/temple.mtl");
+    //P3D::Model3d* runway = LoadObjFile("://models/temple.obj", "://models/temple.mtl");
+    //object3d->AddModel(runway);
+
+    //SaveModel(runway);
+
+    P3D::Model3d* runway = LoadM3dData(modeldata);
     object3d->AddModel(runway);
+
 }
 
 MainWindow::~MainWindow()
@@ -189,13 +201,17 @@ P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
 
                 QImage* image = new QImage("://models/" + lastBit);
 
+#ifndef FB_32BIT
+                *image = image->convertToFormat(QImage::Format_RGB555);
+#endif
+
                 if(!image->isNull())
                 {
                     textureMap[currMtlName] = t;
                     t->width = image->width();
                     t->height = image->height();
 
-                    t->pixels = (const QRgb*)image->constBits();
+                    t->pixels = (const P3D::pixel*)image->constBits();
                 }
 
 
@@ -281,3 +297,154 @@ P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
     return model;
 }
 
+#pragma pack(push,1)
+
+
+typedef struct FileModel
+{
+    unsigned int mesh_count;
+    P3D::V3<P3D::fp> pos;
+} FileModel;
+
+typedef struct FileTexture
+{
+    unsigned int width;
+    unsigned int height;
+    //unsigned short pixels[width * height];
+} FileTexture;
+
+typedef struct FileMesh
+{
+    unsigned int color;
+    unsigned int has_texture;
+    unsigned int triangle_count;
+    //P3D::Triangle3d triangles[triangle_count];
+} FileMesh;
+
+#pragma pack(pop)
+
+#define RGB8(r,g,b)	( (((b)>>3)<<10) | (((g)>>3)<<5) | ((r)>>3) )
+
+void MainWindow::SaveModel(P3D::Model3d* model)
+{
+    QByteArray byteArray;
+    QBuffer buffer(&byteArray);
+    buffer.open(QIODevice::WriteOnly);
+
+    FileModel fm;
+    fm.pos = model->pos;
+    fm.mesh_count = model->mesh.size();
+
+    buffer.write((const char*)&fm, sizeof(fm));
+
+    for(unsigned int i = 0; i < model->mesh.size(); i++)
+    {
+        P3D::Mesh3d* mesh = model->mesh[i];
+
+        FileMesh fms;
+        fms.color = mesh->color;
+        fms.has_texture = mesh->texture != nullptr;
+        fms.triangle_count = mesh->tris.size();
+
+        buffer.write((const char*)&fms, sizeof(fms));
+
+        for(unsigned int j = 0; j < mesh->tris.size(); j++)
+        {
+            buffer.write((const char*)mesh->tris[j], sizeof(P3D::Triangle3d));
+        }
+
+        if(fms.has_texture)
+        {
+            FileTexture ft;
+
+            ft.width = mesh->texture->width;
+            ft.height = mesh->texture->height;
+
+            buffer.write((const char*)&ft, sizeof(ft));
+
+            for(unsigned int k = 0; k < ft.width * ft.height; k++)
+            {
+                P3D::pixel p = mesh->texture->pixels[k];
+
+                buffer.write((const char*)&p, sizeof(unsigned short));
+            }
+        }
+    }
+
+    buffer.close();
+
+    SaveBytesAsCFile(byteArray, "C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\model.cpp");
+}
+
+P3D::Model3d* MainWindow::LoadM3dData(const unsigned char* data)
+{
+    P3D::Model3d* model = new P3D::Model3d();
+
+
+    FileModel* fm = (FileModel*)data;
+
+    model->pos = fm->pos;
+
+    FileMesh* fms = (FileMesh*)&fm[1];
+
+    for(unsigned int i = 0; i < fm->mesh_count; i++)
+    {
+        P3D::Mesh3d* mesh = new P3D::Mesh3d();
+        mesh->color = fms->color;
+
+        P3D::Triangle3d* t = (P3D::Triangle3d*)&fms[1];
+
+        for(unsigned int j = 0; j < fms->triangle_count; j++)
+        {
+            mesh->tris.push_back(&t[j]);
+        }
+
+        if(fms->has_texture)
+        {
+            FileTexture* ft = (FileTexture*)&t[fms->triangle_count];
+
+            mesh->texture = new P3D::Texture;
+            mesh->texture->width = ft->width;
+            mesh->texture->height = ft->height;
+
+            mesh->texture->pixels = (P3D::pixel*)&ft[1];
+
+            fms = (FileMesh*)&mesh->texture->pixels[ft->width * ft->height];
+        }
+        else
+        {
+            fms = (FileMesh*)&t[fms->triangle_count];
+        }
+
+        model->mesh.push_back(mesh);
+    }
+
+    return model;
+}
+
+void MainWindow::SaveBytesAsCFile(QByteArray& bytes, QString file)
+{
+    QFile f(file);
+
+    if(!f.open(QIODevice::Truncate | QIODevice::ReadWrite))
+        return;
+
+    QString decl = QString("const extern unsigned char modeldata[%1UL] = {\n").arg(bytes.size());
+
+    f.write(decl.toLatin1());
+
+    for(int i = 0; i < bytes.size(); i++)
+    {
+        QString element = QString("0x%1,").arg((quint8)bytes.at(i),2, 16, QChar('0'));
+
+        if(( (i+1) % 40) == 0)
+            element += "\n";
+
+        f.write(element.toLatin1());
+    }
+
+    QString close = QString("\n};");
+    f.write(close.toLatin1());
+
+    f.close();
+}

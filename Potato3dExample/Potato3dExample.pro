@@ -21,7 +21,8 @@ SOURCES += \
     ../object3d.cpp \
     ../render.cpp \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    models/model.cpp
 
 HEADERS += \
     ../3dmaths/f3dmath.h \
@@ -36,7 +37,8 @@ HEADERS += \
     ../potato3d.h \
     ../render.h \
     ../rtypes.h \
-    mainwindow.h
+    mainwindow.h \
+    models/model.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
