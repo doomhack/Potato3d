@@ -15,21 +15,25 @@ SOURCES += \
     source/render.iwram.cpp
 
 
+HEADERS += \
+    ../3dmaths/divide.h \
+    ../3dmaths/f3dmath.h \
+    ../3dmaths/fp.h \
+    ../3dmaths/m4.h \
+    ../3dmaths/utils.h \
+    ../3dmaths/v2.h \
+    ../3dmaths/v3.h \
+    ../3dmaths/v4.h \
+    ../common.h \
+    ../object3d.h \
+    ../potato3d.h \
+    ../render.h \
+    ../rtypes.h \
+    include/common.h \
+    include/model.h
+
 DISTFILES += \
     Makefile \
     source/fixeddiv.s
 
-HEADERS += \
-    include/common.h \
-    include/f3dmath.h \
-    include/fp.h \
-    include/m4.h \
-    include/model.h \
-    include/object3d.h \
-    include/potato3d.h \
-    include/render.h \
-    include/rtypes.h \
-    include/utils.h \
-    include/v2.h \
-    include/v3.h \
-    include/v4.h
+

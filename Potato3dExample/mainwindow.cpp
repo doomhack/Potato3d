@@ -26,7 +26,7 @@ MainWindow::MainWindow(QWidget *parent)
     P3D::Model3d* runway = LoadObjFile("://models/temple.obj", "://models/temple.mtl");
     object3d->AddModel(runway);
 
-    //SaveModel(runway);
+    SaveModel(runway);
 
     //P3D::Model3d* runway = LoadM3dData(modeldata);
     //object3d->AddModel(runway);

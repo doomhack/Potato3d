@@ -25,6 +25,7 @@ SOURCES += \
     models/model.cpp
 
 HEADERS += \
+    ../3dmaths/divide.h \
     ../3dmaths/f3dmath.h \
     ../3dmaths/fp.h \
     ../3dmaths/m4.h \

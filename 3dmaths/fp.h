@@ -2,8 +2,9 @@
 #define FP_H
 
 #include <limits>
-#include <iostream>
+//#include <iostream>
 
+#include "divide.h"
 
 //#define OVERFLOW_CHECK
 
@@ -140,42 +141,23 @@ namespace P3D
         constexpr FP& operator*=(const float& r)      {return *this*=FP(r);}
 
         //Divide
-        constexpr FP operator/(const FP& r) const
+        FP operator/(const FP& r) const
         {
-            long long int tmp = (((long long int)n << fracbits) / r.n);
-
-    #ifdef OVERFLOW_CHECK
-
-            if(tmp < std::numeric_limits<int>::min() || tmp > std::numeric_limits<int>::max())
-            {
-                std::cout << "divide overflow: " <<  r.i() << this->i();
-            }
-    #endif
-
-            FP v(r); v.n = (int)tmp;
+            FP v(r); v.n = FixedDiv(n, r.n);
             return v;
         }
 
-        constexpr FP operator/(const int r) const       {FP v(r);   return *this/v;}
-        constexpr FP operator/(const float r) const     {FP v(r);   return *this/v;}
+        FP operator/(const int r) const       {FP v(r);   return *this/v;}
+        FP operator/(const float r) const     {FP v(r);   return *this/v;}
 
-        constexpr FP& operator/=(const FP& r)
+        FP& operator/=(const FP& r)
         {
-            long long int tmp = (((long long int)n << fracbits) / r.n);
-
-    #ifdef OVERFLOW_CHECK
-
-            if(tmp < std::numeric_limits<int>::min() || tmp > std::numeric_limits<int>::max())
-            {
-                std::cout << "divide overflow: " <<  r.i() << this->i();
-            }
-    #endif
-            n = (int)tmp;
+            n = FixedDiv(n, r.n);
             return *this;
         }
 
-        constexpr FP& operator/=(const int& r)              {return *this/=FP(r);}
-        constexpr FP& operator/=(const float& r)            {return *this/=FP(r);}
+        FP& operator/=(const int& r)              {return *this/=FP(r);}
+        FP& operator/=(const float& r)            {return *this/=FP(r);}
 
         //Equality
         constexpr bool operator==(const FP& r) const        {return n == r.n;}
@@ -234,11 +216,11 @@ namespace P3D
         constexpr FP operator>>(const unsigned int r) const {FP v(*this);   return v>>=r;}
         constexpr FP& operator>>=(const unsigned int r)     {n >>= r;  return *this;}
 
+        static const unsigned int fracbits = 16;
 
     private:
         int n;
 
-        static const unsigned int fracbits = 16;
         static const unsigned int one = (1 << fracbits);
     };
 

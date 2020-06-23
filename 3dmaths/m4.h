@@ -334,8 +334,8 @@ namespace P3D
             else
             {
                 T a = d2r(angle);
-                c = std::cos(a);
-                s = std::sin(a);
+                c = std::cos((float)a);
+                s = std::sin((float)a);
 
             }
 
@@ -380,8 +380,8 @@ namespace P3D
             else
             {
                 T a = d2r(angle);
-                c = std::cos(a);
-                s = std::sin(a);
+                c = std::cos((float)a);
+                s = std::sin((float)a);
 
             }
 
@@ -424,8 +424,8 @@ namespace P3D
             else
             {
                 T a = d2r(angle);
-                c = std::cos(a);
-                s = std::sin(a);
+                c = std::cos((float)a);
+                s = std::sin((float)a);
             }
 
             T tmp;

@@ -81,7 +81,7 @@ namespace P3D
         {
             const Triangle3d* triangle = *it;
 
-            render->DrawTriangle(triangle, mesh->texture, mesh->color, (RenderFlags)(PerspectiveCorrect));
+            render->DrawTriangle(triangle, mesh->texture, mesh->color, (RenderFlags)(0));
         }
     }
 
@@ -93,5 +93,10 @@ namespace P3D
     void Object3d::SetBackgroundColor(pixel color)
     {
         backgroundColor = color;
+    }
+
+    void Object3d::SetFramebuffer(pixel* framebuffer)
+    {
+        render->SetFramebuffer(framebuffer);
     }
 }

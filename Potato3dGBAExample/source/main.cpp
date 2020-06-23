@@ -2,7 +2,7 @@
 #include <gba_input.h>
 #include <gba_timers.h>
 
-#include "potato3d.h"
+#include "../../potato3d.h"
 
 #include "model.h"
 

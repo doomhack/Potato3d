@@ -42,6 +42,8 @@ namespace P3D
 
         void SetBackgroundColor(pixel color);
 
+        void SetFramebuffer(pixel* framebuffer);
+
     private:
 
         void DrawModel(const Model3d* model);

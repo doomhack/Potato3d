@@ -1089,6 +1089,9 @@ namespace P3D
         {
             if(sl_pos.z < *zb)
             {
+                //optimise idea.
+                //int txy = sl_pos.u | (sl_pos.v << tex_h_shift);
+
                 int tx = sl_pos.u;
                 int ty = sl_pos.v;
 

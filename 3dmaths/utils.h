@@ -31,6 +31,4 @@ namespace P3D
     }
 }
 
-
-
 #endif // UTILS_H
