@@ -3,6 +3,8 @@
 #include <QtCore>
 #include <QtGui>
 
+#include "models/model.h"
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
@@ -209,6 +211,14 @@ P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
                     t->width = image->width();
                     t->height = image->height();
 
+                    t->u_mask = t->width-1;
+                    t->v_mask = t->height-1;
+
+                    t->v_shift = 0;
+
+                    while( (1 << t->v_shift) < t->width)
+                        t->v_shift++;
+
                     t->pixels = (const P3D::pixel*)image->constBits();
                 }
 
@@ -308,6 +318,9 @@ typedef struct FileTexture
 {
     unsigned int width;
     unsigned int height;
+    unsigned int u_mask;
+    unsigned int v_mask;
+    unsigned int v_shift;
     //unsigned short pixels[width * height];
 } FileTexture;
 
@@ -357,6 +370,9 @@ void MainWindow::SaveModel(P3D::Model3d* model)
 
             ft.width = mesh->texture->width;
             ft.height = mesh->texture->height;
+            ft.u_mask = mesh->texture->u_mask;
+            ft.v_mask = mesh->texture->v_mask;
+            ft.v_shift = mesh->texture->v_shift;
 
             buffer.write((const char*)&ft, sizeof(ft));
 
@@ -410,6 +426,10 @@ P3D::Model3d* MainWindow::LoadM3dData(const unsigned char* data)
             mesh->texture = new P3D::Texture;
             mesh->texture->width = ft->width;
             mesh->texture->height = ft->height;
+
+            mesh->texture->u_mask = ft->u_mask;
+            mesh->texture->v_mask = ft->v_mask;
+            mesh->texture->v_shift = ft->v_shift;
 
             mesh->texture->pixels = (P3D::pixel*)&ft[1];
 

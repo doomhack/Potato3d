@@ -66,10 +66,16 @@ namespace P3D
 
     private:
         void DrawTriangleClip(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags);
+
+        void DrawTriangleClipW(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags);
+        void DrawTriangleClipX(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags);
+        void DrawTriangleClipX2(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags);
+        void DrawTriangleClipY(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags);
+        void DrawTriangleClipY2(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags);
+
         void DrawTriangleCull(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags);
 
-        fp GetLineIntersection(fp v1, fp v2, const fp pos);
-
+        fp GetLineIntersectionFrac(const fp a1, const fp a2, const fp b1, const fp b2);
 
         void DrawTriangleSplitPerspectiveCorrect(Vertex2d points[], const Texture *texture, const RenderFlags flags);
         void DrawTriangleTopPerspectiveCorrect(const Vertex2d points[], const Texture *texture, const RenderFlags flags);
@@ -92,13 +98,14 @@ namespace P3D
         bool IsTriangleFrontface(const Vertex2d screenSpacePoints[]);
         bool IsTriangleOnScreen(const Vertex2d screenSpacePoints[]);
 
-        void LerpEdgeZWUV(TriDrawPos& out, const TriEdgeTrace &edge, fp frac);
-        void LerpEdgeZUV(TriDrawPos& out, const TriEdgeTrace &edge, fp frac);
+        void LerpEdgePosZWUV(TriDrawPos& out, const TriEdgeTrace &edge, fp frac);
+        void LerpEdgePosZUV(TriDrawPos& out, const TriEdgeTrace &edge, fp frac);
 
-        void LerpVertexXZWUV(TriEdgeTrace& out, const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, fp frac);
-        void LerpVertexXZUV(TriEdgeTrace& out, const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, fp frac);
-        void LerpVertexXZ(TriEdgeTrace& out, const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, fp frac);
+        void LerpEdgeXZWUV(TriEdgeTrace& out, const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, fp frac);
+        void LerpEdgeXZUV(TriEdgeTrace& out, const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, fp frac);
+        void LerpEdgeXZ(TriEdgeTrace& out, const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, fp frac);
 
+        void LerpVertexXYZWUV(Vertex2d& out, const Vertex2d& left, const Vertex2d& right, fp frac);
 
 
         int fracToY(fp frac);

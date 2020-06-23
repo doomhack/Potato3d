@@ -46,8 +46,11 @@ namespace P3D
     {
     public:
         const pixel* pixels;
-        unsigned int width;
-        unsigned int height;
+        unsigned short width;
+        unsigned short height;
+        unsigned short u_mask;
+        unsigned short v_mask;
+        unsigned short v_shift;
     };
 }
 

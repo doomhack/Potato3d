@@ -7,6 +7,8 @@ namespace P3D
 {
 
     //#define USE_FLOAT
+
+
 #ifndef __arm__
     #define FB_32BIT //RGBX888 framebuffer format.
 #endif
@@ -21,7 +23,7 @@ namespace P3D
 
 
     #ifdef USE_FLOAT
-        typedef float fp;
+        typedef double fp;
     #else
         typedef FP fp;
     #endif

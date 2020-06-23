@@ -159,8 +159,6 @@ namespace P3D
 
     void Render::DrawTriangleClip(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags)
     {
-        const fp wClip = zNear;
-
         fp w0 = clipSpacePoints[0].pos.w;
         fp w1 = clipSpacePoints[1].pos.w;
         fp w2 = clipSpacePoints[2].pos.w;
@@ -196,20 +194,29 @@ namespace P3D
             return;
 
         //All points behind clipping plane.
-        if(w0 < wClip && w1 < wClip && w2 < wClip)
+        if(w0 < zNear && w1 < zNear && w2 < zNear)
             return;
+
+        DrawTriangleClipW(clipSpacePoints, texture, color, flags);
+    }
+
+    void Render::DrawTriangleClipW(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags)
+    {
+        const fp wClip = zNear;
+
+        fp w0 = clipSpacePoints[0].pos.w;
+        fp w1 = clipSpacePoints[1].pos.w;
+        fp w2 = clipSpacePoints[2].pos.w;
 
         //All points in valid space.
         if(w0 >= wClip && w1 >= wClip && w2 >= wClip)
         {
-            DrawTriangleCull(clipSpacePoints, texture, color, flags);
+            DrawTriangleClipX(clipSpacePoints, texture, color, flags);
             return;
         }
 
         Vertex2d outputVx[4];
         int vp = 0;
-
-        //qDebug() << w0 << w1 << w2;
 
         for(int i = 0; i < 3; i++)
         {
@@ -221,21 +228,236 @@ namespace P3D
 
             int i2 = i < 2 ? i+1 : 0;
 
-            fp frac = GetLineIntersection(clipSpacePoints[i].pos.w, clipSpacePoints[i2].pos.w, wClip);
+            fp frac = GetLineIntersectionFrac(clipSpacePoints[i].pos.w, clipSpacePoints[i2].pos.w, wClip, wClip);
 
             if(frac > 0)
             {
-                //qDebug() << "Clipfrac = " << frac;
-
                 Vertex2d newVx;
 
-                newVx.pos.x = pLerp(clipSpacePoints[i].pos.x, clipSpacePoints[i2].pos.x, frac);
-                newVx.pos.y = pLerp(clipSpacePoints[i].pos.y, clipSpacePoints[i2].pos.y, frac);
-                newVx.pos.z = pLerp(clipSpacePoints[i].pos.z, clipSpacePoints[i2].pos.z, frac);
-                newVx.pos.w = wClip;
+                LerpVertexXYZWUV(newVx, clipSpacePoints[i], clipSpacePoints[i2], frac);
 
-                newVx.uv.x = pLerp(clipSpacePoints[i].uv.x, clipSpacePoints[i2].uv.x, frac);
-                newVx.uv.y = pLerp(clipSpacePoints[i].uv.y, clipSpacePoints[i2].uv.y, frac);
+                outputVx[vp] = newVx;
+                vp++;
+            }
+        }
+
+        if(vp == 3)
+        {
+            DrawTriangleClipX(outputVx, texture, color, flags);
+        }
+        else if(vp == 4)
+        {
+            DrawTriangleClipX(outputVx, texture, color, flags);
+            outputVx[1] = outputVx[0];
+            DrawTriangleClipX(&outputVx[1], texture, color, flags);
+        }
+    }
+
+    void Render::DrawTriangleClipX(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags)
+    {
+        fp w0 = clipSpacePoints[0].pos.w;
+        fp w1 = clipSpacePoints[1].pos.w;
+        fp w2 = clipSpacePoints[2].pos.w;
+
+        fp x0 = clipSpacePoints[0].pos.x;
+        fp x1 = clipSpacePoints[1].pos.x;
+        fp x2 = clipSpacePoints[2].pos.x;
+
+        //All points in valid space.
+        if(x0 <= w0 && x1 <= w1 && x2 <= w2)
+        {
+            DrawTriangleClipX2(clipSpacePoints, texture, color, flags);
+            return;
+        }
+
+        Vertex2d outputVx[4];
+        int vp = 0;
+
+        for(int i = 0; i < 3; i++)
+        {
+            if(clipSpacePoints[i].pos.w >= clipSpacePoints[i].pos.x)
+            {
+                outputVx[vp] = clipSpacePoints[i];
+                vp++;
+            }
+
+            int i2 = i < 2 ? i+1 : 0;
+
+            fp frac = GetLineIntersectionFrac(clipSpacePoints[i].pos.w, clipSpacePoints[i2].pos.w, clipSpacePoints[i].pos.x, clipSpacePoints[i2].pos.x);
+
+            if(frac > 0)
+            {
+                Vertex2d newVx;
+
+                LerpVertexXYZWUV(newVx, clipSpacePoints[i], clipSpacePoints[i2], frac);
+
+                outputVx[vp] = newVx;
+                vp++;
+            }
+        }
+
+        if(vp == 3)
+        {
+            DrawTriangleClipX2(outputVx, texture, color, flags);
+        }
+        else if(vp == 4)
+        {
+            DrawTriangleClipX2(outputVx, texture, color, flags);
+            outputVx[1] = outputVx[0];
+            DrawTriangleClipX2(&outputVx[1], texture, color, flags);
+        }
+
+    }
+
+    void Render::DrawTriangleClipX2(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags)
+    {
+        fp w0 = clipSpacePoints[0].pos.w;
+        fp w1 = clipSpacePoints[1].pos.w;
+        fp w2 = clipSpacePoints[2].pos.w;
+
+        fp x0 = -clipSpacePoints[0].pos.x;
+        fp x1 = -clipSpacePoints[1].pos.x;
+        fp x2 = -clipSpacePoints[2].pos.x;
+
+        //All points in valid space.
+        if(x0 <= w0 && x1 <= w1 && x2 <= w2)
+        {
+            DrawTriangleClipY(clipSpacePoints, texture, color, flags);
+            return;
+        }
+
+        Vertex2d outputVx[4];
+        int vp = 0;
+
+        for(int i = 0; i < 3; i++)
+        {
+            if(clipSpacePoints[i].pos.w >= -clipSpacePoints[i].pos.x)
+            {
+                outputVx[vp] = clipSpacePoints[i];
+                vp++;
+            }
+
+            int i2 = i < 2 ? i+1 : 0;
+
+            fp frac = GetLineIntersectionFrac(clipSpacePoints[i].pos.w, clipSpacePoints[i2].pos.w, -clipSpacePoints[i].pos.x, -clipSpacePoints[i2].pos.x);
+
+            if(frac > 0)
+            {
+                Vertex2d newVx;
+
+                LerpVertexXYZWUV(newVx, clipSpacePoints[i], clipSpacePoints[i2], frac);
+
+                outputVx[vp] = newVx;
+                vp++;
+            }
+        }
+
+        if(vp == 3)
+        {
+            DrawTriangleClipY(outputVx, texture, color, flags);
+        }
+        else if(vp == 4)
+        {
+            DrawTriangleClipY(outputVx, texture, color, flags);
+            outputVx[1] = outputVx[0];
+            DrawTriangleClipY(&outputVx[1], texture, color, flags);
+        }
+    }
+
+
+    void Render::DrawTriangleClipY(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags)
+    {
+        fp w0 = clipSpacePoints[0].pos.w;
+        fp w1 = clipSpacePoints[1].pos.w;
+        fp w2 = clipSpacePoints[2].pos.w;
+
+        fp y0 = clipSpacePoints[0].pos.y;
+        fp y1 = clipSpacePoints[1].pos.y;
+        fp y2 = clipSpacePoints[2].pos.y;
+
+        //All points in valid space.
+        if(y0 <= w0 && y1 <= w1 && y2 <= w2)
+        {
+            DrawTriangleClipY2(clipSpacePoints, texture, color, flags);
+            return;
+        }
+
+        Vertex2d outputVx[4];
+        int vp = 0;
+
+        for(int i = 0; i < 3; i++)
+        {
+            if(clipSpacePoints[i].pos.w >= clipSpacePoints[i].pos.y)
+            {
+                outputVx[vp] = clipSpacePoints[i];
+                vp++;
+            }
+
+            int i2 = i < 2 ? i+1 : 0;
+
+            fp frac = GetLineIntersectionFrac(clipSpacePoints[i].pos.w, clipSpacePoints[i2].pos.w, clipSpacePoints[i].pos.y, clipSpacePoints[i2].pos.y);
+
+            if(frac > 0)
+            {
+                Vertex2d newVx;
+
+                LerpVertexXYZWUV(newVx, clipSpacePoints[i], clipSpacePoints[i2], frac);
+
+                outputVx[vp] = newVx;
+                vp++;
+            }
+        }
+
+        if(vp == 3)
+        {
+            DrawTriangleClipY2(outputVx, texture, color, flags);
+        }
+        else if(vp == 4)
+        {
+            DrawTriangleClipY2(outputVx, texture, color, flags);
+            outputVx[1] = outputVx[0];
+            DrawTriangleClipY2(&outputVx[1], texture, color, flags);
+        }
+    }
+
+
+    void Render::DrawTriangleClipY2(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags)
+    {
+        fp w0 = clipSpacePoints[0].pos.w;
+        fp w1 = clipSpacePoints[1].pos.w;
+        fp w2 = clipSpacePoints[2].pos.w;
+
+        fp y0 = -clipSpacePoints[0].pos.y;
+        fp y1 = -clipSpacePoints[1].pos.y;
+        fp y2 = -clipSpacePoints[2].pos.y;
+
+        //All points in valid space.
+        if(y0 <= w0 && y1 <= w1 && y2 <= w2)
+        {
+            DrawTriangleCull(clipSpacePoints, texture, color, flags);
+            return;
+        }
+
+        Vertex2d outputVx[4];
+        int vp = 0;
+
+        for(int i = 0; i < 3; i++)
+        {
+            if(clipSpacePoints[i].pos.w >= -clipSpacePoints[i].pos.y)
+            {
+                outputVx[vp] = clipSpacePoints[i];
+                vp++;
+            }
+
+            int i2 = i < 2 ? i+1 : 0;
+
+            fp frac = GetLineIntersectionFrac(clipSpacePoints[i].pos.w, clipSpacePoints[i2].pos.w, -clipSpacePoints[i].pos.y, -clipSpacePoints[i2].pos.y);
+
+            if(frac > 0)
+            {
+                Vertex2d newVx;
+
+                LerpVertexXYZWUV(newVx, clipSpacePoints[i], clipSpacePoints[i2], frac);
 
                 outputVx[vp] = newVx;
                 vp++;
@@ -254,38 +476,18 @@ namespace P3D
         }
     }
 
-
-    //Return -1 == both <= pos.
-    //Return -2 == both >= pos.
-    fp Render::GetLineIntersection(fp v1, fp v2, const fp pos)
+    fp Render::GetLineIntersectionFrac(const fp a1, const fp a2, const fp b1, const fp b2)
     {
-        if(v1 >= pos && v2 >= pos)
+        if(a1 <= b1 && a2 <= b2)
+            return -1;
+        else if(a1 >= b1 && a2 >= b2)
             return -2;
-        else if(v1 <= pos && v2 <= pos)
-            return -1;
-        else if(v1 == v2)
-        {
-            if(v1 >= pos)
-                return -2;
 
-            return -1;
-        }
-        else if(v1 > v2)
-        {
-            fp len = (v1 - v2);
+        fp len_1 = (a1 - b1);
+        fp len_2 = (a2 - b2);
 
-            fp splitFrac = (v1 - pos) / len;
-
-            return splitFrac;
-        }
-
-        fp len = (v2 - v1);
-
-        fp splitFrac = (v2 - pos) / len;
-
-        return fp(1) - splitFrac;
+        return len_1 / (len_1 - len_2);
     }
-
 
     void Render::DrawTriangleCull(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags)
     {
@@ -556,7 +758,7 @@ namespace P3D
             fp yFrac = yFracScaled / (1 << yFracShift);
 #endif
 
-            LerpVertexXZWUV(pos, *left, *right, *top, yFrac);
+            LerpEdgeXZWUV(pos, *left, *right, *top, yFrac);
         }
         else
         {
@@ -584,7 +786,7 @@ namespace P3D
 #else
             fp yFrac = yFracScaled / (1 << yFracShift);
 #endif
-            LerpVertexXZWUV(pos, *left, *right, *top, yFrac);
+            LerpEdgeXZWUV(pos, *left, *right, *top, yFrac);
         }
     }
 
@@ -633,7 +835,7 @@ namespace P3D
             fp yFrac = yFracScaled / (1 << yFracShift);
 #endif
 
-            LerpVertexXZUV(pos, *left, *right, *top, yFrac);
+            LerpEdgeXZUV(pos, *left, *right, *top, yFrac);
         }
         else
         {
@@ -660,7 +862,7 @@ namespace P3D
 #else
             fp yFrac = yFracScaled / (1 << yFracShift);
 #endif
-            LerpVertexXZUV(pos, *left, *right, *top, yFrac);
+            LerpEdgeXZUV(pos, *left, *right, *top, yFrac);
         }
     }
 
@@ -709,7 +911,7 @@ namespace P3D
             fp yFrac = yFracScaled / (1 << yFracShift);
 #endif
 
-            LerpVertexXZ(pos, *left, *right, *top, yFrac);
+            LerpEdgeXZ(pos, *left, *right, *top, yFrac);
         }
         else
         {
@@ -733,7 +935,7 @@ namespace P3D
 #else
             fp yFrac = yFracScaled / (1 << yFracShift);
 #endif
-            LerpVertexXZ(pos, *left, *right, *top, yFrac);
+            LerpEdgeXZ(pos, *left, *right, *top, yFrac);
         }
     }
 
@@ -779,7 +981,7 @@ namespace P3D
             fp yFrac = yFracScaled / (1 << yFracShift);
 #endif
 
-            LerpVertexXZWUV(pos, *left, *right, *bottom, yFrac);
+            LerpEdgeXZWUV(pos, *left, *right, *bottom, yFrac);
         }
         else
         {
@@ -808,7 +1010,7 @@ namespace P3D
 #else
             fp yFrac = yFracScaled / (1 << yFracShift);
 #endif
-            LerpVertexXZWUV(pos, *left, *right, *bottom, yFrac);
+            LerpEdgeXZWUV(pos, *left, *right, *bottom, yFrac);
         }
     }
 
@@ -854,7 +1056,7 @@ namespace P3D
             fp yFrac = yFracScaled / (1 << yFracShift);
 #endif
 
-            LerpVertexXZUV(pos, *left, *right, *bottom, yFrac);
+            LerpEdgeXZUV(pos, *left, *right, *bottom, yFrac);
         }
         else
         {
@@ -882,7 +1084,7 @@ namespace P3D
 #else
             fp yFrac = yFracScaled / (1 << yFracShift);
 #endif
-            LerpVertexXZUV(pos, *left, *right, *bottom, yFrac);
+            LerpEdgeXZUV(pos, *left, *right, *bottom, yFrac);
         }
     }
 
@@ -928,7 +1130,7 @@ namespace P3D
             fp yFrac = yFracScaled / (1 << yFracShift);
 #endif
 
-            LerpVertexXZ(pos, *left, *right, *bottom, yFrac);
+            LerpEdgeXZ(pos, *left, *right, *bottom, yFrac);
         }
         else
         {
@@ -953,7 +1155,7 @@ namespace P3D
 #else
             fp yFrac = yFracScaled / (1 << yFracShift);
 #endif
-            LerpVertexXZ(pos, *left, *right, *bottom, yFrac);
+            LerpEdgeXZ(pos, *left, *right, *bottom, yFrac);
         }
     }
 
@@ -987,7 +1189,7 @@ namespace P3D
             fp xFrac = xFracScaled / (1 << xFracShift);
 #endif
 
-            LerpEdgeZWUV(sl_pos, pos, xFrac);
+            LerpEdgePosZWUV(sl_pos, pos, xFrac);
         }
         else
         {
@@ -1033,7 +1235,7 @@ namespace P3D
             fp xFrac = xFracScaled / (1 << xFracShift);
 #endif
 
-            LerpEdgeZWUV(sl_pos, pos, xFrac);
+            LerpEdgePosZWUV(sl_pos, pos, xFrac);
         }
     }
 
@@ -1067,7 +1269,7 @@ namespace P3D
             fp xFrac = xFracScaled / (1 << xFracShift);
 #endif
 
-            LerpEdgeZUV(sl_pos, pos, xFrac);
+            LerpEdgePosZUV(sl_pos, pos, xFrac);
         }
         else
         {
@@ -1089,16 +1291,14 @@ namespace P3D
         {
             if(sl_pos.z < *zb)
             {
-                //optimise idea.
-                //int txy = sl_pos.u | (sl_pos.v << tex_h_shift);
-
                 int tx = sl_pos.u;
                 int ty = sl_pos.v;
 
-                tx = tx & (texture->width - 1);
-                ty = ty & (texture->height - 1);
+                tx = tx & (texture->u_mask);
+                ty = ty & (texture->v_mask);
 
-                *fb = texture->pixels[ty * texture->width + tx];
+                *fb = texture->pixels[(ty << texture->v_shift) | tx];
+
                 *zb = sl_pos.z;
             }
 
@@ -1106,14 +1306,13 @@ namespace P3D
             zb++;
             fb++;
 
-
 #ifndef USE_FLOAT
             fp xFrac = xFracScaled >> xFracShift;
 #else
             fp xFrac = xFracScaled / (1 << xFracShift);
 #endif
 
-            LerpEdgeZUV(sl_pos, pos, xFrac);
+            LerpEdgePosZUV(sl_pos, pos, xFrac);
         }
     }
 
@@ -1185,7 +1384,7 @@ namespace P3D
         }
     }
 
-    void Render::LerpEdgeZWUV(TriDrawPos& out, const TriEdgeTrace& edge, fp frac)
+    void Render::LerpEdgePosZWUV(TriDrawPos& out, const TriEdgeTrace& edge, fp frac)
     {
         out.z = pLerp(edge.z_left, edge.z_right, frac);
         out.w = pLerp(edge.w_left, edge.w_right, frac);
@@ -1193,14 +1392,14 @@ namespace P3D
         out.v = pLerp(edge.v_left, edge.v_right, frac);
     }
 
-    void Render::LerpEdgeZUV(TriDrawPos& out, const TriEdgeTrace &edge, fp frac)
+    void Render::LerpEdgePosZUV(TriDrawPos& out, const TriEdgeTrace &edge, fp frac)
     {
         out.z = pLerp(edge.z_left, edge.z_right, frac);
         out.u = pLerp(edge.u_left, edge.u_right, frac);
         out.v = pLerp(edge.v_left, edge.v_right, frac);
     }
 
-    void Render::LerpVertexXZWUV(TriEdgeTrace& out, const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, fp frac)
+    void Render::LerpEdgeXZWUV(TriEdgeTrace& out, const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, fp frac)
     {
         out.x_left = pLerp(other.pos.x, left.pos.x, frac);
         out.x_right = pLerp(other.pos.x, right.pos.x, frac);
@@ -1218,7 +1417,7 @@ namespace P3D
         out.v_right = pLerp(other.uv.y, right.uv.y, frac);
     }
 
-    void Render::LerpVertexXZUV(TriEdgeTrace& out, const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, fp frac)
+    void Render::LerpEdgeXZUV(TriEdgeTrace& out, const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, fp frac)
     {
         out.x_left = pLerp(other.pos.x, left.pos.x, frac);
         out.x_right = pLerp(other.pos.x, right.pos.x, frac);
@@ -1233,7 +1432,7 @@ namespace P3D
         out.v_right = pLerp(other.uv.y, right.uv.y, frac);
     }
 
-    void Render::LerpVertexXZ(TriEdgeTrace& out, const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, fp frac)
+    void Render::LerpEdgeXZ(TriEdgeTrace& out, const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, fp frac)
     {
         out.x_left = pLerp(other.pos.x, left.pos.x, frac);
         out.x_right = pLerp(other.pos.x, right.pos.x, frac);
@@ -1242,6 +1441,16 @@ namespace P3D
         out.z_right = pLerp(other.pos.z, right.pos.z, frac);
     }
 
+    void Render::LerpVertexXYZWUV(Vertex2d& out, const Vertex2d& left, const Vertex2d& right, fp frac)
+    {
+        out.pos.x = pLerp(left.pos.x, right.pos.x, frac);
+        out.pos.y = pLerp(left.pos.y, right.pos.y, frac);
+        out.pos.z = pLerp(left.pos.z, right.pos.z, frac);
+        out.pos.w = pLerp(left.pos.w, right.pos.w, frac);
+
+        out.uv.x = pLerp(left.uv.x, right.uv.x, frac);
+        out.uv.y = pLerp(left.uv.y, right.uv.y, frac);
+    }
 
     int Render::fracToY(fp frac)
     {

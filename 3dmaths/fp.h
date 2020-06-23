@@ -2,11 +2,14 @@
 #define FP_H
 
 #include <limits>
-//#include <iostream>
 
 #include "divide.h"
 
 //#define OVERFLOW_CHECK
+
+#ifdef OVERFLOW_CHECK
+    #include <iostream>
+#endif
 
 namespace P3D
 {

@@ -45,6 +45,9 @@ typedef struct FileTexture
 {
     unsigned int width;
     unsigned int height;
+    unsigned int u_mask;
+    unsigned int v_mask;
+    unsigned int v_shift;
     //unsigned short pixels[width * height];
 } FileTexture;
 
@@ -88,6 +91,10 @@ P3D::Model3d* LoadM3dData(const unsigned char* data)
             mesh->texture = new P3D::Texture;
             mesh->texture->width = ft->width;
             mesh->texture->height = ft->height;
+
+            mesh->texture->u_mask = ft->u_mask;
+            mesh->texture->v_mask = ft->v_mask;
+            mesh->texture->v_shift = ft->v_shift;
 
             mesh->texture->pixels = (P3D::pixel*)&ft[1];
 
