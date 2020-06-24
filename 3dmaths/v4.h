@@ -103,12 +103,30 @@ namespace P3D
             return ((x * r.y) - (y * r.x));
         }
 
+        template<class FP>
+        constexpr V4<FP> ToScreenSpace() const
+        {
+            if (w == T(1))
+                return V4<T>(x, y, z, w);
+            else
+            {
+                const unsigned int wShift = 14;
+                T inv_w = T(1 << wShift) / w;
+
+                return V4<T>( (x * inv_w) >> wShift, (y * inv_w) >> wShift, (z * inv_w) >> wShift, w);
+            }
+
+        }
+
         constexpr V4<T> ToScreenSpace() const
         {
             if (w == T(1))
                 return V4<T>(x, y, z, w);
             else
+            {
                 return V4<T>(x / w, y / w, z / w, w);
+            }
+
         }
     };
 

@@ -247,39 +247,17 @@ namespace P3D
 
     void Render::TriangulatePolygon(Vertex2d clipSpacePoints[], const int vxCount, const Texture *texture, const pixel color, const RenderFlags flags)
     {
-        if(vxCount >= 3)
-        {
-            DrawTriangleCull(clipSpacePoints, texture, color, flags);
-        }
+        if(vxCount < 3)
+            return;
 
-        if(vxCount >= 4)
-        {
-            clipSpacePoints[1] = clipSpacePoints[0];
-            DrawTriangleCull(&clipSpacePoints[1], texture, color, flags);
-        }
+        DrawTriangleCull(clipSpacePoints, texture, color, flags);
 
-        if(vxCount >= 5)
-        {
-            clipSpacePoints[2] = clipSpacePoints[0];
-            DrawTriangleCull(&clipSpacePoints[2], texture, color, flags);
-        }
+        int rounds = vxCount - 3;
 
-        if(vxCount >= 6)
+        for(int i = 0; i < rounds; i++)
         {
-            clipSpacePoints[3] = clipSpacePoints[0];
-            DrawTriangleCull(&clipSpacePoints[3], texture, color, flags);
-        }
-
-        if(vxCount >= 7)
-        {
-            clipSpacePoints[4] = clipSpacePoints[0];
-            DrawTriangleCull(&clipSpacePoints[4], texture, color, flags);
-        }
-
-        if(vxCount >= 8)
-        {
-            clipSpacePoints[5] = clipSpacePoints[0];
-            DrawTriangleCull(&clipSpacePoints[5], texture, color, flags);
+            clipSpacePoints[i+1] = clipSpacePoints[0];
+            DrawTriangleCull(&clipSpacePoints[i+1], texture, color, flags);
         }
     }
 
@@ -316,7 +294,7 @@ namespace P3D
         fp len_1 = (a1 - b1);
         fp len_2 = (a2 - b2);
 
-        return len_1 / (len_1 - len_2);
+        return ((len_1) / (len_1 - len_2));
     }
 
     void Render::DrawTriangleCull(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags)
@@ -991,54 +969,46 @@ namespace P3D
 
     void Render::DrawTriangleScanlinePerspectiveCorrect(int y, const TriEdgeTrace &pos, const Texture *texture, const RenderFlags flags)
     {
-        TriDrawPos sl_pos;
+        TriDrawPos sl_pos, sl_delta;
 
         int x_start = pos.x_left;
-        int x_end = pos.x_right;
+        int x_end = pos.x_right+1;
 
-        if(x_end < 0 || x_start > fbSize.x)
+        if( (x_end <= x_start) || (x_end <= 0) || (x_start >= fbSize.x) )
             return;
 
-        fp inv_width = 0;
+        sl_pos.z =  pos.z_left;
+        sl_pos.w =  pos.w_left;
+        sl_pos.u =  pos.u_left;
+        sl_pos.v =  pos.v_left;
 
-        if(x_start < x_end)
+        fp inv_width = fp(1)/(x_end - x_start);
+
+        sl_delta.z = ((pos.z_right - pos.z_left) * inv_width);
+        sl_delta.w = ((pos.w_right - pos.w_left) * inv_width);
+        sl_delta.u = ((pos.u_right - pos.u_left) * inv_width);
+        sl_delta.v = ((pos.v_right - pos.v_left) * inv_width);
+
+        while(x_start < 0)
         {
-            inv_width = fp(1 << xFracShift)/(x_end - x_start);
-        }
+            sl_pos.z += sl_delta.z;
+            sl_pos.w += sl_delta.w;
+            sl_pos.u += sl_delta.u;
+            sl_pos.v += sl_delta.v;
 
-        fp xFracScaled;
-
-        if(x_start < 0)
-        {
-            xFracScaled = (fp(-x_start) * inv_width);
-            x_start = 0;
-
-#ifndef USE_FLOAT
-            fp xFrac = xFracScaled >> xFracShift;
-#else
-            fp xFrac = xFracScaled / (1 << xFracShift);
-#endif
-
-            LerpEdgePosZWUV(sl_pos, pos, xFrac);
-        }
-        else
-        {
-            sl_pos.w = pos.w_left;
-            sl_pos.z = pos.z_left;
-            sl_pos.u = pos.u_left;
-            sl_pos.v = pos.v_left;
-
-            xFracScaled = 0;
+            x_start++;
         }
 
         if(x_end >= fbSize.x)
             x_end = fbSize.x-1;
 
+        int count = (x_end - x_start);
+
         int buffOffset = ((y * fbSize.x) + x_start);
         fp* zb = &zBuffer[buffOffset];
         pixel* fb = &frameBuffer[buffOffset];
 
-        for(int x = x_start; x <= x_end; x++)
+        while(count-- > 0)
         {
             if(sl_pos.z < *zb)
             {
@@ -1054,70 +1024,55 @@ namespace P3D
                 *zb = sl_pos.z;
             }
 
-            xFracScaled += inv_width;
             zb++;
             fb++;
 
-
-#ifndef USE_FLOAT
-            fp xFrac = xFracScaled >> xFracShift;
-#else
-            fp xFrac = xFracScaled / (1 << xFracShift);
-#endif
-
-            LerpEdgePosZWUV(sl_pos, pos, xFrac);
+            sl_pos.z += sl_delta.z;
+            sl_pos.w += sl_delta.w;
+            sl_pos.u += sl_delta.u;
+            sl_pos.v += sl_delta.v;
         }
     }
 
     void Render::DrawTriangleScanlineLinear(int y, const TriEdgeTrace& pos, const Texture* texture, const RenderFlags flags)
     {
-        TriDrawPos sl_pos;
+        TriDrawPos sl_pos, sl_delta;
 
         int x_start = pos.x_left;
-        int x_end = pos.x_right;
+        int x_end = pos.x_right+1;
 
-        if(x_end < 0 || x_start > fbSize.x)
+        if( (x_end <= x_start) || (x_end <= 0) || (x_start >= fbSize.x) )
             return;
 
-        fp inv_width = 0;
+        sl_pos.z =  pos.z_left;
+        sl_pos.u =  pos.u_left;
+        sl_pos.v =  pos.v_left;
 
-        if(x_start < x_end)
+        fp inv_width = fp(1)/(x_end - x_start);
+
+        sl_delta.z = ((pos.z_right - pos.z_left) * inv_width);
+        sl_delta.u = ((pos.u_right - pos.u_left) * inv_width);
+        sl_delta.v = ((pos.v_right - pos.v_left) * inv_width);
+
+        while(x_start < 0)
         {
-            inv_width = fp(1 << xFracShift)/(x_end - x_start);
-        }
+            sl_pos.z += sl_delta.z;
+            sl_pos.u += sl_delta.u;
+            sl_pos.v += sl_delta.v;
 
-        fp xFracScaled;
-
-        if(x_start < 0)
-        {
-            xFracScaled = (fp(-x_start) * inv_width);
-            x_start = 0;
-
-#ifndef USE_FLOAT
-            fp xFrac = xFracScaled >> xFracShift;
-#else
-            fp xFrac = xFracScaled / (1 << xFracShift);
-#endif
-
-            LerpEdgePosZUV(sl_pos, pos, xFrac);
-        }
-        else
-        {
-            sl_pos.z = pos.z_left;
-            sl_pos.u = pos.u_left;
-            sl_pos.v = pos.v_left;
-
-            xFracScaled = 0;
+            x_start++;
         }
 
         if(x_end >= fbSize.x)
             x_end = fbSize.x-1;
 
+        int count = (x_end - x_start);
+
         int buffOffset = ((y * fbSize.x) + x_start);
         fp* zb = &zBuffer[buffOffset];
         pixel* fb = &frameBuffer[buffOffset];
 
-        for(int x = x_start; x <= x_end; x++)
+        while(count-- > 0)
         {
             if(sl_pos.z < *zb)
             {
@@ -1132,85 +1087,62 @@ namespace P3D
                 *zb = sl_pos.z;
             }
 
-            xFracScaled += inv_width;
             zb++;
             fb++;
 
-#ifndef USE_FLOAT
-            fp xFrac = xFracScaled >> xFracShift;
-#else
-            fp xFrac = xFracScaled / (1 << xFracShift);
-#endif
-
-            LerpEdgePosZUV(sl_pos, pos, xFrac);
+            sl_pos.z += sl_delta.z;
+            sl_pos.u += sl_delta.u;
+            sl_pos.v += sl_delta.v;
         }
     }
 
     void Render::DrawTriangleScanlineFlat(int y, const TriEdgeTrace& pos, const pixel color, const RenderFlags flags)
     {
-        fp z_pos;
+        TriDrawPos sl_pos, sl_delta;
 
         int x_start = pos.x_left;
-        int x_end = pos.x_right;
+        int x_end = pos.x_right+1;
 
-        if(x_end < 0 || x_start > fbSize.x)
+        if( (x_end <= x_start) || (x_end <= 0) || (x_start >= fbSize.x) )
             return;
 
-        fp inv_width = 0;
+        sl_pos.z =  pLSL(pos.z_left, xFracShift);
 
-        if(x_start < x_end)
+        fp inv_width = fp(1 << xFracShift)/(x_end - x_start);
+
+        sl_delta.z = ((pos.z_right - pos.z_left) * inv_width);
+
+        while(x_start < 0)
         {
-            inv_width = fp(1 << xFracShift)/(x_end - x_start);
-        }
+            sl_pos.z += sl_delta.z;
 
-        fp xFracScaled;
-
-        if(x_start < 0)
-        {
-            xFracScaled = (fp(-x_start) * inv_width);
-            x_start = 0;
-
-#ifndef USE_FLOAT
-            fp xFrac = xFracScaled >> xFracShift;
-#else
-            fp xFrac = xFracScaled / (1 << xFracShift);
-#endif
-
-            z_pos = pLerp(pos.z_left, pos.z_right, xFrac);
-        }
-        else
-        {
-            z_pos = pos.z_left;
-            xFracScaled = 0;
+            x_start++;
         }
 
         if(x_end >= fbSize.x)
             x_end = fbSize.x-1;
 
+        int count = (x_end - x_start);
+
         int buffOffset = ((y * fbSize.x) + x_start);
         fp* zb = &zBuffer[buffOffset];
         pixel* fb = &frameBuffer[buffOffset];
 
-        for(int x = x_start; x <= x_end; x++)
+        while(count-- > 0)
         {
+            fp z_pos = pLSR(sl_pos.z, xFracShift);
+
+
             if(z_pos < *zb)
             {
                 *fb = color;
                 *zb = z_pos;
             }
 
-            xFracScaled += inv_width;
             zb++;
             fb++;
 
-
-#ifndef USE_FLOAT
-            fp xFrac = xFracScaled >> xFracShift;
-#else
-            fp xFrac = xFracScaled / (1 << xFracShift);
-#endif
-
-            z_pos = pLerp(pos.z_left, pos.z_right, xFrac);
+            sl_pos.z += sl_delta.z;
         }
     }
 

@@ -137,7 +137,7 @@ namespace P3D
 
         M4<fp> transformMatrix; //P*V*M
 
-        const unsigned int xFracShift = 10;
+        const unsigned int xFracShift = 1;
         const unsigned int yFracShift = 10;
 
     };
