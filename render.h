@@ -140,6 +140,8 @@ namespace P3D
         const unsigned int xFracShift = 1;
         const unsigned int yFracShift = 10;
 
+        fp* reciprocalTable = nullptr;
+
     };
 
 }

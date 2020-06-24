@@ -50,6 +50,14 @@ namespace P3D
 
         projectionMatrix.perspective(hFov, aspectRatio, zNear, zFar);
 
+        reciprocalTable = new fp[fbSize.x + 10];
+        reciprocalTable[0] = 0;
+
+        for(int i = 1; i < fbSize.x + 10; i++)
+        {
+            reciprocalTable[i] = fp(1) / fp(i);
+        }
+
         return true;
     }
 
@@ -982,7 +990,7 @@ namespace P3D
         sl_pos.u =  pos.u_left;
         sl_pos.v =  pos.v_left;
 
-        fp inv_width = fp(1)/(x_end - x_start);
+        fp inv_width = reciprocalTable[x_end - x_start];
 
         sl_delta.z = ((pos.z_right - pos.z_left) * inv_width);
         sl_delta.w = ((pos.w_right - pos.w_left) * inv_width);
@@ -1000,7 +1008,7 @@ namespace P3D
         }
 
         if(x_end >= fbSize.x)
-            x_end = fbSize.x-1;
+            x_end = fbSize.x;
 
         int count = (x_end - x_start);
 
@@ -1048,7 +1056,7 @@ namespace P3D
         sl_pos.u =  pos.u_left;
         sl_pos.v =  pos.v_left;
 
-        fp inv_width = fp(1)/(x_end - x_start);
+        fp inv_width = reciprocalTable[x_end - x_start];
 
         sl_delta.z = ((pos.z_right - pos.z_left) * inv_width);
         sl_delta.u = ((pos.u_right - pos.u_left) * inv_width);
@@ -1063,8 +1071,8 @@ namespace P3D
             x_start++;
         }
 
-        if(x_end >= fbSize.x)
-            x_end = fbSize.x-1;
+        if(x_end > fbSize.x)
+            x_end = fbSize.x;
 
         int count = (x_end - x_start);
 
@@ -1106,21 +1114,20 @@ namespace P3D
         if( (x_end <= x_start) || (x_end <= 0) || (x_start >= fbSize.x) )
             return;
 
-        sl_pos.z =  pLSL(pos.z_left, xFracShift);
+        sl_pos.z =  pos.z_left;
 
-        fp inv_width = fp(1 << xFracShift)/(x_end - x_start);
+        fp inv_width = reciprocalTable[x_end - x_start];
 
         sl_delta.z = ((pos.z_right - pos.z_left) * inv_width);
 
         while(x_start < 0)
         {
             sl_pos.z += sl_delta.z;
-
             x_start++;
         }
 
-        if(x_end >= fbSize.x)
-            x_end = fbSize.x-1;
+        if(x_end > fbSize.x)
+            x_end = fbSize.x;
 
         int count = (x_end - x_start);
 
@@ -1130,13 +1137,10 @@ namespace P3D
 
         while(count-- > 0)
         {
-            fp z_pos = pLSR(sl_pos.z, xFracShift);
-
-
-            if(z_pos < *zb)
+            if(sl_pos.z < *zb)
             {
                 *fb = color;
-                *zb = z_pos;
+                *zb = sl_pos.z;
             }
 
             zb++;
