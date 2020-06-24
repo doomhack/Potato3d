@@ -39,6 +39,15 @@ namespace P3D
         NoBackfaceCull = 4u,
     } RenderFlags;
 
+    typedef enum ClipPlane
+    {
+        W_Near,
+        X_W_Left,
+        X_W_Right,
+        Y_W_Top,
+        Y_W_Bottom
+    } ClipPlane;
+
     class Render
     {
     public:
@@ -67,11 +76,10 @@ namespace P3D
     private:
         void DrawTriangleClip(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags);
 
-        void DrawTriangleClipW(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags);
-        void DrawTriangleClipX(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags);
-        void DrawTriangleClipX2(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags);
-        void DrawTriangleClipY(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags);
-        void DrawTriangleClipY2(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags);
+        void ClipPolygon(const Vertex2d clipSpacePointsIn[], const int vxCount, Vertex2d clipSpacePointsOut[], int& vxCountOut, ClipPlane clipPlane);
+        void TriangulatePolygon(Vertex2d clipSpacePoints[], const int vxCount, const Texture *texture, const pixel color, const RenderFlags flags);
+
+        fp GetClipPointForVertex(const Vertex2d& vertex, ClipPlane clipPlane);
 
         void DrawTriangleCull(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags);
 

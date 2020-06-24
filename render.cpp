@@ -197,283 +197,113 @@ namespace P3D
         if(w0 < zNear && w1 < zNear && w2 < zNear)
             return;
 
-        DrawTriangleClipW(clipSpacePoints, texture, color, flags);
+        Vertex2d outputVxA[8];
+        Vertex2d outputVxB[8];
+        int countA = 0;
+        int countB = 0;
+
+        //As we clip against each frustrum plane, we swap the buffers
+        //so the output of the last clip is used as input to the next.
+        ClipPolygon(clipSpacePoints, 3, outputVxA, countA, W_Near);
+        ClipPolygon(outputVxA, countA, outputVxB, countB, X_W_Left);
+        ClipPolygon(outputVxB, countB, outputVxA, countA, X_W_Right);
+        ClipPolygon(outputVxA, countA, outputVxB, countB, Y_W_Top);
+        ClipPolygon(outputVxB, countB, outputVxA, countA, Y_W_Bottom);
+
+        //Now outputVxA and CountA contain the final result.
+        TriangulatePolygon(outputVxA, countA, texture, color, flags);
     }
 
-    void Render::DrawTriangleClipW(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags)
+    void Render::ClipPolygon(const Vertex2d clipSpacePointsIn[], const int vxCount, Vertex2d clipSpacePointsOut[], int& vxCountOut, ClipPlane clipPlane)
     {
-        const fp wClip = zNear;
+        vxCountOut = 0;
 
-        fp w0 = clipSpacePoints[0].pos.w;
-        fp w1 = clipSpacePoints[1].pos.w;
-        fp w2 = clipSpacePoints[2].pos.w;
-
-        //All points in valid space.
-        if(w0 >= wClip && w1 >= wClip && w2 >= wClip)
+        for(int i = 0; i < vxCount; i++)
         {
-            DrawTriangleClipX(clipSpacePoints, texture, color, flags);
-            return;
-        }
+            int i2 = (i < (vxCount-1)) ? i+1 : 0;
 
-        Vertex2d outputVx[4];
-        int vp = 0;
+            const fp b1 = GetClipPointForVertex(clipSpacePointsIn[i], clipPlane);
+            const fp b2 = GetClipPointForVertex(clipSpacePointsIn[i2], clipPlane);
 
-        for(int i = 0; i < 3; i++)
-        {
-            if(clipSpacePoints[i].pos.w >= wClip)
+            if(clipSpacePointsIn[i].pos.w >= b1)
             {
-                outputVx[vp] = clipSpacePoints[i];
-                vp++;
+                clipSpacePointsOut[vxCountOut] = clipSpacePointsIn[i];
+                vxCountOut++;
             }
 
-            int i2 = i < 2 ? i+1 : 0;
-
-            fp frac = GetLineIntersectionFrac(clipSpacePoints[i].pos.w, clipSpacePoints[i2].pos.w, wClip, wClip);
+            fp frac = GetLineIntersectionFrac(clipSpacePointsIn[i].pos.w, clipSpacePointsIn[i2].pos.w, b1, b2);
 
             if(frac > 0)
             {
                 Vertex2d newVx;
 
-                LerpVertexXYZWUV(newVx, clipSpacePoints[i], clipSpacePoints[i2], frac);
+                LerpVertexXYZWUV(newVx, clipSpacePointsIn[i], clipSpacePointsIn[i2], frac);
 
-                outputVx[vp] = newVx;
-                vp++;
+                clipSpacePointsOut[vxCountOut] = newVx;
+                vxCountOut++;
             }
-        }
-
-        if(vp == 3)
-        {
-            DrawTriangleClipX(outputVx, texture, color, flags);
-        }
-        else if(vp == 4)
-        {
-            DrawTriangleClipX(outputVx, texture, color, flags);
-            outputVx[1] = outputVx[0];
-            DrawTriangleClipX(&outputVx[1], texture, color, flags);
         }
     }
 
-    void Render::DrawTriangleClipX(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags)
+    void Render::TriangulatePolygon(Vertex2d clipSpacePoints[], const int vxCount, const Texture *texture, const pixel color, const RenderFlags flags)
     {
-        fp w0 = clipSpacePoints[0].pos.w;
-        fp w1 = clipSpacePoints[1].pos.w;
-        fp w2 = clipSpacePoints[2].pos.w;
-
-        fp x0 = clipSpacePoints[0].pos.x;
-        fp x1 = clipSpacePoints[1].pos.x;
-        fp x2 = clipSpacePoints[2].pos.x;
-
-        //All points in valid space.
-        if(x0 <= w0 && x1 <= w1 && x2 <= w2)
-        {
-            DrawTriangleClipX2(clipSpacePoints, texture, color, flags);
-            return;
-        }
-
-        Vertex2d outputVx[4];
-        int vp = 0;
-
-        for(int i = 0; i < 3; i++)
-        {
-            if(clipSpacePoints[i].pos.w >= clipSpacePoints[i].pos.x)
-            {
-                outputVx[vp] = clipSpacePoints[i];
-                vp++;
-            }
-
-            int i2 = i < 2 ? i+1 : 0;
-
-            fp frac = GetLineIntersectionFrac(clipSpacePoints[i].pos.w, clipSpacePoints[i2].pos.w, clipSpacePoints[i].pos.x, clipSpacePoints[i2].pos.x);
-
-            if(frac > 0)
-            {
-                Vertex2d newVx;
-
-                LerpVertexXYZWUV(newVx, clipSpacePoints[i], clipSpacePoints[i2], frac);
-
-                outputVx[vp] = newVx;
-                vp++;
-            }
-        }
-
-        if(vp == 3)
-        {
-            DrawTriangleClipX2(outputVx, texture, color, flags);
-        }
-        else if(vp == 4)
-        {
-            DrawTriangleClipX2(outputVx, texture, color, flags);
-            outputVx[1] = outputVx[0];
-            DrawTriangleClipX2(&outputVx[1], texture, color, flags);
-        }
-
-    }
-
-    void Render::DrawTriangleClipX2(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags)
-    {
-        fp w0 = clipSpacePoints[0].pos.w;
-        fp w1 = clipSpacePoints[1].pos.w;
-        fp w2 = clipSpacePoints[2].pos.w;
-
-        fp x0 = -clipSpacePoints[0].pos.x;
-        fp x1 = -clipSpacePoints[1].pos.x;
-        fp x2 = -clipSpacePoints[2].pos.x;
-
-        //All points in valid space.
-        if(x0 <= w0 && x1 <= w1 && x2 <= w2)
-        {
-            DrawTriangleClipY(clipSpacePoints, texture, color, flags);
-            return;
-        }
-
-        Vertex2d outputVx[4];
-        int vp = 0;
-
-        for(int i = 0; i < 3; i++)
-        {
-            if(clipSpacePoints[i].pos.w >= -clipSpacePoints[i].pos.x)
-            {
-                outputVx[vp] = clipSpacePoints[i];
-                vp++;
-            }
-
-            int i2 = i < 2 ? i+1 : 0;
-
-            fp frac = GetLineIntersectionFrac(clipSpacePoints[i].pos.w, clipSpacePoints[i2].pos.w, -clipSpacePoints[i].pos.x, -clipSpacePoints[i2].pos.x);
-
-            if(frac > 0)
-            {
-                Vertex2d newVx;
-
-                LerpVertexXYZWUV(newVx, clipSpacePoints[i], clipSpacePoints[i2], frac);
-
-                outputVx[vp] = newVx;
-                vp++;
-            }
-        }
-
-        if(vp == 3)
-        {
-            DrawTriangleClipY(outputVx, texture, color, flags);
-        }
-        else if(vp == 4)
-        {
-            DrawTriangleClipY(outputVx, texture, color, flags);
-            outputVx[1] = outputVx[0];
-            DrawTriangleClipY(&outputVx[1], texture, color, flags);
-        }
-    }
-
-
-    void Render::DrawTriangleClipY(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags)
-    {
-        fp w0 = clipSpacePoints[0].pos.w;
-        fp w1 = clipSpacePoints[1].pos.w;
-        fp w2 = clipSpacePoints[2].pos.w;
-
-        fp y0 = clipSpacePoints[0].pos.y;
-        fp y1 = clipSpacePoints[1].pos.y;
-        fp y2 = clipSpacePoints[2].pos.y;
-
-        //All points in valid space.
-        if(y0 <= w0 && y1 <= w1 && y2 <= w2)
-        {
-            DrawTriangleClipY2(clipSpacePoints, texture, color, flags);
-            return;
-        }
-
-        Vertex2d outputVx[4];
-        int vp = 0;
-
-        for(int i = 0; i < 3; i++)
-        {
-            if(clipSpacePoints[i].pos.w >= clipSpacePoints[i].pos.y)
-            {
-                outputVx[vp] = clipSpacePoints[i];
-                vp++;
-            }
-
-            int i2 = i < 2 ? i+1 : 0;
-
-            fp frac = GetLineIntersectionFrac(clipSpacePoints[i].pos.w, clipSpacePoints[i2].pos.w, clipSpacePoints[i].pos.y, clipSpacePoints[i2].pos.y);
-
-            if(frac > 0)
-            {
-                Vertex2d newVx;
-
-                LerpVertexXYZWUV(newVx, clipSpacePoints[i], clipSpacePoints[i2], frac);
-
-                outputVx[vp] = newVx;
-                vp++;
-            }
-        }
-
-        if(vp == 3)
-        {
-            DrawTriangleClipY2(outputVx, texture, color, flags);
-        }
-        else if(vp == 4)
-        {
-            DrawTriangleClipY2(outputVx, texture, color, flags);
-            outputVx[1] = outputVx[0];
-            DrawTriangleClipY2(&outputVx[1], texture, color, flags);
-        }
-    }
-
-
-    void Render::DrawTriangleClipY2(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags)
-    {
-        fp w0 = clipSpacePoints[0].pos.w;
-        fp w1 = clipSpacePoints[1].pos.w;
-        fp w2 = clipSpacePoints[2].pos.w;
-
-        fp y0 = -clipSpacePoints[0].pos.y;
-        fp y1 = -clipSpacePoints[1].pos.y;
-        fp y2 = -clipSpacePoints[2].pos.y;
-
-        //All points in valid space.
-        if(y0 <= w0 && y1 <= w1 && y2 <= w2)
+        if(vxCount >= 3)
         {
             DrawTriangleCull(clipSpacePoints, texture, color, flags);
-            return;
         }
 
-        Vertex2d outputVx[4];
-        int vp = 0;
-
-        for(int i = 0; i < 3; i++)
+        if(vxCount >= 4)
         {
-            if(clipSpacePoints[i].pos.w >= -clipSpacePoints[i].pos.y)
-            {
-                outputVx[vp] = clipSpacePoints[i];
-                vp++;
-            }
-
-            int i2 = i < 2 ? i+1 : 0;
-
-            fp frac = GetLineIntersectionFrac(clipSpacePoints[i].pos.w, clipSpacePoints[i2].pos.w, -clipSpacePoints[i].pos.y, -clipSpacePoints[i2].pos.y);
-
-            if(frac > 0)
-            {
-                Vertex2d newVx;
-
-                LerpVertexXYZWUV(newVx, clipSpacePoints[i], clipSpacePoints[i2], frac);
-
-                outputVx[vp] = newVx;
-                vp++;
-            }
+            clipSpacePoints[1] = clipSpacePoints[0];
+            DrawTriangleCull(&clipSpacePoints[1], texture, color, flags);
         }
 
-        if(vp == 3)
+        if(vxCount >= 5)
         {
-            DrawTriangleCull(outputVx, texture, color, flags);
+            clipSpacePoints[2] = clipSpacePoints[0];
+            DrawTriangleCull(&clipSpacePoints[2], texture, color, flags);
         }
-        else if(vp == 4)
+
+        if(vxCount >= 6)
         {
-            DrawTriangleCull(outputVx, texture, color, flags);
-            outputVx[1] = outputVx[0];
-            DrawTriangleCull(&outputVx[1], texture, color, flags);
+            clipSpacePoints[3] = clipSpacePoints[0];
+            DrawTriangleCull(&clipSpacePoints[3], texture, color, flags);
         }
+
+        if(vxCount >= 7)
+        {
+            clipSpacePoints[4] = clipSpacePoints[0];
+            DrawTriangleCull(&clipSpacePoints[4], texture, color, flags);
+        }
+
+        if(vxCount >= 8)
+        {
+            clipSpacePoints[5] = clipSpacePoints[0];
+            DrawTriangleCull(&clipSpacePoints[5], texture, color, flags);
+        }
+    }
+
+    fp Render::GetClipPointForVertex(const Vertex2d& vertex, ClipPlane clipPlane)
+    {
+        switch(clipPlane)
+        {
+            case W_Near:
+                return zNear;
+
+            case X_W_Left:
+                return -vertex.pos.x;
+
+            case X_W_Right:
+                return vertex.pos.x;
+
+            case Y_W_Top:
+                return vertex.pos.y;
+
+            case Y_W_Bottom:
+                return -vertex.pos.y;
+        }
+
+        return 0;
     }
 
     fp Render::GetLineIntersectionFrac(const fp a1, const fp a2, const fp b1, const fp b2)
