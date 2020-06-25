@@ -81,7 +81,7 @@ namespace P3D
         {
             const Triangle3d* triangle = *it;
 
-            render->DrawTriangle(triangle, mesh->texture, mesh->color, (RenderFlags)(PerspectiveCorrect));
+            render->DrawTriangle(triangle, mesh->texture, mesh->color, (RenderFlags)(0));
         }
     }
 

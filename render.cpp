@@ -50,10 +50,12 @@ namespace P3D
 
         projectionMatrix.perspective(hFov, aspectRatio, zNear, zFar);
 
-        reciprocalTable = new fp[fbSize.x + 10];
+
+        int tableSize = fbSize.x + 10;
+        reciprocalTable = new fp[tableSize];
         reciprocalTable[0] = 0;
 
-        for(int i = 1; i < fbSize.x + 10; i++)
+        for(int i = 1; i < tableSize; i++)
         {
             reciprocalTable[i] = fp(1) / fp(i);
         }
@@ -302,7 +304,9 @@ namespace P3D
         fp len_1 = (a1 - b1);
         fp len_2 = (a2 - b2);
 
-        return ((len_1) / (len_1 - len_2));
+        fp dt = (len_1 - len_2);
+
+        return ((len_1) / dt);
     }
 
     void Render::DrawTriangleCull(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags)
