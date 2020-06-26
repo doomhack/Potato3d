@@ -96,7 +96,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     {
         P3D::V3<P3D::fp> camAngle = object3d->CameraAngle();
 
-        float angleYRad = qDegreesToRadians(camAngle.y);
+        float angleYRad = qDegreesToRadians((float)camAngle.y);
 
         P3D::V3<P3D::fp> d((float)-(qSin(angleYRad) *10), 0, (float)-(qCos(angleYRad) *10));
 
@@ -106,7 +106,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     {
         P3D::V3<P3D::fp> camAngle = object3d->CameraAngle();
 
-        float angleYRad = qDegreesToRadians(camAngle.y);
+        float angleYRad = qDegreesToRadians((float)camAngle.y);
 
         P3D::V3<P3D::fp> d((float)-(qSin(angleYRad) *10), 0, (float)-(qCos(angleYRad) *10));
 

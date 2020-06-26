@@ -23,7 +23,7 @@ namespace P3D
 
 
     #ifdef USE_FLOAT
-        typedef double fp;
+        typedef float fp;
     #else
         typedef FP fp;
     #endif

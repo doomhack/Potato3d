@@ -18,11 +18,27 @@ namespace P3D
 
     typedef struct TriDrawPos
     {
+        fp x;
         fp z;
         fp w;
         fp u;
         fp v;
     } TriDrawPos;
+
+    typedef struct TriDrawYDeltaZUV
+    {
+        fp x_left, x_right;
+        fp z;
+        fp u;
+        fp v;
+    } TriDrawYDeltaZUV;
+
+    typedef struct TriDrawXDeltaZUV
+    {
+        fp z;
+        fp u;
+        fp v;
+    } TriDrawXDeltaZUV;
 
     typedef enum MatrixType
     {
@@ -93,7 +109,7 @@ namespace P3D
         void DrawTriangleSplitLinear(const Vertex2d points[], const Texture *texture, const RenderFlags flags);
         void DrawTriangleTopLinear(const Vertex2d points[], const Texture *texture, const RenderFlags flags);
         void DrawTriangleBottomLinear(const Vertex2d points[3], const Texture* texture, const RenderFlags flags);
-        void DrawTriangleScanlineLinear(int y, const TriEdgeTrace &pos, const Texture *texture, const RenderFlags flags);
+        void DrawTriangleScanlineLinear(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZUV& delta, const Texture* texture, const RenderFlags flags);
 
         void DrawTriangleSplitFlat(const Vertex2d points[], const pixel color, const RenderFlags flags);
         void DrawTriangleTopFlat(const Vertex2d points[], const pixel color, const RenderFlags flags);
@@ -114,6 +130,8 @@ namespace P3D
         void LerpEdgeXZ(TriEdgeTrace& out, const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, fp frac);
 
         void LerpVertexXYZWUV(Vertex2d& out, const Vertex2d& left, const Vertex2d& right, fp frac);
+
+        void GetTriangleLerpDeltasZUV(const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, TriDrawXDeltaZUV& x_delta, TriDrawYDeltaZUV& y_delta);
 
 
         int fracToY(fp frac);
@@ -137,8 +155,8 @@ namespace P3D
 
         M4<fp> transformMatrix; //P*V*M
 
-        const unsigned int xFracShift = 1;
         const unsigned int yFracShift = 10;
+        const unsigned int triFracShift = 4;
 
         fp* reciprocalTable = nullptr;
 
