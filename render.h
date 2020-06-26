@@ -10,10 +10,10 @@ namespace P3D
     typedef struct TriEdgeTrace
     {
         fp x_left, x_right;
-        fp z_left, z_right;
-        fp w_left, w_right;
-        fp u_left, u_right;
-        fp v_left, v_right;
+        fp z_left;
+        fp w_left;
+        fp u_left;
+        fp v_left;
     } TriDrawState;
 
     typedef struct TriDrawPos
@@ -39,6 +39,34 @@ namespace P3D
         fp u;
         fp v;
     } TriDrawXDeltaZUV;
+
+    typedef struct TriDrawXDeltaZWUV
+    {
+        fp z;
+        fp w;
+        fp u;
+        fp v;
+    } TriDrawXDeltaZWUV;
+
+    typedef struct TriDrawYDeltaZWUV
+    {
+        fp x_left, x_right;
+        fp z;
+        fp w;
+        fp u;
+        fp v;
+    } TriDrawYDeltaZWUV;
+
+    typedef struct TriDrawXDeltaZ
+    {
+        fp z;
+    } TriDrawXDeltaZ;
+
+    typedef struct TriDrawYDeltaZ
+    {
+        fp x_left, x_right;
+        fp z;
+    } TriDrawYDeltaZ;
 
     typedef enum MatrixType
     {
@@ -104,17 +132,17 @@ namespace P3D
         void DrawTriangleSplitPerspectiveCorrect(Vertex2d points[], const Texture *texture, const RenderFlags flags);
         void DrawTriangleTopPerspectiveCorrect(const Vertex2d points[], const Texture *texture, const RenderFlags flags);
         void DrawTriangleBottomPerspectiveCorrect(const Vertex2d points[3], const Texture* texture, const RenderFlags flags);
-        void DrawTriangleScanlinePerspectiveCorrect(int y, const TriEdgeTrace &pos, const Texture *texture, const RenderFlags flags);
+        void DrawTriangleScanlinePerspectiveCorrect(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture);
 
         void DrawTriangleSplitLinear(const Vertex2d points[], const Texture *texture, const RenderFlags flags);
         void DrawTriangleTopLinear(const Vertex2d points[], const Texture *texture, const RenderFlags flags);
         void DrawTriangleBottomLinear(const Vertex2d points[3], const Texture* texture, const RenderFlags flags);
-        void DrawTriangleScanlineLinear(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZUV& delta, const Texture* texture, const RenderFlags flags);
+        void DrawTriangleScanlineLinear(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZUV& delta, const Texture* texture);
 
         void DrawTriangleSplitFlat(const Vertex2d points[], const pixel color, const RenderFlags flags);
         void DrawTriangleTopFlat(const Vertex2d points[], const pixel color, const RenderFlags flags);
         void DrawTriangleBottomFlat(const Vertex2d points[3], const pixel color, const RenderFlags flags);
-        void DrawTriangleScanlineFlat(int y, const TriEdgeTrace& pos, const pixel color, const RenderFlags flags);
+        void DrawTriangleScanlineFlat(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZ& delta, const pixel color);
 
         void SortPointsByY(Vertex2d points[]);
 
@@ -122,16 +150,11 @@ namespace P3D
         bool IsTriangleFrontface(const Vertex2d screenSpacePoints[]);
         bool IsTriangleOnScreen(const Vertex2d screenSpacePoints[]);
 
-        void LerpEdgePosZWUV(TriDrawPos& out, const TriEdgeTrace &edge, fp frac);
-        void LerpEdgePosZUV(TriDrawPos& out, const TriEdgeTrace &edge, fp frac);
-
-        void LerpEdgeXZWUV(TriEdgeTrace& out, const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, fp frac);
-        void LerpEdgeXZUV(TriEdgeTrace& out, const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, fp frac);
-        void LerpEdgeXZ(TriEdgeTrace& out, const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, fp frac);
-
         void LerpVertexXYZWUV(Vertex2d& out, const Vertex2d& left, const Vertex2d& right, fp frac);
 
         void GetTriangleLerpDeltasZUV(const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, TriDrawXDeltaZUV& x_delta, TriDrawYDeltaZUV& y_delta);
+        void GetTriangleLerpDeltasZWUV(const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, TriDrawXDeltaZWUV& x_delta, TriDrawYDeltaZWUV &y_delta);
+        void GetTriangleLerpDeltasZ(const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, TriDrawXDeltaZ& x_delta, TriDrawYDeltaZ &y_delta);
 
 
         int fracToY(fp frac);
@@ -155,11 +178,7 @@ namespace P3D
 
         M4<fp> transformMatrix; //P*V*M
 
-        const unsigned int yFracShift = 10;
         const unsigned int triFracShift = 4;
-
-        fp* reciprocalTable = nullptr;
-
     };
 
 }

@@ -50,16 +50,6 @@ namespace P3D
 
         projectionMatrix.perspective(hFov, aspectRatio, zNear, zFar);
 
-
-        int tableSize = fbSize.x + 10;
-        reciprocalTable = new fp[tableSize];
-        reciprocalTable[0] = 0;
-
-        for(int i = 1; i < tableSize; i++)
-        {
-            reciprocalTable[i] = fp(1) / fp(i);
-        }
-
         return true;
     }
 
@@ -150,18 +140,9 @@ namespace P3D
 
     Vertex2d Render::TransformVertex(const Vertex3d* vertex)
     {
-        V4<fp> p = transformMatrix * vertex->pos;
-
         Vertex2d screenspace;
 
-        screenspace.pos = V4<fp>
-        (
-            p.x,
-            p.y,
-            p.z,
-            p.w
-        );
-
+        screenspace.pos = transformMatrix * vertex->pos;
         screenspace.uv = vertex->uv;
 
         return screenspace;
@@ -536,60 +517,45 @@ namespace P3D
     void Render::DrawTriangleTopPerspectiveCorrect(const Vertex2d *points, const Texture *texture, const RenderFlags flags)
     {
         TriEdgeTrace pos;
+        TriDrawXDeltaZWUV x_delta;
+        TriDrawYDeltaZWUV y_delta, y_delta_sum;
 
-        const Vertex2d *top, *left, *right;
-        top = &points[0];
+        const Vertex2d& top     = points[0];
+        const Vertex2d& left    = (points[1].pos.x < points[2].pos.x) ? points[1] : points[2];
+        const Vertex2d& right   = (points[1].pos.x < points[2].pos.x) ? points[2] : points[1];
 
-        if(points[1].pos.x < points[2].pos.x)
-        {
-            left = &points[1];
-            right = &points[2];
-        }
-        else
-        {
-            left = &points[2];
-            right = &points[1];
-        }
-
-        if((top->pos.x >= fbSize.x && left->pos.x >= fbSize.x) || (right->pos.x < 0 && top->pos.x < 0))
+        if((top.pos.x >= fbSize.x && left.pos.x >= fbSize.x) || (right.pos.x < 0 && top.pos.x < 0))
             return;
 
-        int yStart = top->pos.y;
-        int yEnd = left->pos.y;
+        int yStart = (top.pos.y);
+        int yEnd = (left.pos.y);
 
         if(yEnd < 0 || yStart > fbSize.y)
             return;
 
-        fp inv_height = 0;
-
-        if(yEnd > yStart)
-            inv_height = (fp(1 << yFracShift)/(yEnd - yStart));
-
-        fp yFracScaled;
+        GetTriangleLerpDeltasZWUV(left, right, top, x_delta, y_delta);
 
         if(yStart < 0)
         {
-            yFracScaled = (fp(-yStart) * inv_height);
+            y_delta_sum.x_left = (y_delta.x_left * -yStart);
+            y_delta_sum.z = (y_delta.z * -yStart);
+            y_delta_sum.w = (y_delta.w * -yStart);
+            y_delta_sum.u = (y_delta.u * -yStart);
+            y_delta_sum.v = (y_delta.v * -yStart);
+
+            y_delta_sum.x_right = (y_delta.x_right * -yStart);
+
             yStart = 0;
-
-#ifndef USE_FLOAT
-            fp yFrac = yFracScaled >> yFracShift;
-#else
-            fp yFrac = yFracScaled / (1 << yFracShift);
-#endif
-
-            LerpEdgeXZWUV(pos, *left, *right, *top, yFrac);
         }
         else
         {
-            pos.x_left = pos.x_right = top->pos.x;
-            pos.z_left = pos.z_right = top->pos.z;
-            pos.w_left = pos.w_right = top->pos.w;
+            y_delta_sum.x_left = 0;
+            y_delta_sum.z = 0;
+            y_delta_sum.w = 0;
+            y_delta_sum.u = 0;
+            y_delta_sum.v = 0;
 
-            pos.u_left = pos.u_right = top->uv.x;
-            pos.v_left = pos.v_right = top->uv.y;
-
-            yFracScaled = 0;
+            y_delta_sum.x_right = 0;
         }
 
         if(yEnd >= fbSize.y)
@@ -597,41 +563,25 @@ namespace P3D
 
         for (int y = yStart; y <= yEnd; y++)
         {
-            DrawTriangleScanlinePerspectiveCorrect(y, pos, texture, flags);
+            pos.x_left = top.pos.x + pLSR(y_delta_sum.x_left, triFracShift);
+            pos.x_right = top.pos.x + pLSR(y_delta_sum.x_right, triFracShift);
+            pos.z_left = top.pos.z + pLSR(y_delta_sum.z, triFracShift);
+            pos.w_left = top.pos.w + pLSR(y_delta_sum.w, triFracShift);
 
-            yFracScaled += inv_height;
+            pos.u_left = top.uv.x + pLSR(y_delta_sum.u, triFracShift);
+            pos.v_left = top.uv.y + pLSR(y_delta_sum.v, triFracShift);
 
-#ifndef USE_FLOAT
-            fp yFrac = yFracScaled >> yFracShift;
-#else
-            fp yFrac = yFracScaled / (1 << yFracShift);
-#endif
-            LerpEdgeXZWUV(pos, *left, *right, *top, yFrac);
+            DrawTriangleScanlinePerspectiveCorrect(y, pos, x_delta, texture);
+
+            y_delta_sum.x_left += y_delta.x_left;
+            y_delta_sum.x_right += y_delta.x_right;
+            y_delta_sum.z += y_delta.z;
+            y_delta_sum.w += y_delta.w;
+            y_delta_sum.u += y_delta.u;
+            y_delta_sum.v += y_delta.v;
         }
     }
 
-    void Render::GetTriangleLerpDeltasZUV(const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, TriDrawXDeltaZUV& x_delta, TriDrawYDeltaZUV& y_delta)
-    {
-        //Use reciprocal table for these.
-        fp inv_y = 0;
-        fp inv_x = 0;
-
-        if(left.pos.y != other.pos.y)
-            inv_y = fp(1 << triFracShift) / (left.pos.y - other.pos.y);
-
-        if(right.pos.x != left.pos.x)
-            inv_x = fp(1) / (right.pos.x - left.pos.x);
-
-        x_delta.z = (right.pos.z - left.pos.z) * inv_x;
-        x_delta.u = (right.uv.x - left.uv.x) * inv_x;
-        x_delta.v = (right.uv.y - left.uv.y) * inv_x;
-
-        y_delta.x_left = (left.pos.x - other.pos.x) * inv_y;
-        y_delta.x_right = (right.pos.x - other.pos.x) * inv_y;
-        y_delta.z = (left.pos.z - other.pos.z) * inv_y;
-        y_delta.u = (left.uv.x - other.uv.x) * inv_y;
-        y_delta.v = (left.uv.y - other.uv.y) * inv_y;
-    }
 
     void Render::DrawTriangleTopLinear(const Vertex2d points[], const Texture* texture, const RenderFlags flags)
     {
@@ -687,7 +637,7 @@ namespace P3D
             pos.u_left = top.uv.x + pLSR(y_delta_sum.u, triFracShift);
             pos.v_left = top.uv.y + pLSR(y_delta_sum.v, triFracShift);
 
-            DrawTriangleScanlineLinear(y, pos, x_delta, texture, flags);
+            DrawTriangleScanlineLinear(y, pos, x_delta, texture);
 
             y_delta_sum.x_left += y_delta.x_left;
             y_delta_sum.x_right += y_delta.x_right;
@@ -700,56 +650,39 @@ namespace P3D
     void Render::DrawTriangleTopFlat(const Vertex2d points[], const pixel color, const RenderFlags flags)
     {
         TriEdgeTrace pos;
+        TriDrawXDeltaZ x_delta;
+        TriDrawYDeltaZ y_delta, y_delta_sum;
 
-        const Vertex2d *top, *left, *right;
-        top = &points[0];
+        const Vertex2d& top     = points[0];
+        const Vertex2d& left    = (points[1].pos.x < points[2].pos.x) ? points[1] : points[2];
+        const Vertex2d& right   = (points[1].pos.x < points[2].pos.x) ? points[2] : points[1];
 
-        if(points[1].pos.x < points[2].pos.x)
-        {
-            left = &points[1];
-            right = &points[2];
-        }
-        else
-        {
-            left = &points[2];
-            right = &points[1];
-        }
-
-        if((top->pos.x >= fbSize.x && left->pos.x >= fbSize.x) || (right->pos.x < 0 && top->pos.x < 0))
+        if((top.pos.x >= fbSize.x && left.pos.x >= fbSize.x) || (right.pos.x < 0 && top.pos.x < 0))
             return;
 
-        int yStart = top->pos.y;
-        int yEnd = left->pos.y;
+        int yStart = top.pos.y;
+        int yEnd = left.pos.y;
 
         if(yEnd < 0 || yStart > fbSize.y)
             return;
 
-        fp inv_height = 0;
-
-        if(yEnd > yStart)
-            inv_height = (fp(1 << yFracShift)/(yEnd - yStart));
-
-        fp yFracScaled;
+        GetTriangleLerpDeltasZ(left, right, top, x_delta, y_delta);
 
         if(yStart < 0)
         {
-            yFracScaled = (fp(-yStart) * inv_height);
+            y_delta_sum.x_left = (y_delta.x_left * -yStart);
+            y_delta_sum.z = (y_delta.z * -yStart);
+
+            y_delta_sum.x_right = (y_delta.x_right * -yStart);
+
             yStart = 0;
-
-#ifndef USE_FLOAT
-            fp yFrac = yFracScaled >> yFracShift;
-#else
-            fp yFrac = yFracScaled / (1 << yFracShift);
-#endif
-
-            LerpEdgeXZ(pos, *left, *right, *top, yFrac);
         }
         else
         {
-            pos.x_left = pos.x_right = top->pos.x;
-            pos.z_left = pos.z_right = top->pos.z;
+            y_delta_sum.x_left = 0;
+            y_delta_sum.z = 0;
 
-            yFracScaled = 0;
+            y_delta_sum.x_right = 0;
         }
 
         if(yEnd >= fbSize.y)
@@ -757,92 +690,86 @@ namespace P3D
 
         for (int y = yStart; y <= yEnd; y++)
         {
-            DrawTriangleScanlineFlat(y, pos, color, flags);
+            pos.x_left = top.pos.x + pLSR(y_delta_sum.x_left, triFracShift);
+            pos.x_right = top.pos.x + pLSR(y_delta_sum.x_right, triFracShift);
+            pos.z_left = top.pos.z + pLSR(y_delta_sum.z, triFracShift);
 
-            yFracScaled += inv_height;
+            DrawTriangleScanlineFlat(y, pos, x_delta, color);
 
-#ifndef USE_FLOAT
-            fp yFrac = yFracScaled >> yFracShift;
-#else
-            fp yFrac = yFracScaled / (1 << yFracShift);
-#endif
-            LerpEdgeXZ(pos, *left, *right, *top, yFrac);
+            y_delta_sum.x_left += y_delta.x_left;
+            y_delta_sum.x_right += y_delta.x_right;
+            y_delta_sum.z += y_delta.z;
         }
     }
 
     void Render::DrawTriangleBottomPerspectiveCorrect(const Vertex2d *points, const Texture *texture, const RenderFlags flags)
     {
         TriEdgeTrace pos;
+        TriDrawXDeltaZWUV x_delta;
+        TriDrawYDeltaZWUV y_delta, y_delta_sum;
 
-        const Vertex2d *bottom, *left, *right;
+        const Vertex2d& bottom  = points[2];
+        const Vertex2d& left    = (points[0].pos.x < points[1].pos.x) ? points[0] : points[1];
+        const Vertex2d& right   = (points[0].pos.x < points[1].pos.x) ? points[1] : points[0];
 
-        bottom = &points[2];
-
-        if(points[0].pos.x < points[1].pos.x)
-        {
-            left = &points[0];
-            right = &points[1];
-        }
-        else
-        {
-            left = &points[1];
-            right = &points[0];
-        }
-
-        if((bottom->pos.x >= fbSize.x && left->pos.x >= fbSize.x) || (right->pos.x < 0 && bottom->pos.x < 0))
+        if((bottom.pos.x >= fbSize.x && left.pos.x >= fbSize.x) || (right.pos.x < 0 && bottom.pos.x < 0))
             return;
 
-        int yStart = bottom->pos.y;
-        int yEnd = left->pos.y;
+
+        int yStart = (bottom.pos.y);
+        int yEnd = (left.pos.y);
 
         if(yStart < 0 || yEnd >= fbSize.y)
             return;
 
-        fp inv_height = (fp(1 << yFracShift)/(bottom->pos.y - left->pos.y));
-
-        fp yFracScaled;
+        GetTriangleLerpDeltasZWUV(left, right, bottom, x_delta, y_delta);
 
         if(yStart >= fbSize.y)
         {
-            yFracScaled = (fp(yStart-(fbSize.y-1)) * inv_height);
+            int overflow = yStart - (fbSize.y-1);
+
+            y_delta_sum.x_left = (y_delta.x_left * overflow);
+            y_delta_sum.z = (y_delta.z * overflow);
+            y_delta_sum.w = (y_delta.w * overflow);
+            y_delta_sum.u = (y_delta.u * overflow);
+            y_delta_sum.v = (y_delta.v * overflow);
+
+            y_delta_sum.x_right = (y_delta.x_right * overflow);
+
             yStart = fbSize.y-1;
-
-#ifndef USE_FLOAT
-            fp yFrac = yFracScaled >> yFracShift;
-#else
-            fp yFrac = yFracScaled / (1 << yFracShift);
-#endif
-
-            LerpEdgeXZWUV(pos, *left, *right, *bottom, yFrac);
         }
         else
         {
-            pos.x_left = pos.x_right = bottom->pos.x;
-            pos.z_left = pos.z_right = bottom->pos.z;
-            pos.w_left = pos.w_right = bottom->pos.w;
+            y_delta_sum.x_left = 0;
+            y_delta_sum.z = 0;
+            y_delta_sum.w = 0;
+            y_delta_sum.u = 0;
+            y_delta_sum.v = 0;
 
-            pos.u_left = pos.u_right = bottom->uv.x;
-            pos.v_left = pos.v_right = bottom->uv.y;
-
-            yFracScaled = 0;
+            y_delta_sum.x_right = 0;
         }
 
         if(yEnd < 0)
             yEnd = 0;
 
-
         for (int y = yStart; y >= yEnd; y--)
         {
-            DrawTriangleScanlinePerspectiveCorrect(y, pos, texture, flags);
+            pos.x_left = bottom.pos.x - pLSR(y_delta_sum.x_left, triFracShift);
+            pos.x_right = bottom.pos.x - pLSR(y_delta_sum.x_right, triFracShift);
+            pos.z_left = bottom.pos.z - pLSR(y_delta_sum.z, triFracShift);
+            pos.w_left = bottom.pos.w - pLSR(y_delta_sum.w, triFracShift);
 
-            yFracScaled += inv_height;
+            pos.u_left = bottom.uv.x - pLSR(y_delta_sum.u, triFracShift);
+            pos.v_left = bottom.uv.y - pLSR(y_delta_sum.v, triFracShift);
 
-#ifndef USE_FLOAT
-            fp yFrac = yFracScaled >> yFracShift;
-#else
-            fp yFrac = yFracScaled / (1 << yFracShift);
-#endif
-            LerpEdgeXZWUV(pos, *left, *right, *bottom, yFrac);
+            DrawTriangleScanlinePerspectiveCorrect(y, pos, x_delta, texture);
+
+            y_delta_sum.x_left += y_delta.x_left;
+            y_delta_sum.x_right += y_delta.x_right;
+            y_delta_sum.z += y_delta.z;
+            y_delta_sum.w += y_delta.w;
+            y_delta_sum.u += y_delta.u;
+            y_delta_sum.v += y_delta.v;
         }
     }
 
@@ -902,7 +829,7 @@ namespace P3D
             pos.u_left = bottom.uv.x - pLSR(y_delta_sum.u, triFracShift);
             pos.v_left = bottom.uv.y - pLSR(y_delta_sum.v, triFracShift);
 
-            DrawTriangleScanlineLinear(y, pos, x_delta, texture, flags);
+            DrawTriangleScanlineLinear(y, pos, x_delta, texture);
 
             y_delta_sum.x_left += y_delta.x_left;
             y_delta_sum.x_right += y_delta.x_right;
@@ -915,160 +842,77 @@ namespace P3D
     void Render::DrawTriangleBottomFlat(const Vertex2d points[], const pixel color, const RenderFlags flags)
     {
         TriEdgeTrace pos;
+        TriDrawXDeltaZ x_delta;
+        TriDrawYDeltaZ y_delta, y_delta_sum;
 
-        const Vertex2d *bottom, *left, *right;
-        bottom = &points[2];
+        const Vertex2d& bottom  = points[2];
+        const Vertex2d& left    = (points[0].pos.x < points[1].pos.x) ? points[0] : points[1];
+        const Vertex2d& right   = (points[0].pos.x < points[1].pos.x) ? points[1] : points[0];
 
-        if(points[0].pos.x < points[1].pos.x)
-        {
-            left = &points[0];
-            right = &points[1];
-        }
-        else
-        {
-            left = &points[1];
-            right = &points[0];
-        }
-
-        if((bottom->pos.x >= fbSize.x && left->pos.x >= fbSize.x) || (right->pos.x < 0 && bottom->pos.x < 0))
+        if((bottom.pos.x >= fbSize.x && left.pos.x >= fbSize.x) || (right.pos.x < 0 && bottom.pos.x < 0))
             return;
 
-        int yStart = bottom->pos.y;
-        int yEnd = left->pos.y;
+        int yStart = bottom.pos.y;
+        int yEnd = left.pos.y;
 
         if(yStart < 0 || yEnd >= fbSize.y)
             return;
 
-        fp inv_height = (fp(1 << yFracShift)/(bottom->pos.y - left->pos.y));
-
-        fp yFracScaled;
+        GetTriangleLerpDeltasZ(left, right, bottom, x_delta, y_delta);
 
         if(yStart >= fbSize.y)
         {
-            yFracScaled = (fp(yStart-(fbSize.y-1)) * inv_height);
+            int overflow = yStart - (fbSize.y-1);
+
+            y_delta_sum.x_left = (y_delta.x_left * overflow);
+            y_delta_sum.z = (y_delta.z * overflow);
+
+            y_delta_sum.x_right = (y_delta.x_right * overflow);
+
             yStart = fbSize.y-1;
-
-#ifndef USE_FLOAT
-            fp yFrac = yFracScaled >> yFracShift;
-#else
-            fp yFrac = yFracScaled / (1 << yFracShift);
-#endif
-
-            LerpEdgeXZ(pos, *left, *right, *bottom, yFrac);
         }
         else
         {
-            pos.x_left = pos.x_right = bottom->pos.x;
-            pos.z_left = pos.z_right = bottom->pos.z;
+            y_delta_sum.x_left = 0;
+            y_delta_sum.z = 0;
 
-            yFracScaled = 0;
+            y_delta_sum.x_right = 0;
         }
 
         if(yEnd < 0)
             yEnd = 0;
 
-
         for (int y = yStart; y >= yEnd; y--)
         {
-            DrawTriangleScanlineFlat(y, pos, color, flags);
+            pos.x_left = bottom.pos.x - pLSR(y_delta_sum.x_left, triFracShift);
+            pos.x_right = bottom.pos.x - pLSR(y_delta_sum.x_right, triFracShift);
+            pos.z_left = bottom.pos.z - pLSR(y_delta_sum.z, triFracShift);
 
-            yFracScaled += inv_height;
+            DrawTriangleScanlineFlat(y, pos, x_delta, color);
 
-#ifndef USE_FLOAT
-            fp yFrac = yFracScaled >> yFracShift;
-#else
-            fp yFrac = yFracScaled / (1 << yFracShift);
-#endif
-            LerpEdgeXZ(pos, *left, *right, *bottom, yFrac);
+            y_delta_sum.x_left += y_delta.x_left;
+            y_delta_sum.x_right += y_delta.x_right;
+            y_delta_sum.z += y_delta.z;
         }
     }
 
-    void Render::DrawTriangleScanlinePerspectiveCorrect(int y, const TriEdgeTrace &pos, const Texture *texture, const RenderFlags flags)
+    void Render::DrawTriangleScanlinePerspectiveCorrect(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture)
     {
-        TriDrawPos sl_pos, sl_delta;
-
         int x_start = pos.x_left;
         int x_end = pos.x_right+1;
 
-        if( (x_end <= x_start) || (x_end <= 0) || (x_start >= fbSize.x) )
+        if( (x_end < x_start) || (x_end <= 0) || (x_start >= fbSize.x) )
             return;
 
-        sl_pos.z =  pos.z_left;
-        sl_pos.w =  pos.w_left;
-        sl_pos.u =  pos.u_left;
-        sl_pos.v =  pos.v_left;
-
-        fp inv_width = reciprocalTable[x_end - x_start];
-
-        sl_delta.z = ((pos.z_right - pos.z_left) * inv_width);
-        sl_delta.w = ((pos.w_right - pos.w_left) * inv_width);
-        sl_delta.u = ((pos.u_right - pos.u_left) * inv_width);
-        sl_delta.v = ((pos.v_right - pos.v_left) * inv_width);
-
-        while(x_start < 0)
-        {
-            sl_pos.z += sl_delta.z;
-            sl_pos.w += sl_delta.w;
-            sl_pos.u += sl_delta.u;
-            sl_pos.v += sl_delta.v;
-
-            x_start++;
-        }
-
-        if(x_end >= fbSize.x)
-            x_end = fbSize.x;
-
-        int count = (x_end - x_start);
-
-        int buffOffset = ((y * fbSize.x) + x_start);
-        fp* zb = &zBuffer[buffOffset];
-        pixel* fb = &frameBuffer[buffOffset];
-
-        while(count-- > 0)
-        {
-            if(sl_pos.z < *zb)
-            {
-                fp invw = fp(1) / sl_pos.w;
-
-                int tx = sl_pos.u * invw;
-                int ty = sl_pos.v * invw;
-
-                tx = tx & (texture->width - 1);
-                ty = ty & (texture->height - 1);
-
-                *fb = texture->pixels[ty * texture->width + tx];
-                *zb = sl_pos.z;
-            }
-
-            zb++;
-            fb++;
-
-            sl_pos.z += sl_delta.z;
-            sl_pos.w += sl_delta.w;
-            sl_pos.u += sl_delta.u;
-            sl_pos.v += sl_delta.v;
-        }
-    }
-
-    void Render::DrawTriangleScanlineLinear(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZUV& delta, const Texture* texture, const RenderFlags flags)
-    {
-        TriDrawPos sl_pos;
-
-        int x_start = pos.x_left;
-        int x_end = pos.x_right+1;
-
-        if( (x_end <= x_start) || (x_end <= 0) || (x_start >= fbSize.x) )
-            return;
-
-        sl_pos.z =  pos.z_left;
-        sl_pos.u =  pos.u_left;
-        sl_pos.v =  pos.v_left;
+        fp z = pos.z_left, u = pos.u_left, v = pos.v_left, w = pos.w_left;
+        fp dz = delta.z, du = delta.u, dv = delta.v, dw = delta.w;
 
         if(x_start < 0)
         {
-            sl_pos.z += delta.z * -x_start;
-            sl_pos.u += delta.u * -x_start;
-            sl_pos.v += delta.v * -x_start;
+            z += dz * -x_start;
+            w += dw * -x_start;
+            u += du * -x_start;
+            v += dv * -x_start;
 
             x_start = 0;
         }
@@ -1082,50 +926,56 @@ namespace P3D
         fp* zb = &zBuffer[buffOffset];
         pixel* fb = &frameBuffer[buffOffset];
 
-        while(count-- > 0)
+        unsigned int umask = texture->u_mask;
+        unsigned int vmask = texture->v_mask;
+        unsigned int vshift = texture->v_shift;
+        const pixel* t_pxl = texture->pixels;
+
+        do
         {
-            if(sl_pos.z < *zb)
+            if(z < *zb)
             {
-                int tx = sl_pos.u;
-                int ty = sl_pos.v;
+                fp invw = fp(1) / w;
 
-                tx = tx & (texture->u_mask);
-                ty = ty & (texture->v_mask);
+                int tx = u * invw;
+                int ty = v * invw;
 
-                *fb = texture->pixels[(ty << texture->v_shift) | tx];
+                tx = tx & umask;
+                ty = ty & vmask;
 
-                *zb = sl_pos.z;
+                *fb = t_pxl[ty << vshift | tx];
+                *zb = z;
             }
 
             zb++;
             fb++;
 
-            sl_pos.z += delta.z;
-            sl_pos.u += delta.u;
-            sl_pos.v += delta.v;
-        }
+            z += dz;
+            w += dw;
+            u += du;
+            v += dv;
+
+        } while(--count);
     }
 
-    void Render::DrawTriangleScanlineFlat(int y, const TriEdgeTrace& pos, const pixel color, const RenderFlags flags)
+    void Render::DrawTriangleScanlineLinear(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZUV& delta, const Texture* texture)
     {
-        TriDrawPos sl_pos, sl_delta;
-
         int x_start = pos.x_left;
         int x_end = pos.x_right+1;
 
-        if( (x_end <= x_start) || (x_end <= 0) || (x_start >= fbSize.x) )
+        if( (x_end < x_start) || (x_end <= 0) || (x_start >= fbSize.x) )
             return;
 
-        sl_pos.z =  pos.z_left;
+        fp z = pos.z_left, u = pos.u_left, v = pos.v_left;
+        fp dz = delta.z, du = delta.u, dv = delta.v;
 
-        fp inv_width = reciprocalTable[x_end - x_start];
-
-        sl_delta.z = ((pos.z_right - pos.z_left) * inv_width);
-
-        while(x_start < 0)
+        if(x_start < 0)
         {
-            sl_pos.z += sl_delta.z;
-            x_start++;
+            z += dz * -x_start;
+            u += du * -x_start;
+            v += dv * -x_start;
+
+            x_start = 0;
         }
 
         if(x_end > fbSize.x)
@@ -1137,76 +987,76 @@ namespace P3D
         fp* zb = &zBuffer[buffOffset];
         pixel* fb = &frameBuffer[buffOffset];
 
-        while(count-- > 0)
+        unsigned int umask = texture->u_mask;
+        unsigned int vmask = texture->v_mask;
+        unsigned int vshift = texture->v_shift;
+        const pixel* t_pxl = texture->pixels;
+
+        do
         {
-            if(sl_pos.z < *zb)
-            {
-                *fb = color;
-                *zb = sl_pos.z;
+            if(z < *zb)
+            {                
+                int tx = u;
+                int ty = v;
+
+                tx = tx & umask;
+                ty = ty & vmask;
+
+                *fb = t_pxl[(ty << vshift) | tx];
+
+                *zb = z;
             }
 
             zb++;
             fb++;
 
-            sl_pos.z += sl_delta.z;
+            z += dz;
+            u += du;
+            v += dv;
+
+        } while(--count);
+    }
+
+    void Render::DrawTriangleScanlineFlat(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZ& delta, const pixel color)
+    {
+        int x_start = pos.x_left;
+        int x_end = pos.x_right+1;
+
+        if( (x_end < x_start) || (x_end <= 0) || (x_start >= fbSize.x) )
+            return;
+
+        fp z = pos.z_left;
+        fp dz = delta.z;
+
+        if(x_start < 0)
+        {
+            z += dz * -x_start;
+            x_start = 0;
         }
-    }
 
-    void Render::LerpEdgePosZWUV(TriDrawPos& out, const TriEdgeTrace& edge, fp frac)
-    {
-        out.z = pLerp(edge.z_left, edge.z_right, frac);
-        out.w = pLerp(edge.w_left, edge.w_right, frac);
-        out.u = pLerp(edge.u_left, edge.u_right, frac);
-        out.v = pLerp(edge.v_left, edge.v_right, frac);
-    }
+        if(x_end > fbSize.x)
+            x_end = fbSize.x;
 
-    void Render::LerpEdgePosZUV(TriDrawPos& out, const TriEdgeTrace &edge, fp frac)
-    {
-        out.z = pLerp(edge.z_left, edge.z_right, frac);
-        out.u = pLerp(edge.u_left, edge.u_right, frac);
-        out.v = pLerp(edge.v_left, edge.v_right, frac);
-    }
+        int count = (x_end - x_start);
 
-    void Render::LerpEdgeXZWUV(TriEdgeTrace& out, const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, fp frac)
-    {
-        out.x_left = pLerp(other.pos.x, left.pos.x, frac);
-        out.x_right = pLerp(other.pos.x, right.pos.x, frac);
+        int buffOffset = ((y * fbSize.x) + x_start);
+        fp* zb = &zBuffer[buffOffset];
+        pixel* fb = &frameBuffer[buffOffset];
 
-        out.z_left = pLerp(other.pos.z, left.pos.z, frac);
-        out.z_right = pLerp(other.pos.z, right.pos.z, frac);
+        do
+        {
+            if(z < *zb)
+            {
+                *fb = color;
+                *zb = z;
+            }
 
-        out.w_left = pLerp(other.pos.w, left.pos.w, frac);
-        out.w_right = pLerp(other.pos.w, right.pos.w, frac);
+            zb++;
+            fb++;
 
-        out.u_left = pLerp(other.uv.x, left.uv.x, frac);
-        out.u_right = pLerp(other.uv.x, right.uv.x, frac);
+            z += dz;
 
-        out.v_left = pLerp(other.uv.y, left.uv.y, frac);
-        out.v_right = pLerp(other.uv.y, right.uv.y, frac);
-    }
-
-    void Render::LerpEdgeXZUV(TriEdgeTrace& out, const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, fp frac)
-    {
-        out.x_left = pLerp(other.pos.x, left.pos.x, frac);
-        out.x_right = pLerp(other.pos.x, right.pos.x, frac);
-
-        out.z_left = pLerp(other.pos.z, left.pos.z, frac);
-        out.z_right = pLerp(other.pos.z, right.pos.z, frac);
-
-        out.u_left = pLerp(other.uv.x, left.uv.x, frac);
-        out.u_right = pLerp(other.uv.x, right.uv.x, frac);
-
-        out.v_left = pLerp(other.uv.y, left.uv.y, frac);
-        out.v_right = pLerp(other.uv.y, right.uv.y, frac);
-    }
-
-    void Render::LerpEdgeXZ(TriEdgeTrace& out, const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, fp frac)
-    {
-        out.x_left = pLerp(other.pos.x, left.pos.x, frac);
-        out.x_right = pLerp(other.pos.x, right.pos.x, frac);
-
-        out.z_left = pLerp(other.pos.z, left.pos.z, frac);
-        out.z_right = pLerp(other.pos.z, right.pos.z, frac);
+        } while(--count);
     }
 
     void Render::LerpVertexXYZWUV(Vertex2d& out, const Vertex2d& left, const Vertex2d& right, fp frac)
@@ -1220,20 +1070,80 @@ namespace P3D
         out.uv.y = pLerp(left.uv.y, right.uv.y, frac);
     }
 
+    void Render::GetTriangleLerpDeltasZUV(const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, TriDrawXDeltaZUV& x_delta, TriDrawYDeltaZUV& y_delta)
+    {
+        //Use reciprocal table for these.
+        fp inv_y = 0;
+        fp inv_x = 0;
+
+        if(left.pos.y != other.pos.y)
+            inv_y = fp(1 << triFracShift) / (left.pos.y - other.pos.y);
+
+        if(right.pos.x != left.pos.x)
+            inv_x = fp(1) / (right.pos.x - left.pos.x);
+
+        x_delta.z = (right.pos.z - left.pos.z) * inv_x;
+        x_delta.u = (right.uv.x - left.uv.x) * inv_x;
+        x_delta.v = (right.uv.y - left.uv.y) * inv_x;
+
+        y_delta.x_left = (left.pos.x - other.pos.x) * inv_y;
+        y_delta.x_right = (right.pos.x - other.pos.x) * inv_y;
+        y_delta.z = (left.pos.z - other.pos.z) * inv_y;
+        y_delta.u = (left.uv.x - other.uv.x) * inv_y;
+        y_delta.v = (left.uv.y - other.uv.y) * inv_y;
+    }
+
+    void Render::GetTriangleLerpDeltasZWUV(const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, TriDrawXDeltaZWUV& x_delta, TriDrawYDeltaZWUV &y_delta)
+    {
+        //Use reciprocal table for these.
+        fp inv_y = 0;
+        fp inv_x = 0;
+
+        if(left.pos.y != other.pos.y)
+            inv_y = fp(1 << triFracShift) / (left.pos.y - other.pos.y);
+
+        if(right.pos.x != left.pos.x)
+            inv_x = fp(1) / (right.pos.x - left.pos.x);
+
+        x_delta.z = (right.pos.z - left.pos.z) * inv_x;
+        x_delta.w = (right.pos.w - left.pos.w) * inv_x;
+        x_delta.u = (right.uv.x - left.uv.x) * inv_x;
+        x_delta.v = (right.uv.y - left.uv.y) * inv_x;
+
+        y_delta.x_left = (left.pos.x - other.pos.x) * inv_y;
+        y_delta.x_right = (right.pos.x - other.pos.x) * inv_y;
+        y_delta.z = (left.pos.z - other.pos.z) * inv_y;
+        y_delta.w = (left.pos.w - other.pos.w) * inv_y;
+        y_delta.u = (left.uv.x - other.uv.x) * inv_y;
+        y_delta.v = (left.uv.y - other.uv.y) * inv_y;
+    }
+
+    void Render::GetTriangleLerpDeltasZ(const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, TriDrawXDeltaZ& x_delta, TriDrawYDeltaZ &y_delta)
+    {
+        //Use reciprocal table for these.
+        fp inv_y = 0;
+        fp inv_x = 0;
+
+        if(left.pos.y != other.pos.y)
+            inv_y = fp(1 << triFracShift) / (left.pos.y - other.pos.y);
+
+        if(right.pos.x != left.pos.x)
+            inv_x = fp(1) / (right.pos.x - left.pos.x);
+
+        x_delta.z = (right.pos.z - left.pos.z) * inv_x;
+
+        y_delta.x_left = (left.pos.x - other.pos.x) * inv_y;
+        y_delta.x_right = (right.pos.x - other.pos.x) * inv_y;
+        y_delta.z = (left.pos.z - other.pos.z) * inv_y;
+    }
+
+
+
     int Render::fracToY(fp frac)
     {
         fp y = fp(2)-(frac + fp(1));
 
-#ifdef USE_FLOAT
-        int sy = (y * fbSize.y) / 2;
-#else
-        int sy = y.intMul(fbSize.y) >> 1;
-
-        if(sy < FP::min())
-            return FP::min();
-        else if(sy > FP::max())
-            return FP::max();
-#endif
+        fp sy = pLSR(y * fbSize.y, 1) + fp(0.5f);
 
         return sy;
     }
@@ -1242,16 +1152,7 @@ namespace P3D
     {
         fp x = frac + fp(1);
 
-#ifdef USE_FLOAT
-        int sx = (x * fbSize.x) / 2;
-#else
-        int sx = x.intMul(fbSize.x) >> 1;
-
-        if(sx < FP::min())
-            return FP::min();
-        else if(sx > FP::max())
-            return FP::max();
-#endif
+        fp sx = pLSR(x * fbSize.x, 1) + fp(0.5f);
 
         return sx;
     }
