@@ -31,25 +31,25 @@ namespace P3D
     }
 
     template <class T>
-    constexpr inline T pLSL(T val, unsigned int shift)
+    constexpr inline T pASL(T val, unsigned int shift)
     {
         return val * (1 << shift);
     }
 
     template <>
-    constexpr inline FP pLSL(FP val, unsigned int shift)
+    constexpr inline FP pASL(FP val, unsigned int shift)
     {
         return val << shift;
     }
 
     template <class T>
-    constexpr inline T pLSR(T val, unsigned int shift)
+    constexpr inline T pASR(T val, unsigned int shift)
     {
         return val / (1 << shift);
     }
 
     template <>
-    constexpr inline FP pLSR(FP val, unsigned int shift)
+    constexpr inline FP pASR(FP val, unsigned int shift)
     {
         return val >> shift;
     }

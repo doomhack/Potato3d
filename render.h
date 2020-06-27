@@ -25,21 +25,6 @@ namespace P3D
         fp v;
     } TriDrawPos;
 
-    typedef struct TriDrawYDeltaZUV
-    {
-        fp x_left, x_right;
-        fp z;
-        fp u;
-        fp v;
-    } TriDrawYDeltaZUV;
-
-    typedef struct TriDrawXDeltaZUV
-    {
-        fp z;
-        fp u;
-        fp v;
-    } TriDrawXDeltaZUV;
-
     typedef struct TriDrawXDeltaZWUV
     {
         fp z;
@@ -129,15 +114,16 @@ namespace P3D
 
         fp GetLineIntersectionFrac(const fp a1, const fp a2, const fp b1, const fp b2);
 
-        void DrawTriangleSplitPerspectiveCorrect(Vertex2d points[], const Texture *texture, const RenderFlags flags);
-        void DrawTriangleTopPerspectiveCorrect(const Vertex2d points[], const Texture *texture, const RenderFlags flags);
-        void DrawTriangleBottomPerspectiveCorrect(const Vertex2d points[3], const Texture* texture, const RenderFlags flags);
-        void DrawTriangleScanlinePerspectiveCorrect(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture);
+        void DrawTriangleSplit(Vertex2d *points, const Texture *texture, const RenderFlags flags);
+        void DrawTriangleTop(const Vertex2d *points, const Texture *texture, const RenderFlags flags);
+        void DrawTriangleBottom(const Vertex2d *points, const Texture *texture, const RenderFlags flags);
 
-        void DrawTriangleSplitLinear(const Vertex2d points[], const Texture *texture, const RenderFlags flags);
-        void DrawTriangleTopLinear(const Vertex2d points[], const Texture *texture, const RenderFlags flags);
-        void DrawTriangleBottomLinear(const Vertex2d points[3], const Texture* texture, const RenderFlags flags);
-        void DrawTriangleScanlineLinear(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZUV& delta, const Texture* texture);
+
+        void DrawTriangleScanlinePerspectiveCorrect(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture);
+        void DrawTriangleScanlinePerspectiveAlpha(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture);
+
+        void DrawTriangleScanlineLinear(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture);
+        void DrawTriangleScanlineLinearAlpha(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture);
 
         void DrawTriangleSplitFlat(const Vertex2d points[], const pixel color, const RenderFlags flags);
         void DrawTriangleTopFlat(const Vertex2d points[], const pixel color, const RenderFlags flags);
@@ -148,11 +134,9 @@ namespace P3D
 
         Vertex2d TransformVertex(const Vertex3d* vertex);
         bool IsTriangleFrontface(const Vertex2d screenSpacePoints[]);
-        bool IsTriangleOnScreen(const Vertex2d screenSpacePoints[]);
 
         void LerpVertexXYZWUV(Vertex2d& out, const Vertex2d& left, const Vertex2d& right, fp frac);
 
-        void GetTriangleLerpDeltasZUV(const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, TriDrawXDeltaZUV& x_delta, TriDrawYDeltaZUV& y_delta);
         void GetTriangleLerpDeltasZWUV(const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, TriDrawXDeltaZWUV& x_delta, TriDrawYDeltaZWUV &y_delta);
         void GetTriangleLerpDeltasZ(const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, TriDrawXDeltaZ& x_delta, TriDrawYDeltaZ &y_delta);
 

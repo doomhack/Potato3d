@@ -17,8 +17,10 @@ namespace P3D
 
     #ifdef FB_32BIT
         typedef unsigned int pixel;
+        const pixel alphaMask = 0xffffff;
     #else
         typedef unsigned short pixel;
+        const pixel alphaMask = 0x7fff;
     #endif
 
 
