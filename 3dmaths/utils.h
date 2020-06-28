@@ -57,7 +57,7 @@ namespace P3D
     template <class T>
     constexpr inline T pAbs(T v)
     {
-        if(v <= T(0))
+        if(v >= T(0))
             return v;
 
         return -v;

@@ -37,24 +37,24 @@ namespace P3D
         if(triangles.size() == 0)
             return nullptr;
 
-        int front = 0, back = 0;
-        int best_front, best_back;
+        int front = 0, back = 0, on = 0;
+        int best_front, best_back, best_on;
 
         int best_index = 0;
 
-        BspPlane best_plane = CheckPlane(triangles, 0, best_front, best_back);
+        BspPlane best_plane = CheckPlane(triangles, 0, best_front, best_back, best_on);
 
         for(unsigned int i = 0; i < triangles.size(); i++)
         {
-            BspPlane plane = CheckPlane(triangles, i, front, back);
+            BspPlane plane = CheckPlane(triangles, i, front, back, on);
 
-            int total_tris = back+front;
+            int total_tris = back+front+on;
             int diff = pAbs(back-front);
 
-            int best_tris = best_back + best_front;
+            int best_tris = best_back + best_front + best_on;
             int best_diff = pAbs(best_back - best_front);
 
-            if ((total_tris <= best_tris) || ((total_tris == best_tris) && (diff < best_diff)))
+            if ((total_tris < best_tris) || ((total_tris == best_tris) && (diff < best_diff)))
             {
                 best_plane = plane;
                 best_index = i;
@@ -81,9 +81,9 @@ namespace P3D
         {
             fp dist[3];
 
-            dist[0] = Distance(plane, triangles[i]->tri->verts[0]);
-            dist[1] = Distance(plane, triangles[i]->tri->verts[0]);
-            dist[2] = Distance(plane, triangles[i]->tri->verts[0]);
+            dist[0] = Distance(plane, triangles[i]->tri->verts[0].pos);
+            dist[1] = Distance(plane, triangles[i]->tri->verts[1].pos);
+            dist[2] = Distance(plane, triangles[i]->tri->verts[2].pos);
 
             int side[3];
             side[0] = Sign(dist[0]);
@@ -581,10 +581,11 @@ namespace P3D
         return out;
     }
 
-    BspPlane Bsp3d::CheckPlane(std::vector<BspTriangle*>& triangles, unsigned int index, int& front, int& back)
+    BspPlane Bsp3d::CheckPlane(std::vector<BspTriangle*>& triangles, unsigned int index, int& front, int& back, int& onplane)
     {
         front = 0;
         back = 0;
+        onplane = 0;
 
         BspPlane plane = CalculatePlane(triangles[index]->tri);
 
@@ -592,9 +593,9 @@ namespace P3D
         {
             int side[3];
 
-            side[0] = Sign(Distance(plane, triangles[i]->tri->verts[0]));
-            side[1] = Sign(Distance(plane, triangles[i]->tri->verts[0]));
-            side[2] = Sign(Distance(plane, triangles[i]->tri->verts[0]));
+            side[0] = Sign(Distance(plane, triangles[i]->tri->verts[0].pos));
+            side[1] = Sign(Distance(plane, triangles[i]->tri->verts[1].pos));
+            side[2] = Sign(Distance(plane, triangles[i]->tri->verts[2].pos));
 
             switch (SplitType(side[0], side[1], side[2]))
             {
@@ -619,6 +620,7 @@ namespace P3D
                 break;
 
             case SplitType( 0,  0,  0):
+                onplane++;
                 break;
 
             case SplitType(-1, -1,  1):
@@ -650,9 +652,9 @@ namespace P3D
         return plane;
     }
 
-    fp Bsp3d::Distance(const BspPlane& plane, const Vertex3d& vertex)
+    fp Bsp3d::Distance(const BspPlane& plane, const V3<fp>& pos)
     {
-        fp dot = plane.normal.DotProduct(vertex.pos);
+        fp dot = plane.normal.DotProduct(pos);
 
         return dot - plane.plane;
     }
@@ -685,5 +687,30 @@ namespace P3D
         p.normal = normal;
 
         return p;
+    }
+
+
+    void BspTree::SortBackToFront(const V3<fp>& p, std::vector<BspTriangle*>& out)
+    {
+        SortBackToFrontRecursive(p, this->root, out);
+    }
+
+
+    void BspTree::SortBackToFrontRecursive(const V3<fp>& p, const BspNode* n, std::vector<BspTriangle*>& out)
+    {
+        if (!n) return;
+
+        if (Bsp3d::Distance(n->plane, p) < 0)
+        {
+            SortBackToFrontRecursive(p, n->front, out);
+            out.insert(out.end(), n->tris.begin(), n->tris.end());
+            SortBackToFrontRecursive(p, n->back, out);
+        }
+        else
+        {
+            SortBackToFrontRecursive(p, n->back, out);
+            out.insert(out.end(), n->tris.begin(), n->tris.end());
+            SortBackToFrontRecursive(p, n->front, out);
+        }
     }
 }

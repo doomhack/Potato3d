@@ -6,7 +6,7 @@
 namespace P3D
 {
 
-    //#define USE_FLOAT
+    #define USE_FLOAT
 
 
 #ifndef __arm__

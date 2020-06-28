@@ -37,6 +37,11 @@ namespace P3D
     public:
         BspTree() {};
         BspNode* root = nullptr;
+
+        void SortBackToFront(const V3<fp>& p, std::vector<BspTriangle*>& out);
+
+    private:
+        void SortBackToFrontRecursive(const V3<fp>& p, const BspNode* n, std::vector<BspTriangle*>& out);
     };
 
     class Bsp3d
@@ -46,16 +51,18 @@ namespace P3D
 
         BspTree* BuildBspTree(Model3d* model);
 
+        static fp Distance(const BspPlane& plane, const V3<fp> &pos);
+
     private:
         BspNode* BuildTreeRecursive(std::vector<BspTriangle*>& triangles);
 
+
         void SeperateTriangles(BspPlane& plane, std::vector<BspTriangle*>& triangles, std::vector<BspTriangle*>& front_tris, std::vector<BspTriangle*>& back_tris, std::vector<BspTriangle*>& plane_tris);
 
-        BspPlane CheckPlane(std::vector<BspTriangle*>& triangles, unsigned int index, int& front, int& back);
+        BspPlane CheckPlane(std::vector<BspTriangle*>& triangles, unsigned int index, int& front, int& back, int& onplane);
 
         BspPlane CalculatePlane(const Triangle3d* triangle);
 
-        fp Distance(const BspPlane& plane, const Vertex3d& vertex);
 
         int Sign(fp i);
 
@@ -71,7 +78,7 @@ namespace P3D
             return pAbs(a) / (pAbs(a) + pAbs(b));
         }
 
-        const fp epsilon = fp(0.1f);
+        const fp epsilon = fp(0.01f);
 
     };
 }
