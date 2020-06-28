@@ -70,13 +70,34 @@ namespace P3D
             return *this;
         }
 
-        constexpr V3 CrossProduct(const V3& r) const
+        V3 CrossProduct(const V3& r) const
         {
             V3 v;
 
-            v.x = ((y * r.z) - (z * r.y));
-            v.y = ((z * r.x) - (x * r.z));
-            v.z = ((x * r.y) - (y * r.x));
+            v.x = (float)(((double)y * (double)r.z) - ((double)z * (double)r.y));
+            v.y = (float)(((double)z * (double)r.x) - ((double)x * (double)r.z));
+            v.z = (float)(((double)x * (double)r.y) - ((double)y * (double)r.x));
+
+            return v;
+        }
+
+        V3 CrossProductNormalised(const V3& r) const
+        {
+            V3 v;
+
+            double xd = ((double)y * (double)r.z) - ((double)z * (double)r.y);
+            double yd = ((double)z * (double)r.x) - ((double)x * (double)r.z);
+            double zd = ((double)x * (double)r.y) - ((double)y * (double)r.x);
+
+            double len =    xd * xd +
+                            yd * yd +
+                            zd * zd;
+
+            len = std::sqrt(len);
+
+            v.x = (float)(xd / len);
+            v.y = (float)(yd / len);
+            v.z = (float)(zd / len);
 
             return v;
         }
@@ -84,21 +105,6 @@ namespace P3D
         constexpr T CrossProductZ(const V3& r) const
         {
             return ((x * r.y) - (y * r.x));
-        }
-
-
-        constexpr void Normalise()
-        {
-            // Need some extra precision if the length is very small.
-            float len = float(x) * float(x) +
-                        float(y) * float(y) +
-                        float(z) * float(z);
-
-            len = std::sqrt(len);
-
-            x = (x / len);
-            y = (y / len);
-            z = (z / len);
         }
 
         T DotProduct(const V3<T>& v2) const

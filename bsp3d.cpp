@@ -675,9 +675,7 @@ namespace P3D
         V3<fp> edge1 = triangle->verts[1].pos - triangle->verts[0].pos;
         V3<fp> edge2 = triangle->verts[2].pos - triangle->verts[1].pos;
 
-        V3<fp> normal = edge1.CrossProduct(edge2);
-
-        normal.Normalise();
+        V3<fp> normal = edge1.CrossProductNormalised(edge2);
 
         fp plane = normal.DotProduct(triangle->verts[0].pos);
 
