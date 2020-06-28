@@ -13,11 +13,11 @@ namespace P3D
         this->render = render;
     }
 
-    bool Object3d::Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov, fp zNear, fp zFar, pixel* framebuffer, fp* zBuffer)
+    bool Object3d::Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov, fp zNear, fp zFar, pixel* framebuffer)
     {
         this->render = new Render();
 
-        return render->Setup(screenWidth, screenHeight, hFov, zNear, zFar, framebuffer, zBuffer);
+        return render->Setup(screenWidth, screenHeight, hFov, zNear, zFar, framebuffer);
     }
 
     V3<fp>& Object3d::CameraPos()
@@ -32,7 +32,7 @@ namespace P3D
 
     void Object3d::RenderScene()
     {
-        render->ClearFramebuffer(backgroundColor, true);
+        render->ClearFramebuffer(backgroundColor);
 
         M4<fp>& viewMatrix = render->GetMatrix(MatrixType::View);
 
@@ -66,7 +66,7 @@ namespace P3D
         {
             BspTriangle* tri = tris[i];
 
-            render->DrawTriangle(tri->tri, tri->texture, tri->color, (RenderFlags)(PerspectiveCorrect));
+            render->DrawTriangle(tri->tri, tri->texture, tri->color, (RenderFlags)(0));
         }
 
         render->EndObject();

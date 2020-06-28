@@ -82,14 +82,14 @@ namespace P3D
     public:
         explicit Render();
 
-        bool Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov = 54, fp zNear = 5, fp zFar = 1024, pixel* framebuffer = nullptr, fp* zBuffer = nullptr);
+        bool Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov = 54, fp zNear = 5, fp zFar = 1024, pixel* framebuffer = nullptr);
 
         void BeginFrame();
         void EndFrame();
         void BeginObject();
         void EndObject();
 
-        void ClearFramebuffer(pixel color, bool zBuffer);
+        void ClearFramebuffer(pixel color);
 
         void UpdateTransformMatrix();
         void UpdateViewProjectionMatrix();

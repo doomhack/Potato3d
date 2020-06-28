@@ -27,10 +27,10 @@ MainWindow::MainWindow(QWidget *parent)
 
     object3d->SetBackgroundColor(qRgb(0,255,255));
 
-    P3D::Model3d* runway = LoadObjFile("://models/temple.obj", "://models/temple.mtl");
+    P3D::Model3d* runway = LoadObjFile("://models/temple2.obj", "://models/temple2.mtl");
     object3d->SetModel(runway);
 
-    //SaveModel(runway);
+    SaveModel(runway);
 
     //P3D::Model3d* runway = LoadM3dData(modeldata);
     //object3d->AddModel(runway);

@@ -19,7 +19,7 @@ namespace P3D
         transformMatrix.setToIdentity();
     }
 
-    bool Render::Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov, fp zNear, fp zFar, pixel* frameBuffer, fp* zBuffer)
+    bool Render::Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov, fp zNear, fp zFar, pixel* frameBuffer)
     {
         if(screenWidth == 0 || screenHeight == 0)
             return false;
@@ -40,11 +40,6 @@ namespace P3D
             this->frameBuffer = frameBuffer;
         else
             this->frameBuffer = new pixel[screenWidth * screenHeight];
-
-        if(zBuffer)
-            this->zBuffer = zBuffer;
-        else
-            this->zBuffer = new fp[screenWidth * screenHeight];
 
         fp aspectRatio = fp((int)screenWidth) / fp((int)screenHeight);
 
@@ -73,18 +68,12 @@ namespace P3D
 
     }
 
-    void Render::ClearFramebuffer(pixel color, bool clearZ)
+    void Render::ClearFramebuffer(pixel color)
     {
         const unsigned int buffSize = fbSize.x*fbSize.y;
 
         for(unsigned int i = 0; i < buffSize; i++)
             frameBuffer[i] = color;
-
-        if(clearZ)
-        {
-            for(unsigned int i = 0; i < buffSize; i++)
-                zBuffer[i] = 1;
-        }
     }
 
     void Render::UpdateTransformMatrix()
@@ -729,12 +718,11 @@ namespace P3D
         if( (x_end < x_start) || (x_end <= 0) || (x_start >= fbSize.x) )
             return;
 
-        fp z = pos.z_left, u = pos.u_left, v = pos.v_left, w = pos.w_left;
-        fp dz = delta.z, du = delta.u, dv = delta.v, dw = delta.w;
+        fp u = pos.u_left, v = pos.v_left, w = pos.w_left;
+        fp du = delta.u, dv = delta.v, dw = delta.w;
 
         if(x_start < 0)
         {
-            z += dz * -x_start;
             w += dw * -x_start;
             u += du * -x_start;
             v += dv * -x_start;
@@ -748,7 +736,6 @@ namespace P3D
         int count = (x_end - x_start);
 
         int buffOffset = ((y * fbSize.x) + x_start);
-        fp* zb = &zBuffer[buffOffset];
         pixel* fb = &frameBuffer[buffOffset];
 
         unsigned int umask = texture->u_mask;
@@ -758,24 +745,19 @@ namespace P3D
 
         do
         {
-            if(z < *zb)
-            {
-                fp invw = fp(1) / w;
 
-                int tx = u * invw;
-                int ty = v * invw;
+            fp invw = fp(1) / w;
 
-                tx = tx & umask;
-                ty = ty & vmask;
+            int tx = u * invw;
+            int ty = v * invw;
 
-                *fb = t_pxl[ty << vshift | tx];
-                *zb = z;
-            }
+            tx = tx & umask;
+            ty = ty & vmask;
 
-            zb++;
+            *fb = t_pxl[ty << vshift | tx];
+
             fb++;
 
-            z += dz;
             w += dw;
             u += du;
             v += dv;
@@ -791,12 +773,11 @@ namespace P3D
         if( (x_end < x_start) || (x_end <= 0) || (x_start >= fbSize.x) )
             return;
 
-        fp z = pos.z_left, u = pos.u_left, v = pos.v_left, w = pos.w_left;
-        fp dz = delta.z, du = delta.u, dv = delta.v, dw = delta.w;
+        fp u = pos.u_left, v = pos.v_left, w = pos.w_left;
+        fp du = delta.u, dv = delta.v, dw = delta.w;
 
         if(x_start < 0)
         {
-            z += dz * -x_start;
             w += dw * -x_start;
             u += du * -x_start;
             v += dv * -x_start;
@@ -810,7 +791,6 @@ namespace P3D
         int count = (x_end - x_start);
 
         int buffOffset = ((y * fbSize.x) + x_start);
-        fp* zb = &zBuffer[buffOffset];
         pixel* fb = &frameBuffer[buffOffset];
 
         unsigned int umask = texture->u_mask;
@@ -820,29 +800,24 @@ namespace P3D
 
         do
         {
-            if(z < *zb)
+
+            fp invw = fp(1) / w;
+
+            int tx = u * invw;
+            int ty = v * invw;
+
+            tx = tx & umask;
+            ty = ty & vmask;
+
+            pixel texel = t_pxl[ty << vshift | tx];
+
+            if(texel & alphaMask)
             {
-                fp invw = fp(1) / w;
-
-                int tx = u * invw;
-                int ty = v * invw;
-
-                tx = tx & umask;
-                ty = ty & vmask;
-
-                pixel texel = t_pxl[ty << vshift | tx];
-
-                if(texel & alphaMask)
-                {
-                    *fb = texel;
-                    *zb = z;
-                }
+                *fb = texel;
             }
 
-            zb++;
             fb++;
 
-            z += dz;
             w += dw;
             u += du;
             v += dv;
@@ -858,12 +833,11 @@ namespace P3D
         if( (x_end < x_start) || (x_end <= 0) || (x_start >= fbSize.x) )
             return;
 
-        fp z = pos.z_left, u = pos.u_left, v = pos.v_left;
-        fp dz = delta.z, du = delta.u, dv = delta.v;
+        fp u = pos.u_left, v = pos.v_left;
+        fp du = delta.u, dv = delta.v;
 
         if(x_start < 0)
         {
-            z += dz * -x_start;
             u += du * -x_start;
             v += dv * -x_start;
 
@@ -876,7 +850,6 @@ namespace P3D
         int count = (x_end - x_start);
 
         int buffOffset = ((y * fbSize.x) + x_start);
-        fp* zb = &zBuffer[buffOffset];
         pixel* fb = &frameBuffer[buffOffset];
 
         unsigned int umask = texture->u_mask;
@@ -886,23 +859,17 @@ namespace P3D
 
         do
         {
-            if(z < *zb)
-            {                
-                int tx = u;
-                int ty = v;
 
-                tx = tx & umask;
-                ty = ty & vmask;
+            int tx = u;
+            int ty = v;
 
-                *fb = t_pxl[(ty << vshift) | tx];
+            tx = tx & umask;
+            ty = ty & vmask;
 
-                *zb = z;
-            }
+            *fb = t_pxl[(ty << vshift) | tx];
 
-            zb++;
             fb++;
 
-            z += dz;
             u += du;
             v += dv;
 
@@ -917,12 +884,11 @@ namespace P3D
         if( (x_end < x_start) || (x_end <= 0) || (x_start >= fbSize.x) )
             return;
 
-        fp z = pos.z_left, u = pos.u_left, v = pos.v_left;
-        fp dz = delta.z, du = delta.u, dv = delta.v;
+        fp u = pos.u_left, v = pos.v_left;
+        fp du = delta.u, dv = delta.v;
 
         if(x_start < 0)
         {
-            z += dz * -x_start;
             u += du * -x_start;
             v += dv * -x_start;
 
@@ -935,7 +901,6 @@ namespace P3D
         int count = (x_end - x_start);
 
         int buffOffset = ((y * fbSize.x) + x_start);
-        fp* zb = &zBuffer[buffOffset];
         pixel* fb = &frameBuffer[buffOffset];
 
         unsigned int umask = texture->u_mask;
@@ -945,28 +910,21 @@ namespace P3D
 
         do
         {
-            if(z < *zb)
+            int tx = u;
+            int ty = v;
+
+            tx = tx & umask;
+            ty = ty & vmask;
+
+            const pixel texel = t_pxl[(ty << vshift) | tx];
+
+            if(texel & alphaMask)
             {
-                int tx = u;
-                int ty = v;
-
-                tx = tx & umask;
-                ty = ty & vmask;
-
-                const pixel texel = t_pxl[(ty << vshift) | tx];
-
-                if(texel & alphaMask)
-                {
-                    *fb = texel;
-                    *zb = z;
-                }
-
+                *fb = texel;
             }
 
-            zb++;
             fb++;
 
-            z += dz;
             u += du;
             v += dv;
 
@@ -981,14 +939,8 @@ namespace P3D
         if( (x_end < x_start) || (x_end <= 0) || (x_start >= fbSize.x) )
             return;
 
-        fp z = pos.z_left;
-        fp dz = delta.z;
-
         if(x_start < 0)
-        {
-            z += dz * -x_start;
             x_start = 0;
-        }
 
         if(x_end > fbSize.x)
             x_end = fbSize.x;
@@ -996,21 +948,12 @@ namespace P3D
         int count = (x_end - x_start);
 
         int buffOffset = ((y * fbSize.x) + x_start);
-        fp* zb = &zBuffer[buffOffset];
         pixel* fb = &frameBuffer[buffOffset];
 
         do
         {
-            if(z < *zb)
-            {
-                *fb = color;
-                *zb = z;
-            }
-
-            zb++;
+            *fb = color;
             fb++;
-
-            z += dz;
 
         } while(--count);
     }

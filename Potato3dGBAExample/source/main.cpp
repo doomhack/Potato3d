@@ -158,7 +158,7 @@ int main()
     obj3d->Setup(160, 128, 54, 25, 1024, I_GetBackBuffer());
 
     P3D::Model3d* runway = LoadM3dData(modeldata);
-    obj3d->AddModel(runway);
+    obj3d->SetModel(runway);
 
     while(true)
     {
