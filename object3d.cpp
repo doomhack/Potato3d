@@ -46,34 +46,15 @@ namespace P3D
 
         render->BeginFrame();
 
-        for (auto it = models.begin() ; it != models.end(); ++it)
-        {
-            const Model3d* model = *it;
-
-            DrawModel(model);
-        }
+        RenderBsp();
 
         render->EndFrame();
     }
 
     void Object3d::RenderBsp()
     {
-        render->ClearFramebuffer(backgroundColor, true);
-
         if(bspTree == nullptr)
             return;
-
-        M4<fp>& viewMatrix = render->GetMatrix(MatrixType::View);
-
-        viewMatrix.setToIdentity();
-        viewMatrix.rotateX(-cameraAngle.x);
-        viewMatrix.rotateY(-cameraAngle.y);
-        viewMatrix.rotateZ(-cameraAngle.z);
-
-        viewMatrix.translate(V3<fp>(-cameraPos.x, -cameraPos.y, -cameraPos.z));
-
-
-        render->BeginFrame();
 
         render->BeginObject();
 
@@ -89,42 +70,15 @@ namespace P3D
         }
 
         render->EndObject();
-
-        render->EndFrame();
     }
 
-    void Object3d::DrawModel(const Model3d* model)
+    void Object3d::SetModel(const Model3d* model)
     {
-        M4<fp>& modelMatrix = render->GetMatrix(MatrixType::Model);
+        this->model = model;
 
-        modelMatrix.setToIdentity();
-        modelMatrix.translate(model->pos);
+        P3D::Bsp3d *bsp = new P3D::Bsp3d();
 
-        render->BeginObject();
-
-        for (auto it = model->mesh.begin() ; it != model->mesh.end(); ++it)
-        {
-            const Mesh3d* mesh = *it;
-
-            DrawMesh(mesh);
-        }
-
-        render->EndObject();
-    }
-
-    void Object3d::DrawMesh(const Mesh3d* mesh)
-    {
-        for (auto it = mesh->tris.begin() ; it != mesh->tris.end(); ++it)
-        {
-            const Triangle3d* triangle = *it;
-
-            render->DrawTriangle(triangle, mesh->texture, mesh->color, (RenderFlags)(0));
-        }
-    }
-
-    void Object3d::AddModel(const Model3d* model)
-    {
-        models.push_back(model);
+        bspTree = bsp->BuildBspTree(model);
     }
 
     void Object3d::SetBackgroundColor(pixel color)
@@ -135,10 +89,5 @@ namespace P3D
     void Object3d::SetFramebuffer(pixel* framebuffer)
     {
         render->SetFramebuffer(framebuffer);
-    }
-
-    void Object3d::SetBspTree(const BspTree *tree)
-    {
-        this->bspTree = tree;
     }
 }

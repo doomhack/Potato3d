@@ -28,15 +28,9 @@ MainWindow::MainWindow(QWidget *parent)
     object3d->SetBackgroundColor(qRgb(0,255,255));
 
     P3D::Model3d* runway = LoadObjFile("://models/temple.obj", "://models/temple.mtl");
-    //object3d->AddModel(runway);
+    object3d->SetModel(runway);
 
     //SaveModel(runway);
-
-    P3D::Bsp3d *bsp = new P3D::Bsp3d();
-
-    P3D::BspTree* bspTree = bsp->BuildBspTree(runway);
-
-    object3d->SetBspTree(bspTree);
 
     //P3D::Model3d* runway = LoadM3dData(modeldata);
     //object3d->AddModel(runway);
@@ -58,7 +52,7 @@ void MainWindow::paintEvent(QPaintEvent *event)
 
     renderTimer.restart();
 
-    object3d->RenderBsp();
+    object3d->RenderScene();
 
     rTime += renderTimer.elapsed();
 

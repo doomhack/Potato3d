@@ -1,9 +1,13 @@
 #include "bsp3d.h"
 
+//BSP tree building.
+//Based on https://github.com/roever/BSP
+//
+
 namespace P3D
 {
 
-    BspTree* Bsp3d::BuildBspTree(Model3d* model)
+    BspTree* Bsp3d::BuildBspTree(const Model3d* model)
     {
         std::vector<BspTriangle*> triangles;
 

@@ -48,7 +48,7 @@ namespace P3D
     public:
         Bsp3d() {};
 
-        BspTree* BuildBspTree(Model3d* model);
+        BspTree* BuildBspTree(const Model3d* model);
 
         static fp Distance(const BspPlane& plane, const V3<fp> &pos);
 

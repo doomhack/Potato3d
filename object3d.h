@@ -23,11 +23,7 @@ namespace P3D
 
         void RenderScene();
 
-        void RenderBsp();
-
-        void AddModel(const Model3d* model);
-
-        void SetBspTree(const BspTree* tree);
+        void SetModel(const Model3d* model);
 
         void SetBackgroundColor(pixel color);
 
@@ -35,12 +31,11 @@ namespace P3D
 
     private:
 
-        void DrawModel(const Model3d* model);
-        void DrawMesh(const Mesh3d* mesh);
+        void RenderBsp();
 
         Render* render = nullptr;
 
-        std::vector<const Model3d*> models;
+        const Model3d* model;
 
         const BspTree* bspTree;
 
