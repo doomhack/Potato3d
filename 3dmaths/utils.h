@@ -53,6 +53,15 @@ namespace P3D
     {
         return val >> shift;
     }
+
+    template <class T>
+    constexpr inline T pAbs(T v)
+    {
+        if(v <= T(0))
+            return v;
+
+        return -v;
+    }
 }
 
 #endif // UTILS_H

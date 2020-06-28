@@ -5,6 +5,8 @@
 
 #include "models/model.h"
 
+#include "../bsp3d.h"
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
@@ -29,6 +31,12 @@ MainWindow::MainWindow(QWidget *parent)
     object3d->AddModel(runway);
 
     SaveModel(runway);
+
+    P3D::Bsp3d *bsp = new P3D::Bsp3d();
+
+    P3D::BspTree* bspTree = bsp->BuildBspTree(runway);
+
+    qDebug() << "done";
 
     //P3D::Model3d* runway = LoadM3dData(modeldata);
     //object3d->AddModel(runway);

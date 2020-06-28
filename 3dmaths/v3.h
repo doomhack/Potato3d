@@ -1,6 +1,7 @@
 #ifndef V3_H
 #define V3_H
 
+#include <cmath>
 #include "fp.h"
 
 namespace P3D
@@ -83,6 +84,26 @@ namespace P3D
         constexpr T CrossProductZ(const V3& r) const
         {
             return ((x * r.y) - (y * r.x));
+        }
+
+
+        constexpr void Normalise()
+        {
+            // Need some extra precision if the length is very small.
+            float len = float(x) * float(x) +
+                        float(y) * float(y) +
+                        float(z) * float(z);
+
+            len = std::sqrt(len);
+
+            x = (x / len);
+            y = (y / len);
+            z = (z / len);
+        }
+
+        T DotProduct(const V3<T>& v2) const
+        {
+            return x * v2.x + y * v2.y + z * v2.z;
         }
     };
 
