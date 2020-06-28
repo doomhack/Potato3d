@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "rtypes.h"
-#include "object3d.h"
 
 namespace P3D
 {
@@ -38,10 +37,10 @@ namespace P3D
         BspTree() {};
         BspNode* root = nullptr;
 
-        void SortBackToFront(const V3<fp>& p, std::vector<BspTriangle*>& out);
+        void SortBackToFront(const V3<fp>& p, std::vector<BspTriangle*>& out) const;
 
     private:
-        void SortBackToFrontRecursive(const V3<fp>& p, const BspNode* n, std::vector<BspTriangle*>& out);
+        void SortBackToFrontRecursive(const V3<fp>& p, const BspNode* n, std::vector<BspTriangle*>& out) const;
     };
 
     class Bsp3d

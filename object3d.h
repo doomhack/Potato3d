@@ -6,25 +6,10 @@
 #include "common.h"
 #include "rtypes.h"
 #include "render.h"
+#include "bsp3d.h"
 
 namespace P3D
 {
-    class Mesh3d
-    {
-    public:
-        pixel color = 0;
-        Texture* texture = nullptr;
-
-        std::vector<Triangle3d*> tris;
-    };
-
-    class Model3d
-    {
-    public:
-        V3<fp> pos = V3<fp>(0,0,0);
-        std::vector<Mesh3d*> mesh;
-    };
-
     class Object3d
     {
     public:
@@ -38,7 +23,11 @@ namespace P3D
 
         void RenderScene();
 
+        void RenderBsp();
+
         void AddModel(const Model3d* model);
+
+        void SetBspTree(const BspTree* tree);
 
         void SetBackgroundColor(pixel color);
 
@@ -52,6 +41,8 @@ namespace P3D
         Render* render = nullptr;
 
         std::vector<const Model3d*> models;
+
+        const BspTree* bspTree;
 
         V3<fp> cameraPos = V3<fp>(0,0,0);
         V3<fp> cameraAngle = V3<fp>(0,0,0);

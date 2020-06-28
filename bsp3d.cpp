@@ -690,13 +690,13 @@ namespace P3D
     }
 
 
-    void BspTree::SortBackToFront(const V3<fp>& p, std::vector<BspTriangle*>& out)
+    void BspTree::SortBackToFront(const V3<fp>& p, std::vector<BspTriangle*>& out) const
     {
         SortBackToFrontRecursive(p, this->root, out);
     }
 
 
-    void BspTree::SortBackToFrontRecursive(const V3<fp>& p, const BspNode* n, std::vector<BspTriangle*>& out)
+    void BspTree::SortBackToFrontRecursive(const V3<fp>& p, const BspNode* n, std::vector<BspTriangle*>& out) const
     {
         if (!n) return;
 

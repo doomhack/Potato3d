@@ -56,6 +56,43 @@ namespace P3D
         render->EndFrame();
     }
 
+    void Object3d::RenderBsp()
+    {
+        render->ClearFramebuffer(backgroundColor, true);
+
+        if(bspTree == nullptr)
+            return;
+
+        M4<fp>& viewMatrix = render->GetMatrix(MatrixType::View);
+
+        viewMatrix.setToIdentity();
+        viewMatrix.rotateX(-cameraAngle.x);
+        viewMatrix.rotateY(-cameraAngle.y);
+        viewMatrix.rotateZ(-cameraAngle.z);
+
+        viewMatrix.translate(V3<fp>(-cameraPos.x, -cameraPos.y, -cameraPos.z));
+
+
+        render->BeginFrame();
+
+        render->BeginObject();
+
+        std::vector<BspTriangle*> tris;
+
+        bspTree->SortBackToFront(cameraPos, tris);
+
+        for(unsigned int i = 0; i < tris.size(); i++)
+        {
+            BspTriangle* tri = tris[i];
+
+            render->DrawTriangle(tri->tri, tri->texture, tri->color, (RenderFlags)(PerspectiveCorrect));
+        }
+
+        render->EndObject();
+
+        render->EndFrame();
+    }
+
     void Object3d::DrawModel(const Model3d* model)
     {
         M4<fp>& modelMatrix = render->GetMatrix(MatrixType::Model);
@@ -98,5 +135,10 @@ namespace P3D
     void Object3d::SetFramebuffer(pixel* framebuffer)
     {
         render->SetFramebuffer(framebuffer);
+    }
+
+    void Object3d::SetBspTree(const BspTree *tree)
+    {
+        this->bspTree = tree;
     }
 }

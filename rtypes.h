@@ -1,6 +1,8 @@
 #ifndef RTYPES_H
 #define RTYPES_H
 
+#include <vector>
+
 #include "common.h"
 #include "3dmaths/f3dmath.h"
 
@@ -51,6 +53,22 @@ namespace P3D
         unsigned short u_mask;
         unsigned short v_mask;
         unsigned short v_shift;
+    };
+
+    class Mesh3d
+    {
+    public:
+        pixel color = 0;
+        Texture* texture = nullptr;
+
+        std::vector<Triangle3d*> tris;
+    };
+
+    class Model3d
+    {
+    public:
+        V3<fp> pos = V3<fp>(0,0,0);
+        std::vector<Mesh3d*> mesh;
     };
 }
 
