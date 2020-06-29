@@ -16,7 +16,7 @@ namespace P3D
         Object3d();
         Object3d(Render* render);
 
-        bool Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov = 54, fp zNear = 5, fp zFar = 1024, pixel* framebuffer = nullptr, fp* zBuffer = nullptr);
+        bool Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov = 54, fp zNear = 5, fp zFar = 1024, pixel* framebuffer = nullptr);
 
         V3<fp>& CameraPos();
         V3<fp>& CameraAngle();
@@ -29,15 +29,21 @@ namespace P3D
 
         void SetFramebuffer(pixel* framebuffer);
 
+        Render* GetRender();
+
     private:
 
         void RenderBsp();
+
+        void UpdateFrustrumAABB();
 
         Render* render = nullptr;
 
         const Model3d* model;
 
         const BspTree* bspTree;
+
+        AABB viewFrustrumBB;
 
         V3<fp> cameraPos = V3<fp>(0,0,0);
         V3<fp> cameraAngle = V3<fp>(0,0,0);

@@ -29,6 +29,8 @@ namespace P3D
         std::vector<BspTriangle*> tris; //Triangles that lie on this plane.
         BspNode* front = nullptr; //Front children.
         BspNode* back = nullptr; //Back children.
+        AABB node_bb; //AABB of the triangles in this node.
+        AABB child_node_bb; //AABB of this node + children.
     };
 
     class BspTree
@@ -37,10 +39,10 @@ namespace P3D
         BspTree() {};
         BspNode* root = nullptr;
 
-        void SortBackToFront(const V3<fp>& p, std::vector<BspTriangle*>& out) const;
+        void SortBackToFront(const V3<fp>& p, const AABB &frustrum, std::vector<BspTriangle*>& out) const;
 
     private:
-        void SortBackToFrontRecursive(const V3<fp>& p, const BspNode* n, std::vector<BspTriangle*>& out) const;
+        void SortBackToFrontRecursive(const V3<fp>& p, const AABB &frustrum, const BspNode* n, std::vector<BspTriangle*>& out) const;
     };
 
     class Bsp3d

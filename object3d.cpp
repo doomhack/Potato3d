@@ -13,11 +13,11 @@ namespace P3D
         this->render = render;
     }
 
-    bool Object3d::Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov, fp zNear, fp zFar, pixel* framebuffer, fp* zBuffer)
+    bool Object3d::Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov, fp zNear, fp zFar, pixel* framebuffer)
     {
         this->render = new Render();
 
-        return render->Setup(screenWidth, screenHeight, hFov, zNear, zFar, framebuffer, zBuffer);
+        return render->Setup(screenWidth, screenHeight, hFov, zNear, zFar, framebuffer);
     }
 
     V3<fp>& Object3d::CameraPos()
@@ -30,9 +30,34 @@ namespace P3D
         return cameraAngle;
     }
 
+    void Object3d::UpdateFrustrumAABB()
+    {
+        viewFrustrumBB = AABB();
+
+        viewFrustrumBB.AddPoint(cameraPos);
+
+        double d2r = (3.14159265358979323846 / 180.0);
+
+        fp sinphi = (float)std::sin((float)cameraAngle.y * d2r);
+        fp cosphi = (float)std::cos((float)cameraAngle.y * d2r);
+
+        fp xl = (-cosphi*1024 - sinphi*1024) + cameraPos.x;
+        fp zl = (sinphi*1024 - cosphi*1024) + cameraPos.z;
+
+        fp xr = ( cosphi*1024 - sinphi*1024) + cameraPos.x;
+        fp zr = (-sinphi*1024 - cosphi*1024) + cameraPos.z;
+
+        V3<fp> xleft(xl, cameraPos.y - 500, zl);
+        V3<fp> xright(xr, cameraPos.y + 500, zr);
+
+        viewFrustrumBB.AddPoint(xleft);
+        viewFrustrumBB.AddPoint(xright);
+
+    }
+
     void Object3d::RenderScene()
     {
-        render->ClearFramebuffer(backgroundColor, true);
+        render->ClearFramebuffer(backgroundColor);
 
         M4<fp>& viewMatrix = render->GetMatrix(MatrixType::View);
 
@@ -43,6 +68,7 @@ namespace P3D
 
         viewMatrix.translate(V3<fp>(-cameraPos.x, -cameraPos.y, -cameraPos.z));
 
+        UpdateFrustrumAABB();
 
         render->BeginFrame();
 
@@ -60,7 +86,7 @@ namespace P3D
 
         std::vector<BspTriangle*> tris;
 
-        bspTree->SortBackToFront(cameraPos, tris);
+        bspTree->SortBackToFront(cameraPos, viewFrustrumBB, tris);
 
         for(unsigned int i = 0; i < tris.size(); i++)
         {
@@ -90,4 +116,10 @@ namespace P3D
     {
         render->SetFramebuffer(framebuffer);
     }
+
+    Render* Object3d::GetRender()
+    {
+        return render;
+    }
+
 }

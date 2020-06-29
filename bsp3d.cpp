@@ -42,26 +42,26 @@ namespace P3D
             return nullptr;
 
         int front = 0, back = 0, on = 0;
-        int best_front, best_back, best_on;
-
         int best_index = 0;
 
-        BspPlane best_plane = CheckPlane(triangles, 0, best_front, best_back, best_on);
+        int best_score = 0; //Higher is worse!
+
+        BspPlane best_plane = CheckPlane(triangles, 0, front, back, on);
+
+        best_score = pAbs(back - front) + (back + front + on)*10;
 
         for(unsigned int i = 0; i < triangles.size(); i++)
         {
             BspPlane plane = CheckPlane(triangles, i, front, back, on);
 
-            int total_tris = back+front+on;
-            int diff = pAbs(back-front);
+            int score = pAbs(back - front) + (back + front + on)*10;
 
-            int best_tris = best_back + best_front + best_on;
-            int best_diff = pAbs(best_back - best_front);
-
-            if ((total_tris < best_tris) || ((total_tris == best_tris) && (diff < best_diff)))
+            if (score < best_score)
             {
                 best_plane = plane;
                 best_index = i;
+
+                best_score = score;
             }
         }
 
@@ -73,8 +73,22 @@ namespace P3D
 
         SeperateTriangles(best_plane, triangles, front_tris, back_tris, node->tris);
 
+        for(unsigned int i = 0; i < node->tris.size(); i++)
+        {
+            node->node_bb.AddTriangle(*node->tris[i]->tri);
+        }
+
+        node->child_node_bb.AddAABB(node->node_bb);
+
         node->back = BuildTreeRecursive(back_tris);
         node->front = BuildTreeRecursive(front_tris);
+
+        if(node->back)
+            node->child_node_bb.AddAABB(node->back->child_node_bb);
+
+        if(node->front)
+            node->child_node_bb.AddAABB(node->front->child_node_bb);
+
 
         return node;
     }
@@ -692,27 +706,36 @@ namespace P3D
     }
 
 
-    void BspTree::SortBackToFront(const V3<fp>& p, std::vector<BspTriangle*>& out) const
+    void BspTree::SortBackToFront(const V3<fp>& p, const AABB& frustrum, std::vector<BspTriangle*>& out) const
     {
-        SortBackToFrontRecursive(p, this->root, out);
+        SortBackToFrontRecursive(p, frustrum ,this->root, out);
     }
 
 
-    void BspTree::SortBackToFrontRecursive(const V3<fp>& p, const BspNode* n, std::vector<BspTriangle*>& out) const
+    void BspTree::SortBackToFrontRecursive(const V3<fp>& p, const AABB& frustrum, const BspNode* n, std::vector<BspTriangle*>& out) const
     {
         if (!n) return;
 
+        if(!frustrum.Intersect(n->child_node_bb))
+            return;
+
         if (Bsp3d::Distance(n->plane, p) < 0)
         {
-            SortBackToFrontRecursive(p, n->front, out);
-            out.insert(out.end(), n->tris.begin(), n->tris.end());
-            SortBackToFrontRecursive(p, n->back, out);
+            SortBackToFrontRecursive(p, frustrum, n->front, out);
+
+            if(frustrum.Intersect(n->node_bb))
+                out.insert(out.end(), n->tris.begin(), n->tris.end());
+
+            SortBackToFrontRecursive(p, frustrum, n->back, out);
         }
         else
         {
-            SortBackToFrontRecursive(p, n->back, out);
-            out.insert(out.end(), n->tris.begin(), n->tris.end());
-            SortBackToFrontRecursive(p, n->front, out);
+            SortBackToFrontRecursive(p, frustrum, n->back, out);
+
+            if(frustrum.Intersect(n->node_bb))
+                out.insert(out.end(), n->tris.begin(), n->tris.end());
+
+            SortBackToFrontRecursive(p, frustrum, n->front, out);
         }
     }
 }
