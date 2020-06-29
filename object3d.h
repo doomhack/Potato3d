@@ -29,15 +29,21 @@ namespace P3D
 
         void SetFramebuffer(pixel* framebuffer);
 
+        Render* GetRender();
+
     private:
 
         void RenderBsp();
+
+        void UpdateFrustrumAABB();
 
         Render* render = nullptr;
 
         const Model3d* model;
 
         const BspTree* bspTree;
+
+        AABB viewFrustrumBB;
 
         V3<fp> cameraPos = V3<fp>(0,0,0);
         V3<fp> cameraAngle = V3<fp>(0,0,0);

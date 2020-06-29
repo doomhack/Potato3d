@@ -7,6 +7,8 @@
 
 #include "../bsp3d.h"
 
+#include "../rtypes.h"
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
@@ -27,7 +29,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     object3d->SetBackgroundColor(qRgb(0,255,255));
 
-    P3D::Model3d* runway = LoadObjFile("://models/temple2.obj", "://models/temple2.mtl");
+    P3D::Model3d* runway = LoadObjFile("://models/temple.obj", "://models/temple.mtl");
     object3d->SetModel(runway);
 
     SaveModel(runway);
@@ -64,6 +66,8 @@ void MainWindow::paintEvent(QPaintEvent *event)
 
     unsigned int elapsed = fpsTimer.elapsed();
 
+    P3D::RenderStats rs = object3d->GetRender()->GetRenderStats();
+
     if(elapsed > 1000)
     {
         currentFps = qRound((double)frameCount / ((double)elapsed / 1000.0));
@@ -79,6 +83,11 @@ void MainWindow::paintEvent(QPaintEvent *event)
 
     p.drawText(32,32, QString("FPS: %1").arg(currentFps));
     p.drawText(32,48, QString("Ave Render Time: %1ms").arg(aveRtime));
+
+    p.drawText(32,64, QString("Triangles submitted: %1").arg(rs.triangles_submitted));
+    p.drawText(32,80, QString("Triangles drawn: %1").arg(rs.triangles_drawn));
+    p.drawText(32,96, QString("Vertexes transformed: %1").arg(rs.vertex_transformed));
+
 
 
     this->update();
