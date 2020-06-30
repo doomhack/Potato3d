@@ -71,11 +71,16 @@ namespace P3D
         std::vector<BspTriangle*> front_tris;
         std::vector<BspTriangle*> back_tris;
 
-        SeperateTriangles(best_plane, triangles, front_tris, back_tris, node->tris);
+        SeperateTriangles(best_plane, triangles, front_tris, back_tris, node->front_tris, node->back_tris);
 
-        for(unsigned int i = 0; i < node->tris.size(); i++)
+        for(unsigned int i = 0; i < node->front_tris.size(); i++)
         {
-            node->node_bb.AddTriangle(*node->tris[i]->tri);
+            node->node_bb.AddTriangle(*node->front_tris[i]->tri);
+        }
+
+        for(unsigned int i = 0; i < node->back_tris.size(); i++)
+        {
+            node->node_bb.AddTriangle(*node->back_tris[i]->tri);
         }
 
         node->child_node_bb.AddAABB(node->node_bb);
@@ -93,7 +98,7 @@ namespace P3D
         return node;
     }
 
-    void Bsp3d::SeperateTriangles(BspPlane& plane, std::vector<BspTriangle*>& triangles, std::vector<BspTriangle*>& front_tris, std::vector<BspTriangle*>& back_tris, std::vector<BspTriangle*>& plane_tris)
+    void Bsp3d::SeperateTriangles(BspPlane& plane, std::vector<BspTriangle*>& triangles, std::vector<BspTriangle*>& front_tris, std::vector<BspTriangle*>& back_tris, std::vector<BspTriangle*>& plane_tris_front, std::vector<BspTriangle *> &plane_tris_back)
     {
         for(unsigned int i = 0; i < triangles.size(); i++)
         {
@@ -152,8 +157,19 @@ namespace P3D
                     break;
 
                 case SplitType( 0,  0,  0):
-                    plane_tris.push_back(triangles[i]);
-                    break;
+                {
+                    //Figure out if triangle faces the same way as the BSP plane.
+                    V3<fp> edge1 = triangles[i]->tri->verts[1].pos - triangles[i]->tri->verts[0].pos;
+                    V3<fp> edge2 = triangles[i]->tri->verts[2].pos - triangles[i]->tri->verts[1].pos;
+
+                    V3<fp> normal = edge1.CrossProductNormalised(edge2);
+
+                    if(plane.normal.DotProduct(normal) < 0)
+                        plane_tris_back.push_back(triangles[i]);
+                    else
+                        plane_tris_front.push_back(triangles[i]);
+                }
+                break;
 
                 case SplitType( 1, -1,  0):
                 {
@@ -706,13 +722,13 @@ namespace P3D
     }
 
 
-    void BspTree::SortBackToFront(const V3<fp>& p, const AABB& frustrum, std::vector<BspTriangle*>& out) const
+    void BspTree::SortBackToFront(const V3<fp>& p, const AABB& frustrum, std::vector<BspTriangle*>& out, bool backface_cull) const
     {
-        SortBackToFrontRecursive(p, frustrum ,this->root, out);
+        SortBackToFrontRecursive(p, frustrum ,this->root, out, backface_cull);
     }
 
 
-    void BspTree::SortBackToFrontRecursive(const V3<fp>& p, const AABB& frustrum, const BspNode* n, std::vector<BspTriangle*>& out) const
+    void BspTree::SortBackToFrontRecursive(const V3<fp>& p, const AABB& frustrum, const BspNode* n, std::vector<BspTriangle*>& out, bool backface_cull) const
     {
         if (!n) return;
 
@@ -721,21 +737,31 @@ namespace P3D
 
         if (Bsp3d::Distance(n->plane, p) < 0)
         {
-            SortBackToFrontRecursive(p, frustrum, n->front, out);
+            SortBackToFrontRecursive(p, frustrum, n->front, out, backface_cull);
 
             if(frustrum.Intersect(n->node_bb))
-                out.insert(out.end(), n->tris.begin(), n->tris.end());
+            {
+                out.insert(out.end(), n->front_tris.begin(), n->front_tris.end());
 
-            SortBackToFrontRecursive(p, frustrum, n->back, out);
+                if(!backface_cull)
+                    out.insert(out.end(), n->back_tris.begin(), n->back_tris.end());
+            }
+
+            SortBackToFrontRecursive(p, frustrum, n->back, out, backface_cull);
         }
         else
         {
-            SortBackToFrontRecursive(p, frustrum, n->back, out);
+            SortBackToFrontRecursive(p, frustrum, n->back, out, backface_cull);
 
             if(frustrum.Intersect(n->node_bb))
-                out.insert(out.end(), n->tris.begin(), n->tris.end());
+            {
+                out.insert(out.end(), n->back_tris.begin(), n->back_tris.end());
 
-            SortBackToFrontRecursive(p, frustrum, n->front, out);
+                if(!backface_cull)
+                    out.insert(out.end(), n->front_tris.begin(), n->front_tris.end());
+            }
+
+            SortBackToFrontRecursive(p, frustrum, n->front, out, backface_cull);
         }
     }
 }

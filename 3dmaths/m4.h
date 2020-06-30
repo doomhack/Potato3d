@@ -333,7 +333,7 @@ namespace P3D
             }
             else
             {
-                T a = d2r(angle);
+                T a = pD2R(angle);
                 c = std::cos((float)a);
                 s = std::sin((float)a);
 
@@ -379,7 +379,7 @@ namespace P3D
             }
             else
             {
-                T a = d2r(angle);
+                T a = pD2R(angle);
                 c = std::cos((float)a);
                 s = std::sin((float)a);
 
@@ -423,7 +423,7 @@ namespace P3D
             }
             else
             {
-                T a = d2r(angle);
+                T a = pD2R(angle);
                 c = std::cos((float)a);
                 s = std::sin((float)a);
             }
@@ -450,7 +450,7 @@ namespace P3D
 
             // Construct the projection.
             M4 m;
-            float radians = d2r(verticalAngle / 2);
+            float radians = pD2R(verticalAngle / 2);
             float sine = std::sin(radians);
 
             if (sine == 0)
@@ -487,13 +487,7 @@ namespace P3D
     private:
         T m[4][4];
 
-        constexpr T d2r(T degrees) const
-        {
-            const T pi((3.14159265358979323846f));
 
-            return (degrees * pi) / 180;
-            //return degrees * T((float)M_PI/180);
-        }
 
         unsigned int flags;
     };

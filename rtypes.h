@@ -187,6 +187,14 @@ namespace P3D
         unsigned int triangles_submitted;
         unsigned int triangles_drawn;
     } RenderStats;
+
+    typedef enum RenderFlags
+    {
+        NoFlags = 0u,
+        PerspectiveCorrect = 1u,
+        Alpha = 2u,
+        NoBackfaceCull = 4u,
+    } RenderFlags;
 }
 
 #endif // RTYPES_H

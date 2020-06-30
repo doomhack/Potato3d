@@ -48,6 +48,10 @@ namespace P3D
         V3<fp> cameraPos = V3<fp>(0,0,0);
         V3<fp> cameraAngle = V3<fp>(0,0,0);
         pixel backgroundColor = 0;
+
+        RenderFlags renderFlags = RenderFlags::NoFlags;
+
+        V3<fp> frustrumPoints[2]; //Top left and bottom-right frustrum points.
     };
 }
 

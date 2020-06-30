@@ -50,13 +50,7 @@ namespace P3D
         Projection
     } MatrixType;
 
-    typedef enum RenderFlags
-    {
-        NoFlags = 0u,
-        PerspectiveCorrect = 1u,
-        Alpha = 2u,
-        NoBackfaceCull = 4u,
-    } RenderFlags;
+
 
     typedef enum ClipPlane
     {
@@ -125,7 +119,6 @@ namespace P3D
         void SortPointsByY(Vertex2d points[]);
 
         Vertex2d TransformVertex(const Vertex3d* vertex);
-        bool IsTriangleFrontface(const Vertex2d screenSpacePoints[]);
 
         void LerpVertexXYZWUV(Vertex2d& out, const Vertex2d& left, const Vertex2d& right, fp frac);
 

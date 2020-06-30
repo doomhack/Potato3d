@@ -5,7 +5,7 @@ namespace P3D
 {
     Object3d::Object3d()
     {
-
+        renderFlags = (RenderFlags)(0);
     }
 
     Object3d::Object3d(Render* render)
@@ -16,6 +16,12 @@ namespace P3D
     bool Object3d::Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov, fp zNear, fp zFar, pixel* framebuffer)
     {
         this->render = new Render();
+
+        fp halfFrustrumWidth = zFar * std::tan((float)pD2R(fp(45)));
+        fp halfFrustrumHeight = zFar * std::tan((float)pD2R(pASR(hFov, 1)));
+
+        frustrumPoints[0] = V3<fp>(-halfFrustrumWidth, -halfFrustrumHeight, -zFar);
+        frustrumPoints[1] = V3<fp>(halfFrustrumWidth, halfFrustrumHeight, -zFar);
 
         return render->Setup(screenWidth, screenHeight, hFov, zNear, zFar, framebuffer);
     }
@@ -34,25 +40,21 @@ namespace P3D
     {
         viewFrustrumBB = AABB();
 
+        M4<fp> camMatrix;
+        camMatrix.setToIdentity();
+        camMatrix.translate(V3<fp>(cameraPos.x,cameraPos.y,cameraPos.z));
+
+        camMatrix.rotateX(cameraAngle.x);
+        camMatrix.rotateY(cameraAngle.y);
+        camMatrix.rotateZ(cameraAngle.z);
+
         viewFrustrumBB.AddPoint(cameraPos);
 
-        double d2r = (3.14159265358979323846 / 180.0);
+        V4<fp> t1 = camMatrix * frustrumPoints[0];
+        V4<fp> t2 = camMatrix * frustrumPoints[1];
 
-        fp sinphi = (float)std::sin((float)cameraAngle.y * d2r);
-        fp cosphi = (float)std::cos((float)cameraAngle.y * d2r);
-
-        fp xl = (-cosphi*1024 - sinphi*1024) + cameraPos.x;
-        fp zl = (sinphi*1024 - cosphi*1024) + cameraPos.z;
-
-        fp xr = ( cosphi*1024 - sinphi*1024) + cameraPos.x;
-        fp zr = (-sinphi*1024 - cosphi*1024) + cameraPos.z;
-
-        V3<fp> xleft(xl, cameraPos.y - 500, zl);
-        V3<fp> xright(xr, cameraPos.y + 500, zr);
-
-        viewFrustrumBB.AddPoint(xleft);
-        viewFrustrumBB.AddPoint(xright);
-
+        viewFrustrumBB.AddPoint(V3<fp>(t1.x, t1.y, t1.z));
+        viewFrustrumBB.AddPoint(V3<fp>(t2.x, t2.y, t2.z));
     }
 
     void Object3d::RenderScene()
@@ -86,13 +88,15 @@ namespace P3D
 
         std::vector<BspTriangle*> tris;
 
-        bspTree->SortBackToFront(cameraPos, viewFrustrumBB, tris);
+        bool backface_cull = !(renderFlags & NoBackfaceCull);
+
+        bspTree->SortBackToFront(cameraPos, viewFrustrumBB, tris, backface_cull);
 
         for(unsigned int i = 0; i < tris.size(); i++)
         {
             BspTriangle* tri = tris[i];
 
-            render->DrawTriangle(tri->tri, tri->texture, tri->color, (RenderFlags)(PerspectiveCorrect));
+            render->DrawTriangle(tri->tri, tri->texture, tri->color, renderFlags);
         }
 
         render->EndObject();

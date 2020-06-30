@@ -308,13 +308,6 @@ namespace P3D
             }
         }
 
-        //Backface cull here.
-        if(!(flags & RenderFlags::NoBackfaceCull))
-        {
-            if(!IsTriangleFrontface(screenSpacePoints))
-                return;
-        }
-
         for(int i = 0; i < 3; i++)
         {
             screenSpacePoints[i].pos.x = fracToX(screenSpacePoints[i].pos.x);
@@ -332,18 +325,6 @@ namespace P3D
         else
             DrawTriangleSplitFlat(screenSpacePoints, color, flags);
     }
-
-    bool Render::IsTriangleFrontface(const Vertex2d screenSpacePoints[])
-    {
-        fp x1 = (screenSpacePoints[0].pos.x - screenSpacePoints[1].pos.x);
-        fp y1 = (screenSpacePoints[1].pos.y - screenSpacePoints[0].pos.y);
-
-        fp x2 = (screenSpacePoints[1].pos.x - screenSpacePoints[2].pos.x);
-        fp y2 = (screenSpacePoints[2].pos.y - screenSpacePoints[1].pos.y);
-
-        return ((x1 * y2) - (y1 * x2)) > 0;
-    }
-
 
     void Render::DrawTriangleSplit(Vertex2d *points, const Texture *texture, const RenderFlags flags)
     {

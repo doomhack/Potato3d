@@ -6,6 +6,14 @@
 namespace P3D
 {
     template <class T>
+    constexpr inline T pD2R(T degrees)
+    {
+        const T pi((3.14159265358979323846f));
+
+        return (degrees * pi) / 180;
+    }
+
+    template <class T>
     constexpr inline T pLerp(T a, T b, T frac)
     {
 

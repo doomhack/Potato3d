@@ -26,7 +26,8 @@ namespace P3D
     {
     public:
         BspPlane plane; //Plane that this node splits on.
-        std::vector<BspTriangle*> tris; //Triangles that lie on this plane.
+        std::vector<BspTriangle*> back_tris; //Back facing triangles that lie on this plane.
+        std::vector<BspTriangle*> front_tris; //Triangles that lie on this plane.
         BspNode* front = nullptr; //Front children.
         BspNode* back = nullptr; //Back children.
         AABB node_bb; //AABB of the triangles in this node.
@@ -39,10 +40,10 @@ namespace P3D
         BspTree() {};
         BspNode* root = nullptr;
 
-        void SortBackToFront(const V3<fp>& p, const AABB &frustrum, std::vector<BspTriangle*>& out) const;
+        void SortBackToFront(const V3<fp>& p, const AABB &frustrum, std::vector<BspTriangle*>& out, bool backface_cull = true) const;
 
     private:
-        void SortBackToFrontRecursive(const V3<fp>& p, const AABB &frustrum, const BspNode* n, std::vector<BspTriangle*>& out) const;
+        void SortBackToFrontRecursive(const V3<fp>& p, const AABB &frustrum, const BspNode* n, std::vector<BspTriangle*>& out, bool backface_cull) const;
     };
 
     class Bsp3d
@@ -58,7 +59,7 @@ namespace P3D
         BspNode* BuildTreeRecursive(std::vector<BspTriangle*>& triangles);
 
 
-        void SeperateTriangles(BspPlane& plane, std::vector<BspTriangle*>& triangles, std::vector<BspTriangle*>& front_tris, std::vector<BspTriangle*>& back_tris, std::vector<BspTriangle*>& plane_tris);
+        void SeperateTriangles(BspPlane& plane, std::vector<BspTriangle*>& triangles, std::vector<BspTriangle*>& front_tris, std::vector<BspTriangle*>& back_tris, std::vector<BspTriangle*>& plane_tris_front, std::vector<BspTriangle*>& plane_tris_back);
 
         BspPlane CheckPlane(std::vector<BspTriangle*>& triangles, unsigned int index, int& front, int& back, int& onplane);
 
