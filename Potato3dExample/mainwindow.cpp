@@ -25,11 +25,11 @@ MainWindow::MainWindow(QWidget *parent)
 
     object3d = new P3D::Object3d();
 
-    object3d->Setup(screenWidth, screenHeight, 54, 25, 1024, (P3D::pixel*)frameBufferImage.bits());
+    object3d->Setup(screenWidth, screenHeight, 54, 25, 2048, (P3D::pixel*)frameBufferImage.bits());
 
     object3d->SetBackgroundColor(qRgb(104,96,73));
 
-    P3D::Model3d* runway = LoadObjFile("://models/temple.obj", "://models/temple.mtl");
+    P3D::Model3d* runway = LoadObjFile(":/models/GE_Facility/facility.obj", ":/models/GE_Facility/facility.mtl");
     object3d->SetModel(runway);
 
     SaveModel(runway);
@@ -210,7 +210,7 @@ P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
             {
                 P3D::Texture* t = new P3D::Texture();
 
-                QImage* image = new QImage("://models/" + lastBit);
+                QImage* image = new QImage(":/models/GE_Facility/" + lastBit);
 
 #ifndef FB_32BIT
                 *image = image->convertToFormat(QImage::Format_RGB555);
@@ -226,6 +226,9 @@ P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
                     t->v_mask = t->height-1;
 
                     t->v_shift = 0;
+
+                    if(lastBit.left(2) == "A_")
+                        t->alpha = 1;
 
                     while( (1 << t->v_shift) < t->width)
                         t->v_shift++;

@@ -53,6 +53,7 @@ namespace P3D
         unsigned short u_mask;
         unsigned short v_mask;
         unsigned short v_shift;
+        unsigned short alpha;
     };
 
     class Mesh3d

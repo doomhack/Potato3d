@@ -326,7 +326,7 @@ namespace P3D
             DrawTriangleSplitFlat(screenSpacePoints, color, flags);
     }
 
-    void Render::DrawTriangleSplit(Vertex2d *points, const Texture *texture, const RenderFlags flags)
+    void Render::DrawTriangleSplit(Vertex2d *points, const Texture *texture, RenderFlags flags)
     {
         if(flags & PerspectiveCorrect)
         {
@@ -334,6 +334,9 @@ namespace P3D
             points[1].toPerspectiveCorrect();
             points[2].toPerspectiveCorrect();
         }
+
+        if(texture->alpha)
+            flags = (RenderFlags)(flags | RenderFlags::Alpha);
 
         if(points[1].pos.y == points[2].pos.y)
         {

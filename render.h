@@ -100,7 +100,7 @@ namespace P3D
 
         fp GetLineIntersectionFrac(const fp a1, const fp a2, const fp b1, const fp b2);
 
-        void DrawTriangleSplit(Vertex2d *points, const Texture *texture, const RenderFlags flags);
+        void DrawTriangleSplit(Vertex2d *points, const Texture *texture, RenderFlags flags);
         void DrawTriangleTop(const Vertex2d *points, const Texture *texture, const RenderFlags flags);
         void DrawTriangleBottom(const Vertex2d *points, const Texture *texture, const RenderFlags flags);
 
