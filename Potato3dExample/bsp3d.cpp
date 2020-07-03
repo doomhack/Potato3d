@@ -840,6 +840,7 @@ namespace P3D
                     bmt.texture = modelTextureList.length();
 
                     modelTextureList.append(bnt);
+                    textureList.append(tex);
                 }
 
                 modelTriList.append(bmt);
@@ -882,6 +883,7 @@ namespace P3D
                     bmt.texture = modelTextureList.length();
 
                     modelTextureList.append(bnt);
+                    textureList.append(tex);
                 }
 
                 modelTriList.append(bmt);
@@ -935,7 +937,7 @@ namespace P3D
         }
 
         bspModel->header.texture_pixels_offset = buffer.pos();
-        buffer.write(texturePixels);
+        buffer.write(texturePixels.data(), texturePixels.length());
 
         //Now overwrite the header with offsets.
         BspModelHeader* hdr = (BspModelHeader*)bytes->data();

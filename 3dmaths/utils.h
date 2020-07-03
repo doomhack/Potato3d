@@ -3,6 +3,10 @@
 
 #include "fp.h"
 
+#ifdef __arm__
+    #include <gba_dma.h>
+#endif
+
 namespace P3D
 {
     template <class T>
@@ -69,6 +73,18 @@ namespace P3D
             return v;
 
         return -v;
+    }
+
+    inline void FastFill32(unsigned int* dest, unsigned int value, unsigned int words)
+    {
+#ifndef __arm__
+        while(words--)
+        {
+            *dest++ = value;
+        }
+#else
+        DMA3COPY(&value, dest, DMA_SRC_FIXED | DMA_DST_INC | DMA32 | DMA_IMMEDIATE | words)
+#endif
     }
 }
 

@@ -32,85 +32,6 @@ void I_FinishUpdate_e32()
     REG_DISPCNT ^= DCNT_PAGE;
 }
 
-#pragma pack(push,1)
-
-
-typedef struct FileModel
-{
-    unsigned int mesh_count;
-    P3D::V3<P3D::fp> pos;
-} FileModel;
-
-typedef struct FileTexture
-{
-    unsigned int width;
-    unsigned int height;
-    unsigned int u_mask;
-    unsigned int v_mask;
-    unsigned int v_shift;
-    //unsigned short pixels[width * height];
-} FileTexture;
-
-typedef struct FileMesh
-{
-    unsigned int color;
-    unsigned int has_texture;
-    unsigned int triangle_count;
-    //P3D::Triangle3d triangles[triangle_count];
-} FileMesh;
-
-#pragma pack(pop)
-
-P3D::Model3d* LoadM3dData(const unsigned char* data)
-{
-    P3D::Model3d* model = new P3D::Model3d();
-
-
-    FileModel* fm = (FileModel*)data;
-
-    model->pos = fm->pos;
-
-    FileMesh* fms = (FileMesh*)&fm[1];
-
-    for(unsigned int i = 0; i < fm->mesh_count; i++)
-    {
-        P3D::Mesh3d* mesh = new P3D::Mesh3d();
-        mesh->color = fms->color;
-
-        P3D::Triangle3d* t = (P3D::Triangle3d*)&fms[1];
-
-        for(unsigned int j = 0; j < fms->triangle_count; j++)
-        {
-            mesh->tris.push_back(&t[j]);
-        }
-
-        if(fms->has_texture)
-        {
-            FileTexture* ft = (FileTexture*)&t[fms->triangle_count];
-
-            mesh->texture = new P3D::Texture;
-            mesh->texture->width = ft->width;
-            mesh->texture->height = ft->height;
-
-            mesh->texture->u_mask = ft->u_mask;
-            mesh->texture->v_mask = ft->v_mask;
-            mesh->texture->v_shift = ft->v_shift;
-
-            mesh->texture->pixels = (P3D::pixel*)&ft[1];
-
-            fms = (FileMesh*)&mesh->texture->pixels[ft->width * ft->height];
-        }
-        else
-        {
-            fms = (FileMesh*)&t[fms->triangle_count];
-        }
-
-        model->mesh.push_back(mesh);
-    }
-
-    return model;
-}
-
 P3D::Object3d* obj3d = nullptr;
 
 void PollKeys()
@@ -157,7 +78,7 @@ int main()
 
     obj3d->Setup(160, 128, 54, 25, 1024, I_GetBackBuffer());
 
-    P3D::Model3d* runway = LoadM3dData(modeldata);
+    const P3D::BspModel* runway = (const P3D::BspModel*)modeldata;
     obj3d->SetModel(runway);
 
     while(true)

@@ -76,10 +76,14 @@ namespace P3D
 
     void Render::ClearFramebuffer(pixel color)
     {
-        const unsigned int buffSize = fbSize.x*fbSize.y;
+        const unsigned int buffSize = fbSize.x * fbSize.y * sizeof(pixel);
+#ifdef FB_32
+        FastFill32((unsigned int*)frameBuffer, color, buffSize >> 2);
+#else
+        unsigned int c32 = color;
 
-        for(unsigned int i = 0; i < buffSize; i++)
-            frameBuffer[i] = color;
+        FastFill32((unsigned int*)frameBuffer, c32 | c32 << 16, buffSize >> 2);
+#endif
     }
 
     void Render::UpdateTransformMatrix()
@@ -811,8 +815,11 @@ namespace P3D
         if( (x_end < x_start) || (x_end <= 0) || (x_start >= fbSize.x) )
             return;
 
-        fp u = pos.u_left, v = pos.v_left;
-        fp du = delta.u, dv = delta.v;
+        if(x_end > fbSize.x)
+            x_end = fbSize.x;
+
+        fp u = pos.u_left, v = pos.v_left << (unsigned int)texture->v_shift;
+        fp du = delta.u, dv = delta.v << (unsigned int)texture->v_shift;
 
         if(x_start < 0)
         {
@@ -822,36 +829,27 @@ namespace P3D
             x_start = 0;
         }
 
-        if(x_end > fbSize.x)
-            x_end = fbSize.x;
+        unsigned int count = (x_end - x_start);
 
-        int count = (x_end - x_start);
+        pixel* fb = &frameBuffer[((y * fbSize.x) + x_start)];
 
-        int buffOffset = ((y * fbSize.x) + x_start);
-        pixel* fb = &frameBuffer[buffOffset];
-
-        unsigned int umask = texture->u_mask;
-        unsigned int vmask = texture->v_mask;
-        unsigned int vshift = texture->v_shift;
+        const unsigned int umask = texture->u_mask;
+        const unsigned int vmask = texture->v_mask << texture->v_shift;
         const pixel* t_pxl = texture->pixels;
 
         do
         {
-
-            int tx = u;
-            int ty = v;
+            unsigned int tx = (int)u;
+            unsigned int ty = (int)v;
 
             tx = tx & umask;
             ty = ty & vmask;
-
-            *fb = t_pxl[(ty << vshift) | tx];
-
-            fb++;
+            *fb++ = t_pxl[ty | tx];
 
             u += du;
             v += dv;
 
-        } while(--count);
+        } while(count--);
     }
 
     void Render::DrawTriangleScanlineLinearAlpha(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture)

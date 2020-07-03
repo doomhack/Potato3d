@@ -23,8 +23,7 @@ SOURCES += \
     ../render.cpp \
     bsp3d.cpp \
     main.cpp \
-    mainwindow.cpp \
-    models/model.cpp
+    mainwindow.cpp
 
 HEADERS += \
     ../3dmaths/divide.h \

@@ -7,10 +7,10 @@ namespace P3D
 {
     #define RENDER_STATS
 
-    #define USE_FLOAT
+    //#define USE_FLOAT
 
 #ifndef __arm__
-    #define FB_32BIT //RGBX888 framebuffer format.
+    //#define FB_32BIT //RGBX888 framebuffer format.
 #endif
 
     #define FAST_LERP

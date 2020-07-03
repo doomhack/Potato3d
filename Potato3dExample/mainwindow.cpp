@@ -30,7 +30,6 @@ MainWindow::MainWindow(QWidget *parent)
     object3d->SetBackgroundColor(qRgb(104,96,73));
 
     P3D::Model3d* runway = LoadObjFile(":/models/temple.obj", ":/models/temple.mtl");
-    //object3d->SetModel(runway);
 
     P3D::Bsp3d* bsp = new P3D::Bsp3d;
 
@@ -39,19 +38,11 @@ MainWindow::MainWindow(QWidget *parent)
     QByteArray* ba = new QByteArray;
     bspTree->SaveBspTree(ba);
 
+    SaveBytesAsCFile(ba, "C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\model.cpp");
+
     const P3D::BspModel* bspModel = (P3D::BspModel*)ba->constData();
 
     object3d->SetModel(bspModel);
-
-
-    SaveBytesAsCFile(ba, "C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\model_bsp.cpp");
-
-
-    //SaveModel(runway);
-
-    //P3D::Model3d* runway = LoadM3dData(modeldata);
-    //object3d->AddModel(runway);
-
 }
 
 MainWindow::~MainWindow()
@@ -330,147 +321,6 @@ P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
 
     if(currentMesh->tris.size())
         model->mesh.push_back(currentMesh);
-
-    return model;
-}
-
-#pragma pack(push,1)
-
-
-typedef struct FileModel
-{
-    unsigned int mesh_count;
-    P3D::V3<P3D::fp> pos;
-} FileModel;
-
-typedef struct FileTexture
-{
-    unsigned int width;
-    unsigned int height;
-    unsigned int u_mask;
-    unsigned int v_mask;
-    unsigned int v_shift;
-    //unsigned short pixels[width * height];
-} FileTexture;
-
-typedef struct FileMesh
-{
-    unsigned int color;
-    unsigned int has_texture;
-    unsigned int triangle_count;
-    //P3D::Triangle3d triangles[triangle_count];
-} FileMesh;
-
-#pragma pack(pop)
-
-#define RGB8(r,g,b)	( (((b)>>3)<<10) | (((g)>>3)<<5) | ((r)>>3) )
-
-void MainWindow::SaveModel(P3D::Model3d* model)
-{
-    QByteArray byteArray;
-    QBuffer buffer(&byteArray);
-    buffer.open(QIODevice::WriteOnly);
-
-    FileModel fm;
-    fm.pos = model->pos;
-    fm.mesh_count = model->mesh.size();
-
-    buffer.write((const char*)&fm, sizeof(fm));
-
-    for(unsigned int i = 0; i < model->mesh.size(); i++)
-    {
-        P3D::Mesh3d* mesh = model->mesh[i];
-
-        FileMesh fms;
-        fms.color = mesh->color;
-        fms.has_texture = mesh->texture != nullptr;
-        fms.triangle_count = mesh->tris.size();
-
-        buffer.write((const char*)&fms, sizeof(fms));
-
-        for(unsigned int j = 0; j < mesh->tris.size(); j++)
-        {
-            buffer.write((const char*)mesh->tris[j], sizeof(P3D::Triangle3d));
-        }
-
-        if(fms.has_texture)
-        {
-            FileTexture ft;
-
-            ft.width = mesh->texture->width;
-            ft.height = mesh->texture->height;
-            ft.u_mask = mesh->texture->u_mask;
-            ft.v_mask = mesh->texture->v_mask;
-            ft.v_shift = mesh->texture->v_shift;
-
-            buffer.write((const char*)&ft, sizeof(ft));
-
-            for(unsigned int k = 0; k < ft.width * ft.height; k++)
-            {
-                QRgb p8 = mesh->texture->pixels[k];
-
-                unsigned int r = qRed(p8);
-                unsigned int g = qGreen(p8);
-                unsigned int b = qBlue(p8);
-
-                P3D::pixel p5 = RGB8(r,g,b);
-
-                buffer.write((const char*)&p5, sizeof(unsigned short));
-            }
-        }
-    }
-
-    buffer.close();
-
-    SaveBytesAsCFile(&byteArray, "C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\model.cpp");
-}
-
-P3D::Model3d* MainWindow::LoadM3dData(const unsigned char* data)
-{
-    P3D::Model3d* model = new P3D::Model3d();
-
-
-    FileModel* fm = (FileModel*)data;
-
-    model->pos = fm->pos;
-
-    FileMesh* fms = (FileMesh*)&fm[1];
-
-    for(unsigned int i = 0; i < fm->mesh_count; i++)
-    {
-        P3D::Mesh3d* mesh = new P3D::Mesh3d();
-        mesh->color = fms->color;
-
-        P3D::Triangle3d* t = (P3D::Triangle3d*)&fms[1];
-
-        for(unsigned int j = 0; j < fms->triangle_count; j++)
-        {
-            mesh->tris.push_back(&t[j]);
-        }
-
-        if(fms->has_texture)
-        {
-            FileTexture* ft = (FileTexture*)&t[fms->triangle_count];
-
-            mesh->texture = new P3D::Texture;
-            mesh->texture->width = ft->width;
-            mesh->texture->height = ft->height;
-
-            mesh->texture->u_mask = ft->u_mask;
-            mesh->texture->v_mask = ft->v_mask;
-            mesh->texture->v_shift = ft->v_shift;
-
-            mesh->texture->pixels = (P3D::pixel*)&ft[1];
-
-            fms = (FileMesh*)&mesh->texture->pixels[ft->width * ft->height];
-        }
-        else
-        {
-            fms = (FileMesh*)&t[fms->triangle_count];
-        }
-
-        model->mesh.push_back(mesh);
-    }
 
     return model;
 }

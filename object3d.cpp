@@ -5,7 +5,7 @@ namespace P3D
 {
     Object3d::Object3d()
     {
-        renderFlags = (RenderFlags)(0);
+        renderFlags = (RenderFlags)(PerspectiveCorrect);
     }
 
     Object3d::Object3d(Render* render)
@@ -104,6 +104,7 @@ namespace P3D
             tex.height = ntex->height;
             tex.u_mask = ntex->u_mask;
             tex.v_mask = ntex->v_mask;
+            tex.v_shift = ntex ->v_shift;
             tex.pixels = model->GetTexturePixels(ntex->texture_pixels_offset);
 
             render->DrawTriangle(&tri->tri, &tex, tri->color, renderFlags);
