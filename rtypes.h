@@ -196,6 +196,12 @@ namespace P3D
         Alpha = 2u,
         NoBackfaceCull = 4u,
     } RenderFlags;
+
+    typedef struct BspPlane
+    {
+        V3<fp> normal;
+        fp plane;
+    } BspPlane;
 }
 
 #endif // RTYPES_H

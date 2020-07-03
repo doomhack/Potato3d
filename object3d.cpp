@@ -81,34 +81,40 @@ namespace P3D
 
     void Object3d::RenderBsp()
     {
-        if(bspTree == nullptr)
+        if(model == nullptr)
             return;
 
         render->BeginObject();
 
-        std::vector<BspTriangle*> tris;
+        std::vector<const BspModelTriangle*> tris;
 
         bool backface_cull = !(renderFlags & NoBackfaceCull);
 
-        bspTree->SortBackToFront(cameraPos, viewFrustrumBB, tris, backface_cull);
+        model->SortBackToFront(cameraPos, viewFrustrumBB, tris, backface_cull);
 
         for(unsigned int i = 0; i < tris.size(); i++)
         {
-            BspTriangle* tri = tris[i];
+            const BspModelTriangle* tri = tris[i];
 
-            render->DrawTriangle(tri->tri, tri->texture, tri->color, renderFlags);
+            Texture tex;
+            const BspNodeTexture* ntex = model->GetTexture(tri->texture);
+
+            tex.alpha = ntex->alpha;
+            tex.width = ntex->width;
+            tex.height = ntex->height;
+            tex.u_mask = ntex->u_mask;
+            tex.v_mask = ntex->v_mask;
+            tex.pixels = model->GetTexturePixels(ntex->texture_pixels_offset);
+
+            render->DrawTriangle(&tri->tri, &tex, tri->color, renderFlags);
         }
 
         render->EndObject();
     }
 
-    void Object3d::SetModel(const Model3d* model)
+    void Object3d::SetModel(const BspModel *model)
     {
         this->model = model;
-
-        P3D::Bsp3d *bsp = new P3D::Bsp3d();
-
-        bspTree = bsp->BuildBspTree(model);
     }
 
     void Object3d::SetBackgroundColor(pixel color)

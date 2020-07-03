@@ -6,7 +6,7 @@
 #include "common.h"
 #include "rtypes.h"
 #include "render.h"
-#include "bsp3d.h"
+#include "bspmodel.h"
 
 namespace P3D
 {
@@ -23,7 +23,7 @@ namespace P3D
 
         void RenderScene();
 
-        void SetModel(const Model3d* model);
+        void SetModel(const BspModel* model);
 
         void SetBackgroundColor(pixel color);
 
@@ -39,9 +39,7 @@ namespace P3D
 
         Render* render = nullptr;
 
-        const Model3d* model;
-
-        const BspTree* bspTree;
+        const BspModel* model;
 
         AABB viewFrustrumBB;
 

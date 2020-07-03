@@ -18,9 +18,10 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-    ../bsp3d.cpp \
+    ../bspmodel.cpp \
     ../object3d.cpp \
     ../render.cpp \
+    bsp3d.cpp \
     main.cpp \
     mainwindow.cpp \
     models/model.cpp
@@ -34,12 +35,13 @@ HEADERS += \
     ../3dmaths/v2.h \
     ../3dmaths/v3.h \
     ../3dmaths/v4.h \
-    ../bsp3d.h \
+    ../bspmodel.h \
     ../common.h \
     ../object3d.h \
     ../potato3d.h \
     ../render.h \
     ../rtypes.h \
+    bsp3d.h \
     mainwindow.h \
     models/model.h
 

@@ -5,7 +5,7 @@
 
 #include "models/model.h"
 
-#include "../bsp3d.h"
+#include "bsp3d.h"
 
 #include "../rtypes.h"
 
@@ -29,10 +29,25 @@ MainWindow::MainWindow(QWidget *parent)
 
     object3d->SetBackgroundColor(qRgb(104,96,73));
 
-    P3D::Model3d* runway = LoadObjFile(":/models/GE_Facility/facility.obj", ":/models/GE_Facility/facility.mtl");
-    object3d->SetModel(runway);
+    P3D::Model3d* runway = LoadObjFile(":/models/temple.obj", ":/models/temple.mtl");
+    //object3d->SetModel(runway);
 
-    SaveModel(runway);
+    P3D::Bsp3d* bsp = new P3D::Bsp3d;
+
+    P3D::BspTree* bspTree = bsp->BuildBspTree(runway);
+
+    QByteArray* ba = new QByteArray;
+    bspTree->SaveBspTree(ba);
+
+    const P3D::BspModel* bspModel = (P3D::BspModel*)ba->constData();
+
+    object3d->SetModel(bspModel);
+
+
+    SaveBytesAsCFile(ba, "C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\model_bsp.cpp");
+
+
+    //SaveModel(runway);
 
     //P3D::Model3d* runway = LoadM3dData(modeldata);
     //object3d->AddModel(runway);
@@ -210,7 +225,7 @@ P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
             {
                 P3D::Texture* t = new P3D::Texture();
 
-                QImage* image = new QImage(":/models/GE_Facility/" + lastBit);
+                QImage* image = new QImage(":/models/" + lastBit);
 
 #ifndef FB_32BIT
                 *image = image->convertToFormat(QImage::Format_RGB555);
@@ -407,7 +422,7 @@ void MainWindow::SaveModel(P3D::Model3d* model)
 
     buffer.close();
 
-    SaveBytesAsCFile(byteArray, "C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\model.cpp");
+    SaveBytesAsCFile(&byteArray, "C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\model.cpp");
 }
 
 P3D::Model3d* MainWindow::LoadM3dData(const unsigned char* data)
@@ -460,20 +475,20 @@ P3D::Model3d* MainWindow::LoadM3dData(const unsigned char* data)
     return model;
 }
 
-void MainWindow::SaveBytesAsCFile(QByteArray& bytes, QString file)
+void MainWindow::SaveBytesAsCFile(QByteArray* bytes, QString file)
 {
     QFile f(file);
 
     if(!f.open(QIODevice::Truncate | QIODevice::ReadWrite))
         return;
 
-    QString decl = QString("const extern unsigned char modeldata[%1UL] = {\n").arg(bytes.size());
+    QString decl = QString("const extern unsigned char modeldata[%1UL] = {\n").arg(bytes->size());
 
     f.write(decl.toLatin1());
 
-    for(int i = 0; i < bytes.size(); i++)
+    for(int i = 0; i < bytes->size(); i++)
     {
-        QString element = QString("0x%1,").arg((quint8)bytes.at(i),2, 16, QChar('0'));
+        QString element = QString("0x%1,").arg((quint8)bytes->at(i),2, 16, QChar('0'));
 
         if(( (i+1) % 40) == 0)
             element += "\n";

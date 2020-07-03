@@ -27,7 +27,7 @@ private:
 
 
     void SaveModel(P3D::Model3d* model);
-    void SaveBytesAsCFile(QByteArray& bytes, QString file);
+    void SaveBytesAsCFile(QByteArray *bytes, QString file);
 
 
     QElapsedTimer fpsTimer;

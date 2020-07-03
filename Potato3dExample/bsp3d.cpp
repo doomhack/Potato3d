@@ -1,3 +1,5 @@
+#include <QtCore>
+
 #include "bsp3d.h"
 
 //BSP tree building.
@@ -6,7 +8,6 @@
 
 namespace P3D
 {
-
     BspTree* Bsp3d::BuildBspTree(const Model3d* model)
     {
         std::vector<BspTriangle*> triangles;
@@ -18,6 +19,14 @@ namespace P3D
             for (auto it = mesh->tris.begin() ; it != mesh->tris.end(); ++it)
             {
                 Triangle3d* triangle = *it;
+
+                //Check for degnerate polygons.
+                BspPlane p = CalculatePlane(triangle);
+
+                //NaN always compares != to anything. Even itself.
+                //Hopefully, the optimiser won't break this.
+                if(p.plane != p.plane)
+                    continue;
 
                 BspTriangle* bsptri = new BspTriangle();
 
@@ -763,5 +772,186 @@ namespace P3D
 
             SortBackToFrontRecursive(p, frustrum, n->front, out, backface_cull);
         }
+    }
+
+    bool BspTree::SaveBspTree(QByteArray* bytes)
+    {
+        QList<const BspNode*> nodeList;
+
+        TraverseNodesRecursive(this->root, nodeList);
+
+        QBuffer buffer(bytes);
+        buffer.open(QIODevice::WriteOnly);
+
+        BspModel* bspModel = new BspModel;
+
+        QList<const Texture*> textureList;
+        QList<const BspTriangle*> triangleList;
+
+        QList<BspModelNode> modelNodeList;
+        QList<BspNodeTexture> modelTextureList;
+        QList<BspModelTriangle> modelTriList;
+
+
+        QByteArray texturePixels;
+
+
+        for(int i = 0; i < nodeList.length(); i++)
+        {
+            BspModelNode bn;
+            bn.plane = nodeList[i]->plane;
+            bn.node_bb = nodeList[i]->node_bb;
+            bn.child_bb = nodeList[i]->child_node_bb;
+
+
+
+            bn.front_tris.count = nodeList[i]->front_tris.size();
+            bn.front_tris.offset = modelTriList.length();
+
+            for(unsigned int j = 0; j < nodeList[i]->front_tris.size(); j++)
+            {
+                BspModelTriangle bmt;
+                bmt.tri = *nodeList[i]->front_tris[j]->tri;
+                bmt.color = nodeList[i]->front_tris[j]->color;
+                bmt.texture = -1;
+
+                const Texture* tex = nodeList[i]->front_tris[j]->texture;
+
+                if(textureList.contains(tex))
+                {
+                    bmt.texture = textureList.indexOf(tex);
+                }
+                else
+                {
+                    BspNodeTexture bnt;
+                    bnt.alpha = nodeList[i]->front_tris[j]->texture->alpha;
+                    bnt.width = nodeList[i]->front_tris[j]->texture->width;
+                    bnt.height = nodeList[i]->front_tris[j]->texture->height;
+                    bnt.u_mask = nodeList[i]->front_tris[j]->texture->u_mask;
+                    bnt.v_mask = nodeList[i]->front_tris[j]->texture->v_mask;
+                    bnt.v_shift = nodeList[i]->front_tris[j]->texture->v_shift;
+                    bnt.texture_pixels_offset = texturePixels.length() / sizeof(pixel);
+
+                    QByteArray pxl((const char*)nodeList[i]->front_tris[j]->texture->pixels,
+                                   nodeList[i]->front_tris[j]->texture->width * nodeList[i]->front_tris[j]->texture->height * sizeof(pixel));
+
+                    texturePixels.append(pxl);
+
+                    bmt.texture = modelTextureList.length();
+
+                    modelTextureList.append(bnt);
+                }
+
+                modelTriList.append(bmt);
+            }
+
+
+
+            bn.back_tris.count = nodeList[i]->back_tris.size();
+            bn.back_tris.offset = modelTriList.length();
+
+            for(unsigned int j = 0; j < nodeList[i]->back_tris.size(); j++)
+            {
+                BspModelTriangle bmt;
+                bmt.tri = *nodeList[i]->back_tris[j]->tri;
+                bmt.color = nodeList[i]->back_tris[j]->color;
+                bmt.texture = -1;
+
+                const Texture* tex = nodeList[i]->back_tris[j]->texture;
+
+                if(textureList.contains(tex))
+                {
+                    bmt.texture = textureList.indexOf(tex);
+                }
+                else
+                {
+                    BspNodeTexture bnt;
+                    bnt.alpha = nodeList[i]->back_tris[j]->texture->alpha;
+                    bnt.width = nodeList[i]->back_tris[j]->texture->width;
+                    bnt.height = nodeList[i]->back_tris[j]->texture->height;
+                    bnt.u_mask = nodeList[i]->back_tris[j]->texture->u_mask;
+                    bnt.v_mask = nodeList[i]->back_tris[j]->texture->v_mask;
+                    bnt.v_shift = nodeList[i]->back_tris[j]->texture->v_shift;
+                    bnt.texture_pixels_offset = texturePixels.length() / sizeof(pixel);
+
+                    QByteArray pxl((const char*)nodeList[i]->back_tris[j]->texture->pixels,
+                                   nodeList[i]->back_tris[j]->texture->width * nodeList[i]->back_tris[j]->texture->height * sizeof(pixel));
+
+                    texturePixels.append(pxl);
+
+                    bmt.texture = modelTextureList.length();
+
+                    modelTextureList.append(bnt);
+                }
+
+                modelTriList.append(bmt);
+            }
+
+
+
+            bn.front_node = 0;
+            bn.back_node = 0;
+
+            if(nodeList[i]->front)
+            {
+                bn.front_node = nodeList.indexOf(nodeList[i]->front);
+            }
+
+            if(nodeList[i]->back)
+            {
+                bn.back_node = nodeList.indexOf(nodeList[i]->back);
+            }
+
+
+            modelNodeList.append(bn);
+        }
+
+
+
+        buffer.write((const char*)&bspModel->header, sizeof(bspModel->header));
+
+        bspModel->header.node_count = modelNodeList.length();
+        bspModel->header.node_offset = buffer.pos();
+
+        for(int i = 0; i < modelNodeList.length(); i++)
+        {
+            buffer.write((const char*)&modelNodeList[i], sizeof(modelNodeList[i]));
+        }
+
+        bspModel->header.triangle_count = modelTriList.length();
+        bspModel->header.triangle_offset = buffer.pos();
+
+        for(int i = 0; i < modelTriList.length(); i++)
+        {
+            buffer.write((const char*)&modelTriList[i], sizeof(modelTriList[i]));
+        }
+
+        bspModel->header.texture_count = modelTextureList.length();
+        bspModel->header.texture_offset = buffer.pos();
+
+        for(int i = 0; i < modelTextureList.length(); i++)
+        {
+            buffer.write((const char*)&modelTextureList[i], sizeof(modelTextureList[i]));
+        }
+
+        bspModel->header.texture_pixels_offset = buffer.pos();
+        buffer.write(texturePixels);
+
+        //Now overwrite the header with offsets.
+        BspModelHeader* hdr = (BspModelHeader*)bytes->data();
+
+        *hdr = bspModel->header;
+
+        return true;
+    }
+
+    void BspTree::TraverseNodesRecursive(const BspNode* n, QList<const BspNode*>& nodeList) const
+    {
+        if (!n) return;
+
+        nodeList.append(n);
+
+        TraverseNodesRecursive(n->front, nodeList);
+        TraverseNodesRecursive(n->back, nodeList);
     }
 }

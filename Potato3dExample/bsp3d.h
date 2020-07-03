@@ -1,9 +1,12 @@
 #ifndef BSP3D_H
 #define BSP3D_H
 
+#include <QtCore>
+
 #include <vector>
 
-#include "rtypes.h"
+#include "../rtypes.h"
+#include "../bspmodel.h"
 
 namespace P3D
 {
@@ -13,13 +16,6 @@ namespace P3D
         Triangle3d* tri;
         const Texture* texture;
         pixel color;
-    };
-
-    class BspPlane
-    {
-    public:
-        V3<fp> normal;
-        fp plane;
     };
 
     class BspNode
@@ -42,8 +38,12 @@ namespace P3D
 
         void SortBackToFront(const V3<fp>& p, const AABB &frustrum, std::vector<BspTriangle*>& out, bool backface_cull = true) const;
 
+        bool SaveBspTree(QByteArray *bytes);
+
     private:
         void SortBackToFrontRecursive(const V3<fp>& p, const AABB &frustrum, const BspNode* n, std::vector<BspTriangle*>& out, bool backface_cull) const;
+
+        void TraverseNodesRecursive(const BspNode* n, QList<const BspNode *> &nodeList) const;
     };
 
     class Bsp3d
@@ -57,6 +57,7 @@ namespace P3D
 
     private:
         BspNode* BuildTreeRecursive(std::vector<BspTriangle*>& triangles);
+
 
 
         void SeperateTriangles(BspPlane& plane, std::vector<BspTriangle*>& triangles, std::vector<BspTriangle*>& front_tris, std::vector<BspTriangle*>& back_tris, std::vector<BspTriangle*>& plane_tris_front, std::vector<BspTriangle*>& plane_tris_back);
