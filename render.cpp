@@ -56,6 +56,7 @@ namespace P3D
         stats.triangles_drawn = 0;
         stats.triangles_submitted = 0;
         stats.vertex_transformed = 0;
+        stats.scanlines_drawn = 0;
 #endif
     }
 
@@ -724,6 +725,10 @@ namespace P3D
         unsigned int vmask = texture->v_mask;
         const pixel* t_pxl = texture->pixels;
 
+#ifdef RENDER_STATS
+        stats.scanlines_drawn++;
+#endif
+
         do
         {
 
@@ -775,6 +780,10 @@ namespace P3D
         unsigned int umask = texture->u_mask;
         unsigned int vmask = texture->v_mask;
         const pixel* t_pxl = texture->pixels;
+
+#ifdef RENDER_STATS
+        stats.scanlines_drawn++;
+#endif
 
         do
         {
@@ -831,6 +840,10 @@ namespace P3D
         const unsigned int vmask = texture->v_mask;
         const pixel* t_pxl = texture->pixels;
 
+#ifdef RENDER_STATS
+        stats.scanlines_drawn++;
+#endif
+
         do
         {
             unsigned int tx = (int)u;
@@ -876,6 +889,10 @@ namespace P3D
         const unsigned int vmask = texture->v_mask;
         const pixel* t_pxl = texture->pixels;
 
+#ifdef RENDER_STATS
+        stats.scanlines_drawn++;
+#endif
+
         do
         {
             unsigned int tx = (int)u;
@@ -915,6 +932,10 @@ namespace P3D
 
         int buffOffset = ((y * fbSize.x) + x_start);
         pixel* fb = &frameBuffer[buffOffset];
+
+#ifdef RENDER_STATS
+        stats.scanlines_drawn++;
+#endif
 
         do
         {

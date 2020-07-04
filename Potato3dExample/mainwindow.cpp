@@ -93,6 +93,7 @@ void MainWindow::paintEvent(QPaintEvent *event)
     p.drawText(32,64, QString("Triangles submitted: %1").arg(rs.triangles_submitted));
     p.drawText(32,80, QString("Triangles drawn: %1").arg(rs.triangles_drawn));
     p.drawText(32,96, QString("Vertexes transformed: %1").arg(rs.vertex_transformed));
+    p.drawText(32,112, QString("Scanlines drawn: %1").arg(rs.scanlines_drawn));
 
 
 

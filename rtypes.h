@@ -187,6 +187,7 @@ namespace P3D
         unsigned int vertex_transformed;
         unsigned int triangles_submitted;
         unsigned int triangles_drawn;
+        unsigned int scanlines_drawn;
     } RenderStats;
 
     typedef enum RenderFlags
