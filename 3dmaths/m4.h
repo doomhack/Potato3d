@@ -16,7 +16,7 @@ namespace P3D
     template <class T> class M4
     {
     public:
-        explicit M4()   {SetFlag(Updated);}
+        explicit M4()   {flags = Updated;}
 
         bool GetFlag(MatrixFlags flag) const
         {

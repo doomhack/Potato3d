@@ -308,7 +308,7 @@ namespace P3D
             if(texture)
             {
                 screenSpacePoints[i].uv.x = clipSpacePoints[i].uv.x * (int)texture->width;
-                screenSpacePoints[i].uv.y = fp((int)texture->height) - (clipSpacePoints[i].uv.y * (int)texture->height);
+                screenSpacePoints[i].uv.y = (fp((int)texture->height) - (clipSpacePoints[i].uv.y * (int)texture->height)) << (unsigned int)texture->v_shift;
             }
         }
 
@@ -722,7 +722,6 @@ namespace P3D
 
         unsigned int umask = texture->u_mask;
         unsigned int vmask = texture->v_mask;
-        unsigned int vshift = texture->v_shift;
         const pixel* t_pxl = texture->pixels;
 
         do
@@ -736,9 +735,7 @@ namespace P3D
             tx = tx & umask;
             ty = ty & vmask;
 
-            *fb = t_pxl[ty << vshift | tx];
-
-            fb++;
+            *fb++ = t_pxl[ty | tx];
 
             w += dw;
             u += du;
@@ -777,7 +774,6 @@ namespace P3D
 
         unsigned int umask = texture->u_mask;
         unsigned int vmask = texture->v_mask;
-        unsigned int vshift = texture->v_shift;
         const pixel* t_pxl = texture->pixels;
 
         do
@@ -785,18 +781,16 @@ namespace P3D
 
             fp invw = fp(1) / w;
 
-            int tx = u * invw;
-            int ty = v * invw;
+            int tx = (u * invw);
+            int ty = (v * invw);
 
             tx = tx & umask;
             ty = ty & vmask;
 
-            pixel texel = t_pxl[ty << vshift | tx];
+            pixel texel = t_pxl[ty | tx];
 
             if(texel & alphaMask)
-            {
                 *fb = texel;
-            }
 
             fb++;
 
@@ -818,8 +812,8 @@ namespace P3D
         if(x_end > fbSize.x)
             x_end = fbSize.x;
 
-        fp u = pos.u_left, v = pos.v_left << (unsigned int)texture->v_shift;
-        fp du = delta.u, dv = delta.v << (unsigned int)texture->v_shift;
+        fp u = pos.u_left, v = pos.v_left;
+        fp du = delta.u, dv = delta.v;
 
         if(x_start < 0)
         {
@@ -834,7 +828,7 @@ namespace P3D
         pixel* fb = &frameBuffer[((y * fbSize.x) + x_start)];
 
         const unsigned int umask = texture->u_mask;
-        const unsigned int vmask = texture->v_mask << texture->v_shift;
+        const unsigned int vmask = texture->v_mask;
         const pixel* t_pxl = texture->pixels;
 
         do
@@ -849,7 +843,7 @@ namespace P3D
             u += du;
             v += dv;
 
-        } while(count--);
+        } while(--count);
     }
 
     void Render::DrawTriangleScanlineLinearAlpha(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture)
@@ -859,6 +853,9 @@ namespace P3D
 
         if( (x_end < x_start) || (x_end <= 0) || (x_start >= fbSize.x) )
             return;
+
+        if(x_end > fbSize.x)
+            x_end = fbSize.x;
 
         fp u = pos.u_left, v = pos.v_left;
         fp du = delta.u, dv = delta.v;
@@ -871,33 +868,26 @@ namespace P3D
             x_start = 0;
         }
 
-        if(x_end > fbSize.x)
-            x_end = fbSize.x;
+        unsigned int count = (x_end - x_start);
 
-        int count = (x_end - x_start);
+        pixel* fb = &frameBuffer[((y * fbSize.x) + x_start)];
 
-        int buffOffset = ((y * fbSize.x) + x_start);
-        pixel* fb = &frameBuffer[buffOffset];
-
-        unsigned int umask = texture->u_mask;
-        unsigned int vmask = texture->v_mask;
-        unsigned int vshift = texture->v_shift;
+        const unsigned int umask = texture->u_mask;
+        const unsigned int vmask = texture->v_mask;
         const pixel* t_pxl = texture->pixels;
 
         do
         {
-            int tx = u;
-            int ty = v;
+            unsigned int tx = (int)u;
+            unsigned int ty = (int)v;
 
             tx = tx & umask;
             ty = ty & vmask;
 
-            const pixel texel = t_pxl[(ty << vshift) | tx];
+            pixel texel = t_pxl[ty | tx];
 
             if(texel & alphaMask)
-            {
                 *fb = texel;
-            }
 
             fb++;
 
@@ -928,9 +918,7 @@ namespace P3D
 
         do
         {
-            *fb = color;
-            fb++;
-
+            *fb++ = color;
         } while(--count);
     }
 

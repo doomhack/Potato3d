@@ -229,7 +229,7 @@ P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
                     t->height = image->height();
 
                     t->u_mask = t->width-1;
-                    t->v_mask = t->height-1;
+
 
                     t->v_shift = 0;
 
@@ -238,6 +238,8 @@ P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
 
                     while( (1 << t->v_shift) < t->width)
                         t->v_shift++;
+
+                    t->v_mask = (t->height-1) << t->v_shift;
 
                     t->pixels = (const P3D::pixel*)image->constBits();
                 }
