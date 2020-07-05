@@ -462,21 +462,44 @@ namespace P3D
         span.color = color;
         span.render_flags = flags;
 
-        if(x_start < spanBuffer[y].min_opening)
+        if(x_start < 0)
         {
-            int offset = spanBuffer[y].min_opening - x_start;
+            span.edge.w_left += delta.w * -x_start;
+            span.edge.u_left += delta.u * -x_start;
+            span.edge.v_left += delta.v * -x_start;
 
-            span.edge.w_left += delta.w * offset;
-            span.edge.u_left += delta.u * offset;
-            span.edge.v_left += delta.v * offset;
+            span.edge.x_left = 0;
 
-            span.edge.x_left = spanBuffer[y].min_opening;
+            x_start = 0;
         }
 
         if(x_end > fbSize.x)
             span.edge.x_right = fbSize.x;
 
-        spanBuffer[y].span_list.push_back(span);
+        //Clip against spans already in buffer.
+        for(int i = 0; i < spanBuffer[y].span_list.size(); i++)
+        {
+            Span& other = spanBuffer[y].span_list[i];
+
+            //Overlaps both sides.
+            if(x_start < (int)other.edge.x_left && x_end > (int)other.edge.x_right)
+                continue;
+
+            if(x_start >= (int)other.edge.x_left && x_end <= (int)other.edge.x_right)
+                return;
+
+//            if(x_start < (int)other.edge.x_left && x_end <= (int)other.edge.x_right)
+//                x_end = other.edge.x_left;
+
+//            if(x_start >= (int)other.edge.x_left && x_end > (int)other.edge.x_right)
+//                x_start = other.edge.x_right;
+        }
+
+
+
+
+        if(x_start < x_end)
+            spanBuffer[y].span_list.push_back(span);
 
         if(span.edge.x_left <= spanBuffer[y].min_opening)
             spanBuffer[y].min_opening = span.edge.x_right + 1;
@@ -493,8 +516,8 @@ namespace P3D
             if(spanCount == 0)
                 continue;
 
-            for(int i = spanCount-1; i >= 0; i--)
-            //for(int i = 0; i < spanCount; i++)
+            //for(int i = spanCount-1; i >= 0; i--)
+            for(int i = 0; i < spanCount; i++)
             {
                 Span& span = sb->span_list[i];
 
