@@ -453,6 +453,12 @@ namespace P3D
         if( (x_end < x_start) || (x_end <= 0) || (x_start >= fbSize.x) )
             return;
 
+        if(x_start < 0)
+            x_start = 0;
+
+        if(x_end > fbSize.x)
+            x_end = fbSize.x;
+
 
         Span span;
 
@@ -462,22 +468,8 @@ namespace P3D
         span.color = color;
         span.render_flags = flags;
 
-        if(x_start < 0)
-        {
-            span.edge.w_left += delta.w * -x_start;
-            span.edge.u_left += delta.u * -x_start;
-            span.edge.v_left += delta.v * -x_start;
-
-            span.edge.x_left = 0;
-
-            x_start = 0;
-        }
-
-        if(x_end > fbSize.x)
-            span.edge.x_right = fbSize.x;
-
         //Clip against spans already in buffer.
-        for(int i = 0; i < spanBuffer[y].span_list.size(); i++)
+        for(unsigned int i = 0; i < spanBuffer[y].span_list.size(); i++)
         {
             Span& other = spanBuffer[y].span_list[i];
 
@@ -485,21 +477,40 @@ namespace P3D
             if(x_start < (int)other.edge.x_left && x_end > (int)other.edge.x_right)
                 continue;
 
+            if(x_start > (int)other.edge.x_right)
+                continue;
+
+            if(x_end < (int)other.edge.x_left)
+                continue;
+
+            //Fully occluded.
             if(x_start >= (int)other.edge.x_left && x_end <= (int)other.edge.x_right)
                 return;
 
-//            if(x_start < (int)other.edge.x_left && x_end <= (int)other.edge.x_right)
-//                x_end = other.edge.x_left;
+            if(x_start < (int)other.edge.x_left && x_end > (int)other.edge.x_left)
+                x_end = other.edge.x_left;
 
-//            if(x_start >= (int)other.edge.x_left && x_end > (int)other.edge.x_right)
-//                x_start = other.edge.x_right;
+            if(x_start < (int)other.edge.x_right && x_start > (int)other.edge.x_left)
+                x_start = other.edge.x_right;
+
+            if(x_start > x_end)
+                return;
         }
 
+        span.edge.x_right = x_end;
 
+        if(x_start > (int)span.edge.x_left)
+        {
+            int overlap = x_start - (int)span.edge.x_left;
 
+            span.edge.w_left += delta.w * overlap;
+            span.edge.u_left += delta.u * overlap;
+            span.edge.v_left += delta.v * overlap;
 
-        if(x_start < x_end)
-            spanBuffer[y].span_list.push_back(span);
+            span.edge.x_left = x_start;
+        }
+
+        spanBuffer[y].span_list.push_back(span);
 
         if(span.edge.x_left <= spanBuffer[y].min_opening)
             spanBuffer[y].min_opening = span.edge.x_right + 1;
@@ -516,8 +527,8 @@ namespace P3D
             if(spanCount == 0)
                 continue;
 
-            //for(int i = spanCount-1; i >= 0; i--)
-            for(int i = 0; i < spanCount; i++)
+            for(int i = spanCount-1; i >= 0; i--)
+            //for(int i = 0; i < spanCount; i++)
             {
                 Span& span = sb->span_list[i];
 
