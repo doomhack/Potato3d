@@ -462,18 +462,15 @@ namespace P3D
         span.color = color;
         span.render_flags = flags;
 
-
-
-        fp u = pos.u_left, v = pos.v_left, w = pos.w_left;
-        fp du = delta.u, dv = delta.v, dw = delta.w;
-
-        if(x_start < 0)
+        if(x_start < spanBuffer[y].min_opening)
         {
-            span.edge.w_left += delta.w * -x_start;
-            span.edge.u_left += delta.u * -x_start;
-            span.edge.v_left += delta.v * -x_start;
+            int offset = spanBuffer[y].min_opening - x_start;
 
-            span.edge.x_left = 0;
+            span.edge.w_left += delta.w * offset;
+            span.edge.u_left += delta.u * offset;
+            span.edge.v_left += delta.v * offset;
+
+            span.edge.x_left = spanBuffer[y].min_opening;
         }
 
         if(x_end > fbSize.x)
@@ -482,7 +479,7 @@ namespace P3D
         spanBuffer[y].span_list.push_back(span);
 
         if(span.edge.x_left <= spanBuffer[y].min_opening)
-            spanBuffer[y].min_opening = span.edge.x_right;
+            spanBuffer[y].min_opening = span.edge.x_right + 1;
     }
 
     void Render::DrawSpans()
@@ -497,6 +494,7 @@ namespace P3D
                 continue;
 
             for(int i = spanCount-1; i >= 0; i--)
+            //for(int i = 0; i < spanCount; i++)
             {
                 Span& span = sb->span_list[i];
 
