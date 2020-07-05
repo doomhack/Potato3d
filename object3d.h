@@ -2,6 +2,7 @@
 #define OBJECT3D_H
 
 #include <vector>
+#include <map>
 
 #include "common.h"
 #include "rtypes.h"
@@ -50,6 +51,8 @@ namespace P3D
         RenderFlags renderFlags = RenderFlags::NoFlags;
 
         V3<fp> frustrumPoints[2]; //Top left and bottom-right frustrum points.
+
+        std::map<const BspNodeTexture*, const Texture*> textureMap;
     };
 }
 

@@ -13,7 +13,7 @@ namespace P3D
         fp w_left;
         fp u_left;
         fp v_left;
-    } TriDrawState;
+    } TriEdgeTrace;
 
     typedef struct TriDrawPos
     {
@@ -50,8 +50,6 @@ namespace P3D
         Projection
     } MatrixType;
 
-
-
     typedef enum ClipPlane
     {
         W_Near,
@@ -60,6 +58,21 @@ namespace P3D
         Y_W_Top,
         Y_W_Bottom
     } ClipPlane;
+
+    typedef struct Span
+    {
+        TriEdgeTrace edge;
+        TriDrawXDeltaZWUV x_delta;
+        pixel color;
+        const Texture* texture;
+        RenderFlags render_flags;
+    } Span;
+
+    typedef struct SpanBuffer
+    {
+        std::vector<Span> span_list;
+        int min_opening = 0;
+    } SpanBuffer;
 
     class Render
     {
@@ -116,6 +129,10 @@ namespace P3D
         void DrawTriangleBottomFlat(const Vertex2d points[3], const pixel color, const RenderFlags flags);
         void DrawTriangleScanlineFlat(int y, const TriEdgeTrace& pos, const pixel color);
 
+        void AddSpanToSpanBuffer(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color, const RenderFlags flags);
+
+        void DrawSpans();
+
         void SortPointsByY(Vertex2d points[]);
 
         Vertex2d TransformVertex(const Vertex3d* vertex);
@@ -132,7 +149,6 @@ namespace P3D
 
 
         pixel* frameBuffer;
-        fp* zBuffer;
         V2<int> fbSize;
 
         fp zNear;
@@ -150,6 +166,8 @@ namespace P3D
         const unsigned int triFracShift = 3;
 
         RenderStats stats;
+
+        SpanBuffer* spanBuffer = nullptr;
     };
 
 }

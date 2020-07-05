@@ -90,24 +90,39 @@ namespace P3D
 
         bool backface_cull = !(renderFlags & NoBackfaceCull);
 
-        model->SortBackToFront(cameraPos, viewFrustrumBB, tris, backface_cull);
+        model->SortFrontToBack(cameraPos, viewFrustrumBB, tris, backface_cull);
 
         for(unsigned int i = 0; i < tris.size(); i++)
         {
             const BspModelTriangle* tri = tris[i];
 
-            Texture tex;
             const BspNodeTexture* ntex = model->GetTexture(tri->texture);
 
-            tex.alpha = ntex->alpha;
-            tex.width = ntex->width;
-            tex.height = ntex->height;
-            tex.u_mask = ntex->u_mask;
-            tex.v_mask = ntex->v_mask;
-            tex.v_shift = ntex ->v_shift;
-            tex.pixels = model->GetTexturePixels(ntex->texture_pixels_offset);
+            const Texture* tex = nullptr;
 
-            render->DrawTriangle(&tri->tri, &tex, tri->color, renderFlags);
+            if(textureMap.count(ntex) == 0)
+            {
+                Texture* t = new Texture;
+
+                t->alpha = ntex->alpha;
+                t->width = ntex->width;
+                t->height = ntex->height;
+                t->u_mask = ntex->u_mask;
+                t->v_mask = ntex->v_mask;
+                t->v_shift = ntex ->v_shift;
+                t->pixels = model->GetTexturePixels(ntex->texture_pixels_offset);
+
+                tex = t;
+
+                textureMap[ntex] = tex;
+            }
+            else
+            {
+                tex = textureMap[ntex];
+            }
+
+
+            render->DrawTriangle(&tri->tri, tex, tri->color, renderFlags);
         }
 
         render->EndObject();
