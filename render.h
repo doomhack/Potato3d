@@ -61,11 +61,8 @@ namespace P3D
 
     typedef struct Span
     {
-        TriEdgeTrace edge;
-        TriDrawXDeltaZWUV x_delta;
-        pixel color;
-        const Texture* texture;
-        RenderFlags render_flags;
+        int x_start;
+        int x_end;
     } Span;
 
     typedef struct SpanBuffer
@@ -129,9 +126,9 @@ namespace P3D
         void DrawTriangleBottomFlat(const Vertex2d points[3], const pixel color, const RenderFlags flags);
         void DrawTriangleScanlineFlat(int y, const TriEdgeTrace& pos, const pixel color);
 
-        void AddSpanToSpanBuffer(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color, const RenderFlags flags);
+        void ClipSpan(int y, TriEdgeTrace &pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color, const RenderFlags flags);
+        void DrawSpan(int y, TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color, const RenderFlags flags);
 
-        void DrawSpans();
 
         void SortPointsByY(Vertex2d points[]);
 
