@@ -466,22 +466,23 @@ namespace P3D
         if(yStart < 0)
         {
             y_delta_sum.x_left = (y_delta.x_left * -yStart);
+            y_delta_sum.x_right = (y_delta.x_right * -yStart);
+
             y_delta_sum.u = (y_delta.u * -yStart);
             y_delta_sum.v = (y_delta.v * -yStart);
             y_delta_sum.w = (y_delta.w * -yStart);
-
-            y_delta_sum.x_right = (y_delta.x_right * -yStart);
 
             yStart = 0;
         }
         else
         {
             y_delta_sum.x_left = 0;
+            y_delta_sum.x_right = 0;
+
             y_delta_sum.w = 0;
             y_delta_sum.u = 0;
             y_delta_sum.v = 0;
 
-            y_delta_sum.x_right = 0;
         }
 
         if(yEnd >= fbSize.y)
@@ -582,22 +583,22 @@ namespace P3D
             int overflow = yStart - (fbSize.y-1);
 
             y_delta_sum.x_left = (y_delta.x_left * overflow);
+            y_delta_sum.x_right = (y_delta.x_right * overflow);
+
             y_delta_sum.w = (y_delta.w * overflow);
             y_delta_sum.u = (y_delta.u * overflow);
             y_delta_sum.v = (y_delta.v * overflow);
-
-            y_delta_sum.x_right = (y_delta.x_right * overflow);
 
             yStart = fbSize.y-1;
         }
         else
         {
             y_delta_sum.x_left = 0;
+            y_delta_sum.x_right = 0;
+
             y_delta_sum.w = 0;
             y_delta_sum.u = 0;
             y_delta_sum.v = 0;
-
-            y_delta_sum.x_right = 0;
         }
 
         if(yEnd < 0)
@@ -607,8 +608,8 @@ namespace P3D
         {
             pos.x_left = bottom.pos.x - pASR(y_delta_sum.x_left, triFracShift);
             pos.x_right = bottom.pos.x - pASR(y_delta_sum.x_right, triFracShift);
-            pos.w_left = bottom.pos.w - pASR(y_delta_sum.w, triFracShift);
 
+            pos.w_left = bottom.pos.w - pASR(y_delta_sum.w, triFracShift);
             pos.u_left = bottom.uv.x - pASR(y_delta_sum.u, triFracShift);
             pos.v_left = bottom.uv.y - pASR(y_delta_sum.v, triFracShift);
 
@@ -616,6 +617,7 @@ namespace P3D
 
             y_delta_sum.x_left += y_delta.x_left;
             y_delta_sum.x_right += y_delta.x_right;
+
             y_delta_sum.w += y_delta.w;
             y_delta_sum.u += y_delta.u;
             y_delta_sum.v += y_delta.v;
