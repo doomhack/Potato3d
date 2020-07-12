@@ -62,10 +62,7 @@ namespace P3D
     public:
         BspModelHeader header;
 
-        void SortBackToFront(const V3<fp>& p, const AABB& frustrum, std::vector<const BspModelTriangle*>& out, bool backface_cull) const;
-
         void SortFrontToBack(const V3<fp>& p, const AABB& frustrum, std::vector<const BspModelTriangle*>& out, bool backface_cull) const;
-
 
         const BspNodeTexture* GetTexture(unsigned int n) const
         {
@@ -79,9 +76,7 @@ namespace P3D
 
     private:
 
-        void SortBackToFrontRecursive(const V3<fp>& p, const AABB& frustrum, const BspModelNode* n, std::vector<const BspModelTriangle *> &out, bool backface_cull) const;
         void SortFrontToBackRecursive(const V3<fp>& p, const AABB& frustrum, const BspModelNode* n, std::vector<const BspModelTriangle *> &out, bool backface_cull) const;
-
 
         const unsigned char* GetBasePtr() const
         {
