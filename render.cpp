@@ -16,7 +16,18 @@ namespace P3D
         viewProjectionMatrix.setToIdentity();
 
         transformMatrix.setToIdentity();
+
+        reciprocalTable = new fp[65536];
+
+
+        reciprocalTable[0] = 0;
+        for(int i = 1; i < 65536; i++)
+        {
+            reciprocalTable[i] = pRound((double)16384 / (double)i);
+        }
     }
+
+
 
     bool Render::Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov, fp zNear, fp zFar, pixel* frameBuffer)
     {
@@ -864,24 +875,70 @@ namespace P3D
         stats.scanlines_drawn++;
 #endif
 
-        do
+        unsigned int l = count >> 3;
+        unsigned int r = count & 7;
+
+        fp invw_0 = fp(1) / w;
+        fp invw_7 = fp(1) / (w + (pASL(dw, 3)));
+
+        fp u0 = u * invw_0;
+        fp u7 = (u + (pASL(du, 3))) * invw_7;
+
+        fp v0 = v * invw_0;
+        fp v7 = (v + (pASL(dv, 3))) * invw_7;
+
+        fp du8 = pASR(u7-u0, 3);
+        fp dv8 = pASR(v7-v0, 3);
+
+        fp uu = u0;
+        fp vv = v0;
+
+        while(l--)
         {
+            DrawScanlinePixelLinear(fb, t_pxl, uu, vv, umask, vmask); fb++; uu += du8; vv += dv8;
+            DrawScanlinePixelLinear(fb, t_pxl, uu, vv, umask, vmask); fb++; uu += du8; vv += dv8;
+            DrawScanlinePixelLinear(fb, t_pxl, uu, vv, umask, vmask); fb++; uu += du8; vv += dv8;
+            DrawScanlinePixelLinear(fb, t_pxl, uu, vv, umask, vmask); fb++; uu += du8; vv += dv8;
+            DrawScanlinePixelLinear(fb, t_pxl, uu, vv, umask, vmask); fb++; uu += du8; vv += dv8;
+            DrawScanlinePixelLinear(fb, t_pxl, uu, vv, umask, vmask); fb++; uu += du8; vv += dv8;
+            DrawScanlinePixelLinear(fb, t_pxl, uu, vv, umask, vmask); fb++; uu += du8; vv += dv8;
+            DrawScanlinePixelLinear(fb, t_pxl, uu, vv, umask, vmask); fb++; uu += du8; vv += dv8;
 
-            fp invw = fp(1) / w;
+            w += (pASL(dw, 3));
+            u += (pASL(du, 3));
+            v += (pASL(dv, 3));
 
-            int tx = (u * invw);
-            int ty = (v * invw);
 
-            tx = tx & umask;
-            ty = ty & vmask;
+            invw_0 = fp(1) / w;
+            invw_7 = fp(1) / (w + (pASL(dw, 3)));
 
-            *fb++ = t_pxl[ty | tx];
+            u0 = u * invw_0;
+            u7 = (u + (pASL(du, 3))) * invw_7;
 
-            w += dw;
-            u += du;
-            v += dv;
+            v0 = v * invw_0;
+            v7 = (v + (pASL(dv, 3))) * invw_7;
 
-        } while(--count);
+            du8 = pASR(u7-u0, 3);
+            dv8 = pASR(v7-v0, 3);
+
+            uu = u0;
+            vv = v0;
+        }
+
+        while(r--)
+        {
+            DrawScanlinePixelLinear(fb, t_pxl, uu, vv, umask, vmask); fb++; uu += du8; vv += dv8;
+        }
+    }
+
+    inline void Render::DrawScanlinePixelLinear(pixel* fb, const pixel* texels, const fp u, const fp v, const unsigned int umask, const unsigned int vmask)
+    {
+        unsigned int tx = (int)u;
+        unsigned int ty = (int)v;
+
+        tx = tx & umask;
+        ty = ty & vmask;
+        *fb = texels[ty | tx];
     }
 
     void Render::DrawTriangleScanlinePerspectiveAlpha(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture)
