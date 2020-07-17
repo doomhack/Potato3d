@@ -116,17 +116,15 @@ namespace P3D
 
 
         void DrawTriangleScanlinePerspectiveCorrect(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture);
-        void DrawTriangleScanlinePerspectiveAlpha(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture);
 
         void DrawTriangleScanlineLinear(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture);
-        void DrawTriangleScanlineLinearAlpha(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture);
 
-        inline void DrawScanlinePixelLinear(pixel* fb, const pixel* texels, const fp u, const fp v, const unsigned int umask, const unsigned int vmask);
+        inline void DrawScanlinePixelLinear(pixel* fb, const pixel* texels, const fp u, const fp v, const unsigned int umask, const unsigned int vmask, const unsigned int vshift);
 
 
-        void DrawTriangleSplitFlat(const Vertex2d points[], const pixel color, const RenderFlags flags);
-        void DrawTriangleTopFlat(const Vertex2d points[], const pixel color, const RenderFlags flags);
-        void DrawTriangleBottomFlat(const Vertex2d points[3], const pixel color, const RenderFlags flags);
+        void DrawTriangleSplitFlat(const Vertex2d points[], const pixel color);
+        void DrawTriangleTopFlat(const Vertex2d points[], const pixel color);
+        void DrawTriangleBottomFlat(const Vertex2d points[3], const pixel color);
         void DrawTriangleScanlineFlat(int y, const TriEdgeTrace& pos, const pixel color);
 
         void ClipSpan(int y, TriEdgeTrace &pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color, const RenderFlags flags);
@@ -162,8 +160,6 @@ namespace P3D
         M4<fp> viewProjectionMatrix; //P*V
 
         M4<fp> transformMatrix; //P*V*M
-
-        fp* reciprocalTable;
 
         const unsigned int triFracShift = 3;
 

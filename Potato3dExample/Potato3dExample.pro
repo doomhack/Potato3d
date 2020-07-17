@@ -18,6 +18,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    ../3dmaths/recip.cpp \
     ../bspmodel.cpp \
     ../object3d.cpp \
     ../render.cpp \
@@ -30,6 +31,7 @@ HEADERS += \
     ../3dmaths/f3dmath.h \
     ../3dmaths/fp.h \
     ../3dmaths/m4.h \
+    ../3dmaths/recip.h \
     ../3dmaths/utils.h \
     ../3dmaths/v2.h \
     ../3dmaths/v3.h \

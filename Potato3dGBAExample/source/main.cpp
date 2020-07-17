@@ -44,12 +44,34 @@ void PollKeys()
     {
         if(key_down & KEY_LEFT)
         {
-            obj3d->CameraAngle().y += 2;
+            obj3d->CameraAngle().y += 4;
         }
 
         if(key_down & KEY_RIGHT)
         {
-            obj3d->CameraAngle().y -= 2;
+            obj3d->CameraAngle().y -= 4;
+        }
+
+        if(key_down & KEY_UP)
+        {
+            P3D::V3<P3D::fp> camAngle = obj3d->CameraAngle();
+
+            P3D::fp angleYRad = P3D::pD2R(camAngle.y);
+
+            P3D::V3<P3D::fp> d(-(std::sin(angleYRad.f()) *25), 0, -(std::cos(angleYRad.f()) *25));
+
+            obj3d->CameraPos() += d;
+        }
+
+        if(key_down & KEY_DOWN)
+        {
+            P3D::V3<P3D::fp> camAngle = obj3d->CameraAngle();
+
+            P3D::fp angleYRad = P3D::pD2R(camAngle.y);
+
+            P3D::V3<P3D::fp> d(-(std::sin(angleYRad.f()) *25), 0, -(std::cos(angleYRad.f()) *25));
+
+            obj3d->CameraPos() -= d;
         }
     }
 }
@@ -80,6 +102,8 @@ int main()
 
     const P3D::BspModel* runway = (const P3D::BspModel*)modeldata;
     obj3d->SetModel(runway);
+
+    obj3d->SetBackgroundColor(0);
 
     while(true)
     {

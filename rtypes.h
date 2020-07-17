@@ -21,7 +21,7 @@ namespace P3D
         V4<fp> pos;
         V2<fp> uv;
 
-        static const int uv_scale = 128;
+        static const int uv_scale = 256;
 
         void toPerspectiveCorrect()
         {

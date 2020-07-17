@@ -1,6 +1,7 @@
 #ifndef DIVIDE_H
 #define DIVIDE_H
 
+
 #ifdef __arm__
     extern "C" unsigned int udiv64_arm (unsigned int a, unsigned int b, unsigned int c);
 #endif
@@ -15,7 +16,10 @@ template<>
 inline int FixedDiv(int a, int b)
 {
 #ifndef __arm__
-    return (int)(((long long int)a << 16) / b);
+
+    long long int tmp = ((long long int)a << 16) / b;
+
+    return (int)tmp;
 #else
 
     int sign = (a^b) < 0; /* different signs */

@@ -16,18 +16,7 @@ namespace P3D
         viewProjectionMatrix.setToIdentity();
 
         transformMatrix.setToIdentity();
-
-        reciprocalTable = new fp[65536];
-
-
-        reciprocalTable[0] = 0;
-        for(int i = 1; i < 65536; i++)
-        {
-            reciprocalTable[i] = pRound((double)16384 / (double)i);
-        }
     }
-
-
 
     bool Render::Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov, fp zNear, fp zFar, pixel* frameBuffer)
     {
@@ -328,7 +317,7 @@ namespace P3D
             if(texture)
             {
                 screenSpacePoints[i].uv.x = clipSpacePoints[i].uv.x * (int)texture->width;
-                screenSpacePoints[i].uv.y = pASL(fp((int)texture->height) - (clipSpacePoints[i].uv.y * (int)texture->height), texture->v_shift);
+                screenSpacePoints[i].uv.y = clipSpacePoints[i].uv.y * (int)texture->height;
             }
         }
 
@@ -347,7 +336,7 @@ namespace P3D
         if(texture)
             DrawTriangleSplit(screenSpacePoints, texture, flags);
         else
-            DrawTriangleSplitFlat(screenSpacePoints, color, flags);
+            DrawTriangleSplitFlat(screenSpacePoints, color);
     }
 
     void Render::DrawTriangleSplit(Vertex2d *points, const Texture *texture, RenderFlags flags)
@@ -402,15 +391,15 @@ namespace P3D
         }
     }
 
-    void Render::DrawTriangleSplitFlat(const Vertex2d points[], const pixel color, const RenderFlags flags)
+    void Render::DrawTriangleSplitFlat(const Vertex2d points[], const pixel color)
     {
         if(points[1].pos.y == points[2].pos.y)
         {
-            DrawTriangleTopFlat(points, color, flags);
+            DrawTriangleTopFlat(points, color);
         }
         else if(points[0].pos.y == points[1].pos.y)
         {
-            DrawTriangleBottomFlat(points, color, flags);
+            DrawTriangleBottomFlat(points, color);
         }
         else
         {
@@ -432,9 +421,9 @@ namespace P3D
 
             triangle[3] = points[2];
 
-            DrawTriangleTopFlat(triangle, color, flags);
+            DrawTriangleTopFlat(triangle, color);
 
-            DrawTriangleBottomFlat(&triangle[1], color, flags);
+            DrawTriangleBottomFlat(&triangle[1], color);
         }
     }
 
@@ -449,8 +438,6 @@ namespace P3D
         if(points[1].pos.y > points[2].pos.y)
             std::swap(points[1], points[2]);
     }
-
-
 
     void Render::DrawTriangleTop(const Vertex2d *points, const Texture *texture, const RenderFlags flags)
     {
@@ -519,7 +506,7 @@ namespace P3D
         }
     }
 
-    void Render::DrawTriangleTopFlat(const Vertex2d points[], const pixel color, const RenderFlags flags)
+    void Render::DrawTriangleTopFlat(const Vertex2d points[], const pixel color)
     {
         TriEdgeTrace pos;
         TriDrawYDeltaZ y_delta, y_delta_sum;
@@ -635,7 +622,7 @@ namespace P3D
         }
     }
 
-    void Render::DrawTriangleBottomFlat(const Vertex2d points[], const pixel color, const RenderFlags flags)
+    void Render::DrawTriangleBottomFlat(const Vertex2d points[], const pixel color)
     {
         TriEdgeTrace pos;
         TriDrawYDeltaZ y_delta, y_delta_sum;
@@ -725,16 +712,16 @@ namespace P3D
             int x_start2 = other.x_start;
             int x_end2 = other.x_end;
 
+            //Fully occluded.
+            if(x_start >= x_start2 && x_end <= x_end2)
+                return;
+
+
             if(x_start2 <= first_opening)
             {
                 if(first_opening < x_end2)
                     first_opening = x_end2 + 1;
             }
-
-
-            //Fully occluded.
-            if(x_start >= x_start2 && x_end <= x_end2)
-                return;
 
             //Fully to the right of.
             if(x_start > x_end2)
@@ -831,30 +818,16 @@ namespace P3D
         {
             if(flags & PerspectiveCorrect)
             {
-                if(flags & Alpha)
-                {
-                    DrawTriangleScanlinePerspectiveAlpha(y, pos, delta, texture);
-                }
-                else
-                {
-                    DrawTriangleScanlinePerspectiveCorrect(y, pos, delta, texture);
-                }
+                DrawTriangleScanlinePerspectiveCorrect(y, pos, delta, texture);
             }
             else
             {
-                if(flags & Alpha)
-                {
-                    DrawTriangleScanlineLinearAlpha(y, pos, delta, texture);
-                }
-                else
-                {
-                    DrawTriangleScanlineLinear(y, pos, delta, texture);
-                }
+                DrawTriangleScanlineLinear(y, pos, delta, texture);
             }
         }
     }
 
-    void Render::DrawTriangleScanlinePerspectiveCorrect(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture)
+    void Render:: DrawTriangleScanlinePerspectiveCorrect(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture)
     {
         int x_start = pos.x_left;
         int x_end = pos.x_right;
@@ -867,19 +840,17 @@ namespace P3D
         int buffOffset = ((y * fbSize.x) + x_start);
         pixel* fb = &frameBuffer[buffOffset];
 
-        unsigned int umask = texture->u_mask;
-        unsigned int vmask = texture->v_mask;
+        const unsigned int umask = texture->u_mask;
+        const unsigned int vmask = texture->v_mask;
+        const unsigned int vshift = texture->v_shift;
         const pixel* t_pxl = texture->pixels;
 
 #ifdef RENDER_STATS
         stats.scanlines_drawn++;
 #endif
 
-        unsigned int l = count >> 3;
-        unsigned int r = count & 7;
-
-        fp invw_0 = fp(1) / w;
-        fp invw_7 = fp(1) / (w + (pASL(dw, 3)));
+        fp invw_0 = pReciprocal(w);
+        fp invw_7 = pReciprocal(w + (pASL(dw, 3)));
 
         fp u0 = u * invw_0;
         fp u7 = (u + (pASL(du, 3))) * invw_7;
@@ -893,24 +864,30 @@ namespace P3D
         fp uu = u0;
         fp vv = v0;
 
+        unsigned int l = count >> 3;
+        unsigned int r = count & 7;
+
         while(l--)
         {
-            DrawScanlinePixelLinear(fb, t_pxl, uu, vv, umask, vmask); fb++; uu += du8; vv += dv8;
-            DrawScanlinePixelLinear(fb, t_pxl, uu, vv, umask, vmask); fb++; uu += du8; vv += dv8;
-            DrawScanlinePixelLinear(fb, t_pxl, uu, vv, umask, vmask); fb++; uu += du8; vv += dv8;
-            DrawScanlinePixelLinear(fb, t_pxl, uu, vv, umask, vmask); fb++; uu += du8; vv += dv8;
-            DrawScanlinePixelLinear(fb, t_pxl, uu, vv, umask, vmask); fb++; uu += du8; vv += dv8;
-            DrawScanlinePixelLinear(fb, t_pxl, uu, vv, umask, vmask); fb++; uu += du8; vv += dv8;
-            DrawScanlinePixelLinear(fb, t_pxl, uu, vv, umask, vmask); fb++; uu += du8; vv += dv8;
-            DrawScanlinePixelLinear(fb, t_pxl, uu, vv, umask, vmask); fb++; uu += du8; vv += dv8;
+            DrawScanlinePixelLinear(fb, t_pxl, uu, vv, umask, vmask, vshift); fb++; uu += du8; vv += dv8;
+            DrawScanlinePixelLinear(fb, t_pxl, uu, vv, umask, vmask, vshift); fb++; uu += du8; vv += dv8;
+            DrawScanlinePixelLinear(fb, t_pxl, uu, vv, umask, vmask, vshift); fb++; uu += du8; vv += dv8;
+            DrawScanlinePixelLinear(fb, t_pxl, uu, vv, umask, vmask, vshift); fb++; uu += du8; vv += dv8;
+            DrawScanlinePixelLinear(fb, t_pxl, uu, vv, umask, vmask, vshift); fb++; uu += du8; vv += dv8;
+            DrawScanlinePixelLinear(fb, t_pxl, uu, vv, umask, vmask, vshift); fb++; uu += du8; vv += dv8;
+            DrawScanlinePixelLinear(fb, t_pxl, uu, vv, umask, vmask, vshift); fb++; uu += du8; vv += dv8;
+            DrawScanlinePixelLinear(fb, t_pxl, uu, vv, umask, vmask, vshift); fb++; uu += du8; vv += dv8;
+
 
             w += (pASL(dw, 3));
             u += (pASL(du, 3));
             v += (pASL(dv, 3));
 
+            if(l == 0)
+                break;
 
-            invw_0 = fp(1) / w;
-            invw_7 = fp(1) / (w + (pASL(dw, 3)));
+            invw_0 = pReciprocal(w);
+            invw_7 = pReciprocal(w + (pASL(dw, 3)));
 
             u0 = u * invw_0;
             u7 = (u + (pASL(du, 3))) * invw_7;
@@ -927,64 +904,8 @@ namespace P3D
 
         while(r--)
         {
-            DrawScanlinePixelLinear(fb, t_pxl, uu, vv, umask, vmask); fb++; uu += du8; vv += dv8;
+            DrawScanlinePixelLinear(fb, t_pxl, uu, vv, umask, vmask, vshift); fb++; uu += du8; vv += dv8;
         }
-    }
-
-    inline void Render::DrawScanlinePixelLinear(pixel* fb, const pixel* texels, const fp u, const fp v, const unsigned int umask, const unsigned int vmask)
-    {
-        unsigned int tx = (int)u;
-        unsigned int ty = (int)v;
-
-        tx = tx & umask;
-        ty = ty & vmask;
-        *fb = texels[ty | tx];
-    }
-
-    void Render::DrawTriangleScanlinePerspectiveAlpha(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture)
-    {
-        int x_start = pos.x_left;
-        int x_end = pos.x_right;
-
-        fp u = pos.u_left, v = pos.v_left, w = pos.w_left;
-        fp du = delta.u, dv = delta.v, dw = delta.w;
-
-        unsigned int count = (x_end - x_start) + 1;
-
-        int buffOffset = ((y * fbSize.x) + x_start);
-        pixel* fb = &frameBuffer[buffOffset];
-
-        unsigned int umask = texture->u_mask;
-        unsigned int vmask = texture->v_mask;
-        const pixel* t_pxl = texture->pixels;
-
-#ifdef RENDER_STATS
-        stats.scanlines_drawn++;
-#endif
-
-        do
-        {
-
-            fp invw = fp(1) / w;
-
-            int tx = (u * invw);
-            int ty = (v * invw);
-
-            tx = tx & umask;
-            ty = ty & vmask;
-
-            pixel texel = t_pxl[ty | tx];
-
-            if(texel & alphaMask)
-                *fb = texel;
-
-            fb++;
-
-            w += dw;
-            u += du;
-            v += dv;
-
-        } while(--count);
     }
 
     void Render::DrawTriangleScanlineLinear(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture)
@@ -1001,66 +922,43 @@ namespace P3D
 
         const unsigned int umask = texture->u_mask;
         const unsigned int vmask = texture->v_mask;
+        const unsigned int vshift = texture->v_shift;
         const pixel* t_pxl = texture->pixels;
 
 #ifdef RENDER_STATS
         stats.scanlines_drawn++;
 #endif
 
-        do
+        unsigned int l = count >> 3;
+
+        while(l--)
         {
-            unsigned int tx = (int)u;
-            unsigned int ty = (int)v;
+            DrawScanlinePixelLinear(fb, t_pxl, u, v, umask, vmask, vshift); fb++; u += du; v += dv;
+            DrawScanlinePixelLinear(fb, t_pxl, u, v, umask, vmask, vshift); fb++; u += du; v += dv;
+            DrawScanlinePixelLinear(fb, t_pxl, u, v, umask, vmask, vshift); fb++; u += du; v += dv;
+            DrawScanlinePixelLinear(fb, t_pxl, u, v, umask, vmask, vshift); fb++; u += du; v += dv;
+            DrawScanlinePixelLinear(fb, t_pxl, u, v, umask, vmask, vshift); fb++; u += du; v += dv;
+            DrawScanlinePixelLinear(fb, t_pxl, u, v, umask, vmask, vshift); fb++; u += du; v += dv;
+            DrawScanlinePixelLinear(fb, t_pxl, u, v, umask, vmask, vshift); fb++; u += du; v += dv;
+            DrawScanlinePixelLinear(fb, t_pxl, u, v, umask, vmask, vshift); fb++; u += du; v += dv;
+        }
 
-            tx = tx & umask;
-            ty = ty & vmask;
-            *fb++ = t_pxl[ty | tx];
+        unsigned int r = count & 7;
 
-            u += du;
-            v += dv;
-
-        } while(--count);
+        while(r--)
+        {
+            DrawScanlinePixelLinear(fb, t_pxl, u, v, umask, vmask, vshift); fb++; u += du; v += dv;
+        }
     }
 
-    void Render::DrawTriangleScanlineLinearAlpha(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture)
+    inline void Render::DrawScanlinePixelLinear(pixel* fb, const pixel* texels, const fp u, const fp v, const unsigned int umask, const unsigned int vmask, const unsigned int vshift)
     {
-        int x_start = pos.x_left;
-        int x_end = pos.x_right;
+        unsigned int tx = (int)u;
+        unsigned int ty = (int)v;
 
-        fp u = pos.u_left, v = pos.v_left;
-        fp du = delta.u, dv = delta.v;
-
-        unsigned int count = (x_end - x_start) + 1;
-
-        pixel* fb = &frameBuffer[((y * fbSize.x) + x_start)];
-
-        const unsigned int umask = texture->u_mask;
-        const unsigned int vmask = texture->v_mask;
-        const pixel* t_pxl = texture->pixels;
-
-#ifdef RENDER_STATS
-        stats.scanlines_drawn++;
-#endif
-
-        do
-        {
-            unsigned int tx = (int)u;
-            unsigned int ty = (int)v;
-
-            tx = tx & umask;
-            ty = ty & vmask;
-
-            pixel texel = t_pxl[ty | tx];
-
-            if(texel & alphaMask)
-                *fb = texel;
-
-            fb++;
-
-            u += du;
-            v += dv;
-
-        } while(--count);
+        tx = tx & umask;
+        ty = (ty << vshift) & vmask;
+        *fb = texels[ty | tx];
     }
 
     void Render::DrawTriangleScanlineFlat(int y, const TriEdgeTrace& pos, const pixel color)
@@ -1103,8 +1001,9 @@ namespace P3D
         if(left.pos.y != other.pos.y)
             inv_y = fp(1 << triFracShift) / (left.pos.y - other.pos.y);
 
+
         if(right.pos.x != left.pos.x)
-            inv_x = fp(1) / (right.pos.x - left.pos.x);
+            inv_x = pReciprocal(right.pos.x - left.pos.x);
 
         x_delta.w = (right.pos.w - left.pos.w) * inv_x;
         x_delta.u = (right.uv.x - left.uv.x) * inv_x;
