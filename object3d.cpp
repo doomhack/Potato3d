@@ -5,7 +5,7 @@ namespace P3D
 {
     Object3d::Object3d()
     {
-        renderFlags = (RenderFlags)(PerspectiveCorrect);
+        renderFlags = (RenderFlags)(0);
     }
 
     Object3d::Object3d(Render* render)

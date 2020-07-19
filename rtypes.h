@@ -193,8 +193,6 @@ namespace P3D
     typedef enum RenderFlags
     {
         NoFlags = 0u,
-        PerspectiveCorrect = 1u,
-        Alpha = 2u,
         NoBackfaceCull = 4u,
     } RenderFlags;
 

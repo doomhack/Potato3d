@@ -25,7 +25,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     object3d = new P3D::Object3d();
 
-    object3d->Setup(screenWidth, screenHeight, 54, 25, 2048, (P3D::pixel*)frameBufferImage.bits());
+    object3d->Setup(screenWidth, screenHeight, 54, 25, 1500, (P3D::pixel*)frameBufferImage.bits());
 
     object3d->SetBackgroundColor(qRgb(104,96,73));
 

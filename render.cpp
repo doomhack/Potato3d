@@ -344,15 +344,9 @@ namespace P3D
 
     void Render::DrawTriangleSplit(Vertex2d *points, const Texture *texture, RenderFlags flags)
     {
-        if(flags & PerspectiveCorrect)
-        {
-            points[0].toPerspectiveCorrect();
-            points[1].toPerspectiveCorrect();
-            points[2].toPerspectiveCorrect();
-        }
-
-        if(texture->alpha)
-            flags = (RenderFlags)(flags | RenderFlags::Alpha);
+        points[0].toPerspectiveCorrect();
+        points[1].toPerspectiveCorrect();
+        points[2].toPerspectiveCorrect();
 
         if(points[1].pos.y == points[2].pos.y)
         {
@@ -384,8 +378,7 @@ namespace P3D
             triangle[2].uv.x = pLerp(points[0].uv.x, points[2].uv.x, splitFrac);
             triangle[2].uv.y = pLerp(points[0].uv.y, points[2].uv.y, splitFrac);
 
-            if(flags & PerspectiveCorrect)
-                triangle[2].pos.w = pLerp(points[0].pos.w, points[2].pos.w, splitFrac);
+            triangle[2].pos.w = pLerp(points[0].pos.w, points[2].pos.w, splitFrac);
 
             triangle[3] = points[2];
 
