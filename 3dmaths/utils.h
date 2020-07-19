@@ -76,7 +76,7 @@ namespace P3D
         return -v;
     }
 
-    inline void FastFill32(unsigned int* dest, unsigned int value, unsigned int words)
+    inline void FastFill32(unsigned int* dest, volatile unsigned int value, unsigned int words)
     {
 #ifndef __arm__
         while(words--)
