@@ -21,7 +21,7 @@ namespace P3D
         V4<fp> pos;
         V2<fp> uv;
 
-        static const int uv_scale = 128;
+        static const int uv_scale = 256;
 
         void toPerspectiveCorrect()
         {
@@ -188,13 +188,13 @@ namespace P3D
         unsigned int triangles_submitted;
         unsigned int triangles_drawn;
         unsigned int scanlines_drawn;
+        unsigned int span_checks;
+        unsigned int span_count;
     } RenderStats;
 
     typedef enum RenderFlags
     {
         NoFlags = 0u,
-        PerspectiveCorrect = 1u,
-        Alpha = 2u,
         NoBackfaceCull = 4u,
     } RenderFlags;
 

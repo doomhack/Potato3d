@@ -2,6 +2,7 @@
 #define UTILS_H
 
 #include "fp.h"
+#include "recip.h"
 
 #ifdef __arm__
     #include <gba_dma.h>
@@ -75,7 +76,7 @@ namespace P3D
         return -v;
     }
 
-    inline void FastFill32(unsigned int* dest, unsigned int value, unsigned int words)
+    inline void FastFill32(unsigned int* dest, volatile unsigned int value, unsigned int words)
     {
 #ifndef __arm__
         while(words--)
@@ -85,6 +86,50 @@ namespace P3D
 #else
         DMA3COPY(&value, dest, DMA_SRC_FIXED | DMA_DST_INC | DMA32 | DMA_IMMEDIATE | words)
 #endif
+    }
+
+    inline void FastFill16(unsigned short* dest, volatile unsigned short value, unsigned int words)
+    {
+#ifndef __arm__
+        while(words--)
+        {
+            *dest++ = value;
+        }
+#else
+        DMA3COPY(&value, dest, DMA_SRC_FIXED | DMA_DST_INC | DMA16 | DMA_IMMEDIATE | words)
+#endif
+    }
+
+    template <class T>
+    constexpr inline T pReciprocal(T val)
+    {
+        return T(1)/val;
+    }
+
+    template <>
+    constexpr inline FP pReciprocal(FP v)
+    {
+        FP result;
+
+        FP val = v < 0 ? -v : v;
+
+        if(val < 1)
+        {
+            result = FP::fromFPInt(reciprocalTable[val.toFPInt()]);
+        }
+        else
+        {
+            if(val < 256)
+            {
+                result = FP::fromFPInt(reciprocalTable[val.toFPInt() >> 8] >> 8);
+            }
+            else
+            {
+                result = FP::fromFPInt(reciprocalTable[val.toFPInt() >> 15] >> 15);
+            }
+        }
+
+        return v < 0 ? -result : result;
     }
 }
 

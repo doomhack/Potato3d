@@ -56,21 +56,30 @@ namespace P3D
         for(int i = 0; i < fbSize.y; i++)
         {
             spanBuffer[i].min_opening = 0;
+            spanBuffer[i].max_opening = fbSize.x-1;
             spanBuffer[i].span_list.clear();
         }
+
+        pixels_left = fbSize.x * fbSize.y;
 
 #ifdef RENDER_STATS
         stats.triangles_drawn = 0;
         stats.triangles_submitted = 0;
         stats.vertex_transformed = 0;
         stats.scanlines_drawn = 0;
+        stats.span_checks = 0;
+        stats.span_count = 0;
 #endif
-
     }
 
     void Render::EndFrame()
     {
-
+#ifdef RENDER_STATS
+        for(int i = 0; i < fbSize.y; i++)
+        {
+            stats.span_count += spanBuffer[i].span_list.size();
+        }
+#endif
     }
 
     void Render::BeginObject()
@@ -119,6 +128,9 @@ namespace P3D
 
             case MatrixType::Projection:
                 return this->projectionMatrix;
+
+            default: //Shouldn't get here. Shut up compiler.
+                return this->viewMatrix;
         }
     }
 
@@ -134,6 +146,9 @@ namespace P3D
 
     void Render::DrawTriangle(const Triangle3d* tri, const Texture* texture, const pixel color, const RenderFlags flags)
     {
+        if(pixels_left <= 0)
+            return;
+
 #ifdef RENDER_STATS
         stats.triangles_submitted++;
 #endif
@@ -203,6 +218,7 @@ namespace P3D
         //All points behind clipping plane.
         if(w0 < zNear && w1 < zNear && w2 < zNear)
             return;
+
 
         Vertex2d outputVxA[8];
         Vertex2d outputVxB[8];
@@ -314,17 +330,14 @@ namespace P3D
         {
             screenSpacePoints[i].pos = clipSpacePoints[i].pos.ToScreenSpace();
 
+            screenSpacePoints[i].pos.x = fracToX(screenSpacePoints[i].pos.x);
+            screenSpacePoints[i].pos.y = fracToY(screenSpacePoints[i].pos.y);
+
             if(texture)
             {
                 screenSpacePoints[i].uv.x = clipSpacePoints[i].uv.x * (int)texture->width;
-                screenSpacePoints[i].uv.y = pASL(fp((int)texture->height) - (clipSpacePoints[i].uv.y * (int)texture->height), texture->v_shift);
+                screenSpacePoints[i].uv.y = clipSpacePoints[i].uv.y * (int)texture->height;
             }
-        }
-
-        for(int i = 0; i < 3; i++)
-        {
-            screenSpacePoints[i].pos.x = fracToX(screenSpacePoints[i].pos.x);
-            screenSpacePoints[i].pos.y = fracToY(screenSpacePoints[i].pos.y);
         }
 
         SortPointsByY(screenSpacePoints);
@@ -336,20 +349,14 @@ namespace P3D
         if(texture)
             DrawTriangleSplit(screenSpacePoints, texture, flags);
         else
-            DrawTriangleSplitFlat(screenSpacePoints, color, flags);
+            DrawTriangleSplitFlat(screenSpacePoints, color);
     }
 
     void Render::DrawTriangleSplit(Vertex2d *points, const Texture *texture, RenderFlags flags)
     {
-        if(flags & PerspectiveCorrect)
-        {
-            points[0].toPerspectiveCorrect();
-            points[1].toPerspectiveCorrect();
-            points[2].toPerspectiveCorrect();
-        }
-
-        if(texture->alpha)
-            flags = (RenderFlags)(flags | RenderFlags::Alpha);
+        points[0].toPerspectiveCorrect();
+        points[1].toPerspectiveCorrect();
+        points[2].toPerspectiveCorrect();
 
         if(points[1].pos.y == points[2].pos.y)
         {
@@ -381,8 +388,7 @@ namespace P3D
             triangle[2].uv.x = pLerp(points[0].uv.x, points[2].uv.x, splitFrac);
             triangle[2].uv.y = pLerp(points[0].uv.y, points[2].uv.y, splitFrac);
 
-            if(flags & PerspectiveCorrect)
-                triangle[2].pos.w = pLerp(points[0].pos.w, points[2].pos.w, splitFrac);
+            triangle[2].pos.w = pLerp(points[0].pos.w, points[2].pos.w, splitFrac);
 
             triangle[3] = points[2];
 
@@ -391,15 +397,15 @@ namespace P3D
         }
     }
 
-    void Render::DrawTriangleSplitFlat(const Vertex2d points[], const pixel color, const RenderFlags flags)
+    void Render::DrawTriangleSplitFlat(const Vertex2d points[], const pixel color)
     {
         if(points[1].pos.y == points[2].pos.y)
         {
-            DrawTriangleTopFlat(points, color, flags);
+            DrawTriangleTopFlat(points, color);
         }
         else if(points[0].pos.y == points[1].pos.y)
         {
-            DrawTriangleBottomFlat(points, color, flags);
+            DrawTriangleBottomFlat(points, color);
         }
         else
         {
@@ -421,9 +427,9 @@ namespace P3D
 
             triangle[3] = points[2];
 
-            DrawTriangleTopFlat(triangle, color, flags);
+            DrawTriangleTopFlat(triangle, color);
 
-            DrawTriangleBottomFlat(&triangle[1], color, flags);
+            DrawTriangleBottomFlat(&triangle[1], color);
         }
     }
 
@@ -438,8 +444,6 @@ namespace P3D
         if(points[1].pos.y > points[2].pos.y)
             std::swap(points[1], points[2]);
     }
-
-
 
     void Render::DrawTriangleTop(const Vertex2d *points, const Texture *texture, const RenderFlags flags)
     {
@@ -508,10 +512,12 @@ namespace P3D
         }
     }
 
-    void Render::DrawTriangleTopFlat(const Vertex2d points[], const pixel color, const RenderFlags flags)
+    void Render::DrawTriangleTopFlat(const Vertex2d points[], const pixel color)
     {
         TriEdgeTrace pos;
         TriDrawYDeltaZ y_delta, y_delta_sum;
+        TriDrawXDeltaZWUV x_delta;
+
 
         const Vertex2d& top     = points[0];
         const Vertex2d& left    = (points[1].pos.x < points[2].pos.x) ? points[1] : points[2];
@@ -549,7 +555,7 @@ namespace P3D
             pos.x_left = top.pos.x + pASR(y_delta_sum.x_left, triFracShift);
             pos.x_right = top.pos.x + pASR(y_delta_sum.x_right, triFracShift);
 
-            DrawTriangleScanlineFlat(y, pos, color);
+            ClipSpan(y, pos, x_delta, nullptr, color, NoFlags);
 
             y_delta_sum.x_left += y_delta.x_left;
             y_delta_sum.x_right += y_delta.x_right;
@@ -624,10 +630,11 @@ namespace P3D
         }
     }
 
-    void Render::DrawTriangleBottomFlat(const Vertex2d points[], const pixel color, const RenderFlags flags)
+    void Render::DrawTriangleBottomFlat(const Vertex2d points[], const pixel color)
     {
         TriEdgeTrace pos;
         TriDrawYDeltaZ y_delta, y_delta_sum;
+        TriDrawXDeltaZWUV x_delta;
 
         const Vertex2d& bottom  = points[2];
         const Vertex2d& left    = (points[0].pos.x < points[1].pos.x) ? points[0] : points[1];
@@ -667,7 +674,7 @@ namespace P3D
             pos.x_left = bottom.pos.x - pASR(y_delta_sum.x_left, triFracShift);
             pos.x_right = bottom.pos.x - pASR(y_delta_sum.x_right, triFracShift);
 
-            DrawTriangleScanlineFlat(y, pos, color);
+            ClipSpan(y, pos, x_delta, nullptr, color, NoFlags);
 
             y_delta_sum.x_left += y_delta.x_left;
             y_delta_sum.x_right += y_delta.x_right;
@@ -678,23 +685,31 @@ namespace P3D
     {
         SpanBuffer* s_buffer = &spanBuffer[y];
 
-        if(s_buffer->min_opening >= fbSize.x)
+        int first_opening = s_buffer->min_opening;
+        int last_opening = s_buffer->max_opening;
+
+        if(last_opening < 0)
             return;
+
+        const int fb_width = fbSize.x;
 
         int x_start = pos.x_left;
         int x_end = pos.x_right;
 
-        if(s_buffer->min_opening > x_end)
+        if(first_opening > x_end)
             return;
 
-        if( (x_end < x_start) || (x_end < 0) || (x_start >= fbSize.x) )
+        if(last_opening < x_start)
+            return;
+
+        if( (x_end < x_start) || (x_end < 0) || (x_start >= fb_width) )
             return;
 
         if(x_start < 0)
             x_start = 0;
 
-        if(x_end >= fbSize.x)
-            x_end = fbSize.x-1;
+        if(x_end >= fb_width)
+            x_end = fb_width-1;
 
         //Clip against spans already in buffer.
         unsigned int span_count = s_buffer->span_list.size();
@@ -702,17 +717,26 @@ namespace P3D
         Span* l_abutt = nullptr;
         Span* r_abutt = nullptr;
 
-        int first_opening = s_buffer->min_opening;
-
         if(x_start <= first_opening && x_end > first_opening)
             first_opening = x_end + 1;
 
+        if(x_end >= last_opening && x_start < last_opening)
+            last_opening = x_start - 1;
+
         for(unsigned int i = 0; i < span_count; i++)
         {
+#ifdef RENDER_STATS
+            stats.span_checks++;
+#endif
+
             Span& other = s_buffer->span_list[i];
 
             int x_start2 = other.x_start;
             int x_end2 = other.x_end;
+
+            //Fully occluded.
+            if(x_start >= x_start2 && x_end <= x_end2)
+                return;
 
             if(x_start2 <= first_opening)
             {
@@ -720,16 +744,19 @@ namespace P3D
                     first_opening = x_end2 + 1;
             }
 
-
-            //Fully occluded.
-            if(x_start >= x_start2 && x_end <= x_end2)
-                return;
+            if(x_end2 >= last_opening)
+            {
+                if(last_opening > x_start2)
+                    last_opening = x_start2 - 1;
+            }
 
             //Fully to the right of.
             if(x_start > x_end2)
             {
                 if(x_start == x_end2 + 1)
+                {
                     l_abutt = &other;
+                }
 
                 continue;
             }
@@ -738,7 +765,9 @@ namespace P3D
             if(x_end < x_start2)
             {
                 if(x_end == x_start2 - 1)
+                {
                     r_abutt = &other;
+                }
 
                 continue;
             }
@@ -773,17 +802,16 @@ namespace P3D
             }
         }
 
-        if(x_start > (int)pos.x_left)
+        if(texture && x_start > (int)pos.x_left)
         {
             int overlap = x_start - (int)pos.x_left;
 
             pos.w_left += (delta.w * overlap);
             pos.u_left += (delta.u * overlap);
             pos.v_left += (delta.v * overlap);
-
-            pos.x_left = x_start;
         }
 
+        pos.x_left = x_start;
         pos.x_right = x_end;
 
         if(l_abutt && r_abutt)
@@ -805,45 +833,28 @@ namespace P3D
             s_buffer->span_list.push_back(span);
         }
 
-        s_buffer->min_opening = first_opening;
+        pixels_left -= (x_end - x_start) + 1;
 
-        DrawSpan(y, pos, delta, texture, color, flags);
+        s_buffer->min_opening = first_opening;
+        s_buffer->max_opening = last_opening;
+
+
+        DrawSpan(y, pos, delta, texture, color);
     }
 
-    void Render::DrawSpan(int y, TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color, const RenderFlags flags)
-    {
+    void Render::DrawSpan(int y, TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color)
+    {        
         if(!texture)
         {
             DrawTriangleScanlineFlat(y, pos, color);
         }
         else
         {
-            if(flags & PerspectiveCorrect)
-            {
-                if(flags & Alpha)
-                {
-                    DrawTriangleScanlinePerspectiveAlpha(y, pos, delta, texture);
-                }
-                else
-                {
-                    DrawTriangleScanlinePerspectiveCorrect(y, pos, delta, texture);
-                }
-            }
-            else
-            {
-                if(flags & Alpha)
-                {
-                    DrawTriangleScanlineLinearAlpha(y, pos, delta, texture);
-                }
-                else
-                {
-                    DrawTriangleScanlineLinear(y, pos, delta, texture);
-                }
-            }
+            DrawTriangleScanlinePerspectiveCorrect(y, pos, delta, texture);
         }
     }
 
-    void Render::DrawTriangleScanlinePerspectiveCorrect(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture)
+    void Render:: DrawTriangleScanlinePerspectiveCorrect(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture)
     {
         int x_start = pos.x_left;
         int x_end = pos.x_right;
@@ -856,154 +867,90 @@ namespace P3D
         int buffOffset = ((y * fbSize.x) + x_start);
         pixel* fb = &frameBuffer[buffOffset];
 
-        unsigned int umask = texture->u_mask;
-        unsigned int vmask = texture->v_mask;
-        const pixel* t_pxl = texture->pixels;
-
-#ifdef RENDER_STATS
-        stats.scanlines_drawn++;
-#endif
-
-        do
-        {
-
-            fp invw = fp(1) / w;
-
-            int tx = (u * invw);
-            int ty = (v * invw);
-
-            tx = tx & umask;
-            ty = ty & vmask;
-
-            *fb++ = t_pxl[ty | tx];
-
-            w += dw;
-            u += du;
-            v += dv;
-
-        } while(--count);
-    }
-
-    void Render::DrawTriangleScanlinePerspectiveAlpha(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture)
-    {
-        int x_start = pos.x_left;
-        int x_end = pos.x_right;
-
-        fp u = pos.u_left, v = pos.v_left, w = pos.w_left;
-        fp du = delta.u, dv = delta.v, dw = delta.w;
-
-        unsigned int count = (x_end - x_start) + 1;
-
-        int buffOffset = ((y * fbSize.x) + x_start);
-        pixel* fb = &frameBuffer[buffOffset];
-
-        unsigned int umask = texture->u_mask;
-        unsigned int vmask = texture->v_mask;
-        const pixel* t_pxl = texture->pixels;
-
-#ifdef RENDER_STATS
-        stats.scanlines_drawn++;
-#endif
-
-        do
-        {
-
-            fp invw = fp(1) / w;
-
-            int tx = (u * invw);
-            int ty = (v * invw);
-
-            tx = tx & umask;
-            ty = ty & vmask;
-
-            pixel texel = t_pxl[ty | tx];
-
-            if(texel & alphaMask)
-                *fb = texel;
-
-            fb++;
-
-            w += dw;
-            u += du;
-            v += dv;
-
-        } while(--count);
-    }
-
-    void Render::DrawTriangleScanlineLinear(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture)
-    {
-        int x_start = pos.x_left;
-        int x_end = pos.x_right;
-
-        fp u = pos.u_left, v = pos.v_left;
-        fp du = delta.u, dv = delta.v;
-
-        unsigned int count = (x_end - x_start) + 1;
-
-        pixel* fb = &frameBuffer[((y * fbSize.x) + x_start)];
-
         const unsigned int umask = texture->u_mask;
         const unsigned int vmask = texture->v_mask;
+        const unsigned int vshift = texture->v_shift;
         const pixel* t_pxl = texture->pixels;
 
 #ifdef RENDER_STATS
         stats.scanlines_drawn++;
 #endif
 
-        do
+        fp invw_0 = pReciprocal(w);
+        fp invw_15 = pReciprocal(w += (pASL(dw, 4)));
+
+        fp u0 = u * invw_0;
+        fp u15 = (u += (pASL(du, 4))) * invw_15;
+
+        fp v0 = v * invw_0;
+        fp v15 = (v += (pASL(dv, 4))) * invw_15;
+
+        fp du16 = pASR(u15-u0, 4);
+        fp dv16 = pASR(v15-v0, 4);
+
+        unsigned int l = count >> 4;
+        unsigned int r = count & 15;
+
+        while(l--)
         {
-            unsigned int tx = (int)u;
-            unsigned int ty = (int)v;
+            DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
+            DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
+            DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
+            DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
+            DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
+            DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
+            DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
+            DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
+            DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
+            DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
+            DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
+            DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
+            DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
+            DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
+            DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
+            DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
 
-            tx = tx & umask;
-            ty = ty & vmask;
-            *fb++ = t_pxl[ty | tx];
+            invw_0 = pReciprocal(w);
+            invw_15 = pReciprocal(w += (pASL(dw, 4)));
 
-            u += du;
-            v += dv;
+            u0 = u * invw_0;
+            u15 = (u += (pASL(du, 4))) * invw_15;
 
-        } while(--count);
+            v0 = v * invw_0;
+            v15 = (v += (pASL(dv, 4))) * invw_15;
+
+            du16 = pASR(u15-u0, 4);
+            dv16 = pASR(v15-v0, 4);
+        }
+
+        switch(r)
+        {
+            case 15:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
+            case 14:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
+            case 13:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
+            case 12:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
+            case 11:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
+            case 10:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
+            case 9:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
+            case 8:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
+            case 7:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
+            case 6:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
+            case 5:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
+            case 4:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
+            case 3:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
+            case 2:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
+            case 1:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift);
+        }
     }
 
-    void Render::DrawTriangleScanlineLinearAlpha(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture)
+    inline void Render::DrawScanlinePixelLinear(pixel* fb, const pixel* texels, const fp u, const fp v, const unsigned int umask, const unsigned int vmask, const unsigned int vshift)
     {
-        int x_start = pos.x_left;
-        int x_end = pos.x_right;
+        unsigned int tx = (int)u;
+        unsigned int ty = (int)v;
 
-        fp u = pos.u_left, v = pos.v_left;
-        fp du = delta.u, dv = delta.v;
-
-        unsigned int count = (x_end - x_start) + 1;
-
-        pixel* fb = &frameBuffer[((y * fbSize.x) + x_start)];
-
-        const unsigned int umask = texture->u_mask;
-        const unsigned int vmask = texture->v_mask;
-        const pixel* t_pxl = texture->pixels;
-
-#ifdef RENDER_STATS
-        stats.scanlines_drawn++;
-#endif
-
-        do
-        {
-            unsigned int tx = (int)u;
-            unsigned int ty = (int)v;
-
-            tx = tx & umask;
-            ty = ty & vmask;
-
-            pixel texel = t_pxl[ty | tx];
-
-            if(texel & alphaMask)
-                *fb = texel;
-
-            fb++;
-
-            u += du;
-            v += dv;
-
-        } while(--count);
+        tx = tx & umask;
+        ty = (ty << vshift) & vmask;
+        *fb = texels[ty | tx];
     }
 
     void Render::DrawTriangleScanlineFlat(int y, const TriEdgeTrace& pos, const pixel color)
@@ -1020,10 +967,7 @@ namespace P3D
         stats.scanlines_drawn++;
 #endif
 
-        do
-        {
-            *fb++ = color;
-        } while(--count);
+        FastFill16(fb, color, count);
     }
 
     void Render::LerpVertexXYZWUV(Vertex2d& out, const Vertex2d& left, const Vertex2d& right, fp frac)
@@ -1046,8 +990,9 @@ namespace P3D
         if(left.pos.y != other.pos.y)
             inv_y = fp(1 << triFracShift) / (left.pos.y - other.pos.y);
 
+
         if(right.pos.x != left.pos.x)
-            inv_x = fp(1) / (right.pos.x - left.pos.x);
+            inv_x = pReciprocal(right.pos.x - left.pos.x);
 
         x_delta.w = (right.pos.w - left.pos.w) * inv_x;
         x_delta.u = (right.uv.x - left.uv.x) * inv_x;

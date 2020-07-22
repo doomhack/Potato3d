@@ -5,6 +5,8 @@
 
 #include "v3.h"
 
+#include "utils.h"
+
 namespace P3D
 {
 
