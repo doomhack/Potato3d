@@ -68,12 +68,18 @@ namespace P3D
         stats.vertex_transformed = 0;
         stats.scanlines_drawn = 0;
         stats.span_checks = 0;
+        stats.span_count = 0;
 #endif
     }
 
     void Render::EndFrame()
     {
-
+#ifdef RENDER_STATS
+        for(int i = 0; i < fbSize.y; i++)
+        {
+            stats.span_count += spanBuffer[i].span_list.size();
+        }
+#endif
     }
 
     void Render::BeginObject()

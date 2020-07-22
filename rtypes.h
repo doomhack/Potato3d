@@ -189,6 +189,7 @@ namespace P3D
         unsigned int triangles_drawn;
         unsigned int scanlines_drawn;
         unsigned int span_checks;
+        unsigned int span_count;
     } RenderStats;
 
     typedef enum RenderFlags
