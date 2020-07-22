@@ -100,27 +100,29 @@ namespace P3D
 
             const Texture* tex = nullptr;
 
-            if(textureMap.count(ntex) == 0)
+            if(ntex)
             {
-                Texture* t = new Texture;
+                if(textureMap.count(ntex) == 0)
+                {
+                    Texture* t = new Texture;
 
-                t->alpha = ntex->alpha;
-                t->width = ntex->width;
-                t->height = ntex->height;
-                t->u_mask = ntex->u_mask;
-                t->v_mask = ntex->v_mask;
-                t->v_shift = ntex ->v_shift;
-                t->pixels = model->GetTexturePixels(ntex->texture_pixels_offset);
+                    t->alpha = ntex->alpha;
+                    t->width = ntex->width;
+                    t->height = ntex->height;
+                    t->u_mask = ntex->u_mask;
+                    t->v_mask = ntex->v_mask;
+                    t->v_shift = ntex ->v_shift;
+                    t->pixels = model->GetTexturePixels(ntex->texture_pixels_offset);
 
-                tex = t;
+                    tex = t;
 
-                textureMap[ntex] = tex;
+                    textureMap[ntex] = tex;
+                }
+                else
+                {
+                    tex = textureMap[ntex];
+                }
             }
-            else
-            {
-                tex = textureMap[ntex];
-            }
-
 
             render->DrawTriangle(&tri->tri, tex, tri->color, renderFlags);
         }

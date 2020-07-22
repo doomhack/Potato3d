@@ -64,8 +64,11 @@ namespace P3D
 
         void SortFrontToBack(const V3<fp>& p, const AABB& frustrum, std::vector<const BspModelTriangle*>& out, bool backface_cull) const;
 
-        const BspNodeTexture* GetTexture(unsigned int n) const
+        const BspNodeTexture* GetTexture(int n) const
         {
+            if(n == -1)
+                return nullptr;
+
             return &((const BspNodeTexture*)(GetBasePtr() + header.texture_offset))[n];
         }
 

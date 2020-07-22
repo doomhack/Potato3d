@@ -76,11 +76,6 @@ void PollKeys()
     }
 }
 
-#define INI_X 160
-#define INI_Y 190
-#define INI_DX 500
-#define INI_DY 960
-
 int main()
 {    
     irqInit();
@@ -91,10 +86,10 @@ int main()
     //Bit5 = unlocked vram at h-blank.
     SetMode(MODE_5 | BG2_ENABLE | BIT(5));
 
-    REG_BG2PA=INI_X;	//escalado horizontal;
-    REG_BG2PD=INI_Y;	//escalado vertical;
-    REG_BG2X=INI_DX;	//desp horizontal
-    REG_BG2Y=10;		//desp vert
+    REG_BG2PA=170;
+    REG_BG2PD=205;
+    REG_BG2X=0;
+    REG_BG2Y=0;
 
     obj3d = new P3D::Object3d();
 

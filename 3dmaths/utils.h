@@ -88,6 +88,18 @@ namespace P3D
 #endif
     }
 
+    inline void FastFill16(unsigned short* dest, volatile unsigned short value, unsigned int words)
+    {
+#ifndef __arm__
+        while(words--)
+        {
+            *dest++ = value;
+        }
+#else
+        DMA3COPY(&value, dest, DMA_SRC_FIXED | DMA_DST_INC | DMA16 | DMA_IMMEDIATE | words)
+#endif
+    }
+
     template <class T>
     constexpr inline T pReciprocal(T val)
     {

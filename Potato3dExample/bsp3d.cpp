@@ -817,30 +817,33 @@ namespace P3D
 
                 const Texture* tex = nodeList[i]->front_tris[j]->texture;
 
-                if(textureList.contains(tex))
+                if(tex)
                 {
-                    bmt.texture = textureList.indexOf(tex);
-                }
-                else
-                {
-                    BspNodeTexture bnt;
-                    bnt.alpha = nodeList[i]->front_tris[j]->texture->alpha;
-                    bnt.width = nodeList[i]->front_tris[j]->texture->width;
-                    bnt.height = nodeList[i]->front_tris[j]->texture->height;
-                    bnt.u_mask = nodeList[i]->front_tris[j]->texture->u_mask;
-                    bnt.v_mask = nodeList[i]->front_tris[j]->texture->v_mask;
-                    bnt.v_shift = nodeList[i]->front_tris[j]->texture->v_shift;
-                    bnt.texture_pixels_offset = texturePixels.length() / sizeof(pixel);
+                    if(textureList.contains(tex))
+                    {
+                        bmt.texture = textureList.indexOf(tex);
+                    }
+                    else
+                    {
+                        BspNodeTexture bnt;
+                        bnt.alpha = nodeList[i]->front_tris[j]->texture->alpha;
+                        bnt.width = nodeList[i]->front_tris[j]->texture->width;
+                        bnt.height = nodeList[i]->front_tris[j]->texture->height;
+                        bnt.u_mask = nodeList[i]->front_tris[j]->texture->u_mask;
+                        bnt.v_mask = nodeList[i]->front_tris[j]->texture->v_mask;
+                        bnt.v_shift = nodeList[i]->front_tris[j]->texture->v_shift;
+                        bnt.texture_pixels_offset = texturePixels.length() / sizeof(pixel);
 
-                    QByteArray pxl((const char*)nodeList[i]->front_tris[j]->texture->pixels,
-                                   nodeList[i]->front_tris[j]->texture->width * nodeList[i]->front_tris[j]->texture->height * sizeof(pixel));
+                        QByteArray pxl((const char*)nodeList[i]->front_tris[j]->texture->pixels,
+                                       nodeList[i]->front_tris[j]->texture->width * nodeList[i]->front_tris[j]->texture->height * sizeof(pixel));
 
-                    texturePixels.append(pxl);
+                        texturePixels.append(pxl);
 
-                    bmt.texture = modelTextureList.length();
+                        bmt.texture = modelTextureList.length();
 
-                    modelTextureList.append(bnt);
-                    textureList.append(tex);
+                        modelTextureList.append(bnt);
+                        textureList.append(tex);
+                    }
                 }
 
                 modelTriList.append(bmt);
