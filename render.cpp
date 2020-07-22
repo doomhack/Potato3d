@@ -46,6 +46,11 @@ namespace P3D
 
         spanBuffer = new SpanBuffer[screenHeight];
 
+        for(int i = 0; i < fbSize.y; i++)
+        {
+            spanBuffer[i].c_buffer = new unsigned char[fbSize.x];
+        }
+
         return true;
     }
 
@@ -57,7 +62,8 @@ namespace P3D
         {
             spanBuffer[i].min_opening = 0;
             spanBuffer[i].max_opening = fbSize.x-1;
-            spanBuffer[i].span_list.clear();
+
+            FastFill32((unsigned int*)spanBuffer[i].c_buffer, 0, fbSize.x >> 2);
         }
 
         pixels_left = fbSize.x * fbSize.y;
@@ -77,7 +83,7 @@ namespace P3D
 #ifdef RENDER_STATS
         for(int i = 0; i < fbSize.y; i++)
         {
-            stats.span_count += spanBuffer[i].span_list.size();
+            //stats.span_count += spanBuffer[i].span_list.size();
         }
 #endif
     }
@@ -685,22 +691,10 @@ namespace P3D
     {
         SpanBuffer* s_buffer = &spanBuffer[y];
 
-        int first_opening = s_buffer->min_opening;
-        int last_opening = s_buffer->max_opening;
-
-        if(last_opening < 0)
-            return;
-
         const int fb_width = fbSize.x;
 
         int x_start = pos.x_left;
         int x_end = pos.x_right;
-
-        if(first_opening > x_end)
-            return;
-
-        if(last_opening < x_start)
-            return;
 
         if( (x_end < x_start) || (x_end < 0) || (x_start >= fb_width) )
             return;
@@ -711,135 +705,40 @@ namespace P3D
         if(x_end >= fb_width)
             x_end = fb_width-1;
 
-        //Clip against spans already in buffer.
-        unsigned int span_count = s_buffer->span_list.size();
 
-        Span* l_abutt = nullptr;
-        Span* r_abutt = nullptr;
-
-        if(x_start <= first_opening && x_end > first_opening)
-            first_opening = x_end + 1;
-
-        if(x_end >= last_opening && x_start < last_opening)
-            last_opening = x_start - 1;
-
-        for(unsigned int i = 0; i < span_count; i++)
+        if(s_buffer->c_buffer[x_start])
         {
-#ifdef RENDER_STATS
-            stats.span_checks++;
-#endif
+            while(s_buffer->c_buffer[x_start] && x_start < fb_width)
+                x_start++;
+        }
 
-            Span& other = s_buffer->span_list[i];
-
-            int x_start2 = other.x_start;
-            int x_end2 = other.x_end;
-
-            //Fully occluded.
-            if(x_start >= x_start2 && x_end <= x_end2)
-                return;
-
-            if(x_start2 <= first_opening)
+        for(int x = x_start; x <= x_end && x < fb_width; x++)
+        {
+            if(s_buffer->c_buffer[x] || x == x_end)
             {
-                if(first_opening < x_end2)
-                    first_opening = x_end2 + 1;
-            }
+                x_end = x;
 
-            if(x_end2 >= last_opening)
-            {
-                if(last_opening > x_start2)
-                    last_opening = x_start2 - 1;
-            }
-
-            //Fully to the right of.
-            if(x_start > x_end2)
-            {
-                if(x_start == x_end2 + 1)
+                if(texture && x_start > (int)pos.x_left)
                 {
-                    l_abutt = &other;
+                    int overlap = x_start - (int)pos.x_left;
+
+                    pos.w_left += (delta.w * overlap);
+                    pos.u_left += (delta.u * overlap);
+                    pos.v_left += (delta.v * overlap);
                 }
 
-                continue;
+                pos.x_left = x_start;
+                pos.x_right = x_end -1;
+
+                DrawSpan(y, pos, delta, texture, color);
+
+                break;
             }
 
-            //Fully to the left of.
-            if(x_end < x_start2)
-            {
-                if(x_end == x_start2 - 1)
-                {
-                    r_abutt = &other;
-                }
-
-                continue;
-            }
-
-            //Overlaps both sides.
-            if(x_start < x_start2 && x_end > x_end2)
-            {
-                //Create new span for left edge.
-                TriEdgeTrace left_edge = pos;
-                left_edge.x_left = x_start;
-                left_edge.x_right = x_start2 - 1;
-
-                ClipSpan(y, left_edge, delta, texture, color, flags);
-
-                //Adjust start point for right edge.
-                x_start = x_end2 + 1;
-                l_abutt = &other;
-                continue;
-            }
-
-            //Left overlap.
-            if(x_start < x_start2)
-            {
-                x_end = x_start2-1;
-                r_abutt = &other;
-            }
-            //Right overlap.
-            else
-            {
-                x_start = x_end2 + 1;
-                l_abutt = &other;
-            }
-        }
-
-        if(texture && x_start > (int)pos.x_left)
-        {
-            int overlap = x_start - (int)pos.x_left;
-
-            pos.w_left += (delta.w * overlap);
-            pos.u_left += (delta.u * overlap);
-            pos.v_left += (delta.v * overlap);
-        }
-
-        pos.x_left = x_start;
-        pos.x_right = x_end;
-
-        if(l_abutt && r_abutt)
-        {
-            l_abutt->x_end = r_abutt->x_end;
-            r_abutt->x_start = l_abutt->x_start;
-        }
-        else if(r_abutt)
-        {
-            r_abutt->x_start = x_start;
-        }
-        else if(l_abutt)
-        {
-            l_abutt->x_end = x_end;
-        }
-        else
-        {
-            Span span = {x_start, x_end};
-            s_buffer->span_list.push_back(span);
+            s_buffer->c_buffer[x] = 1;
         }
 
         pixels_left -= (x_end - x_start) + 1;
-
-        s_buffer->min_opening = first_opening;
-        s_buffer->max_opening = last_opening;
-
-
-        DrawSpan(y, pos, delta, texture, color);
     }
 
     void Render::DrawSpan(int y, TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color)

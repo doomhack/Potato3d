@@ -67,7 +67,7 @@ namespace P3D
 
     typedef struct SpanBuffer
     {
-        std::vector<Span> span_list;
+        unsigned char* c_buffer = nullptr;
         int min_opening = 0;
         int max_opening = 0;
     } SpanBuffer;
