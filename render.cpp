@@ -838,8 +838,23 @@ namespace P3D
         s_buffer->min_opening = first_opening;
         s_buffer->max_opening = last_opening;
 
-
         DrawSpan(y, pos, delta, texture, color);
+
+        //Consolidate spans.
+        for(unsigned int i = 1; i < s_buffer->span_list.size(); i++)
+        {
+            Span& s1 = s_buffer->span_list[i-1];
+            Span& s2 = s_buffer->span_list[i];
+
+            if(s1.x_start < s2.x_end && s1.x_end > s2.x_start)
+            {
+                s1.x_start = std::min(s1.x_start, s2.x_start);
+                s1.x_end = std::max(s1.x_end, s2.x_end);
+
+                s_buffer->span_list.erase(s_buffer->span_list.begin()+i);
+                i--;
+            }
+        }
     }
 
     void Render::DrawSpan(int y, TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color)
