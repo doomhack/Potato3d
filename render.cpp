@@ -817,7 +817,8 @@ namespace P3D
         if(l_abutt && r_abutt)
         {
             l_abutt->x_end = r_abutt->x_end;
-            r_abutt->x_start = l_abutt->x_start;
+            *r_abutt = s_buffer->span_list.back();
+            s_buffer->span_list.pop_back();
         }
         else if(r_abutt)
         {
@@ -851,7 +852,9 @@ namespace P3D
                 s1.x_start = std::min(s1.x_start, s2.x_start);
                 s1.x_end = std::max(s1.x_end, s2.x_end);
 
-                s_buffer->span_list.erase(s_buffer->span_list.begin()+i);
+                s_buffer->span_list[i] = s_buffer->span_list.back();
+                s_buffer->span_list.pop_back();
+
                 i--;
             }
         }
