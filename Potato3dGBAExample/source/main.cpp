@@ -73,6 +73,16 @@ void PollKeys()
 
             obj3d->CameraPos() -= d;
         }
+
+        if(key_down & KEY_L)
+        {
+            obj3d->CameraPos().y -= 10;
+        }
+
+        if(key_down & KEY_R)
+        {
+            obj3d->CameraPos().y += 10;
+        }
     }
 }
 

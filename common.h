@@ -7,6 +7,10 @@ namespace P3D
 {
     #define RENDER_STATS
 
+    #define TEX_SHIFT 5
+    #define TEX_SIZE (1u << TEX_SHIFT)
+    #define TEX_MASK (TEX_SIZE-1)
+
     //#define USE_FLOAT
 
 #ifndef __arm__

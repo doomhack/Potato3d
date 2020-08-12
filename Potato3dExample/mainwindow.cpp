@@ -29,7 +29,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     object3d->SetBackgroundColor(qRgb(104,96,73));
 
-    P3D::Model3d* runway = LoadObjFile(":/models/temple.obj", ":/models/temple.mtl");
+    P3D::Model3d* runway = LoadObjFile(":/models/DKR_Castle/castle.obj", ":/models/DKR_Castle/castle.mtl");
 
     P3D::Bsp3d* bsp = new P3D::Bsp3d;
 
@@ -180,6 +180,11 @@ P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
     QMap<QString, QRgb> textureColors;
 
 
+    QStringList texParts = mtlFile.split("/");
+    texParts.pop_back();
+    QString texBase = texParts.join("/");
+
+
     for(int i = 0; i < mtlLines.length(); i++)
     {
         QString line = mtlLines.at(i);
@@ -217,11 +222,13 @@ P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
             {
                 P3D::Texture* t = new P3D::Texture();
 
-                QImage* image = new QImage(":/models/" + lastBit);
+                QImage* image = new QImage(texBase + "/" + lastBit);
 
 #ifndef FB_32BIT
                 *image = image->convertToFormat(QImage::Format_RGB555);
 #endif
+
+                *image = image->scaled(TEX_SIZE, TEX_SIZE);
 
                 if(!image->isNull())
                 {

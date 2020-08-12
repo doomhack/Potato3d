@@ -712,7 +712,6 @@ namespace P3D
             x_end = fb_width-1;
 
         //Clip against spans already in buffer.
-        unsigned int span_count = s_buffer->span_list.size();
 
         Span* l_abutt = nullptr;
         Span* r_abutt = nullptr;
@@ -723,7 +722,7 @@ namespace P3D
         if(x_end >= last_opening && x_start < last_opening)
             last_opening = x_start - 1;
 
-        for(unsigned int i = 0; i < span_count; i++)
+        for(unsigned int i = 0; i < s_buffer->span_list.size(); i++)
         {
 #ifdef RENDER_STATS
             stats.span_checks++;
@@ -784,7 +783,7 @@ namespace P3D
 
                 //Adjust start point for right edge.
                 x_start = x_end2 + 1;
-                l_abutt = &other;
+                i = 0;
                 continue;
             }
 
@@ -885,9 +884,6 @@ namespace P3D
         int buffOffset = ((y * fbSize.x) + x_start);
         pixel* fb = &frameBuffer[buffOffset];
 
-        const unsigned int umask = texture->u_mask;
-        const unsigned int vmask = texture->v_mask;
-        const unsigned int vshift = texture->v_shift;
         const pixel* t_pxl = texture->pixels;
 
 #ifdef RENDER_STATS
@@ -911,22 +907,22 @@ namespace P3D
 
         while(l--)
         {
-            DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
-            DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
-            DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
-            DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
-            DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
-            DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
-            DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
-            DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
-            DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
-            DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
-            DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
-            DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
-            DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
-            DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
-            DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
-            DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
+            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
 
             invw_0 = pReciprocal(w);
             invw_15 = pReciprocal(w += (pASL(dw, 4)));
@@ -943,31 +939,31 @@ namespace P3D
 
         switch(r)
         {
-            case 15:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
-            case 14:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
-            case 13:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
-            case 12:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
-            case 11:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
-            case 10:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
-            case 9:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
-            case 8:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
-            case 7:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
-            case 6:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
-            case 5:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
-            case 4:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
-            case 3:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
-            case 2:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift); fb++; u0 += du16; v0 += dv16;
-            case 1:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0, umask, vmask, vshift);
+            case 15:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+            case 14:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+            case 13:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+            case 12:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+            case 11:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+            case 10:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+            case 9:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+            case 8:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+            case 7:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+            case 6:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+            case 5:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+            case 4:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+            case 3:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+            case 2:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+            case 1:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0);
         }
     }
 
-    inline void Render::DrawScanlinePixelLinear(pixel* fb, const pixel* texels, const fp u, const fp v, const unsigned int umask, const unsigned int vmask, const unsigned int vshift)
+    inline void Render::DrawScanlinePixelLinear(pixel* fb, const pixel* texels, const fp u, const fp v)
     {
         unsigned int tx = (int)u;
         unsigned int ty = (int)v;
 
-        tx = tx & umask;
-        ty = (ty << vshift) & vmask;
+        tx = tx & TEX_MASK;
+        ty = (ty & TEX_MASK) << TEX_SHIFT;
         *fb = texels[ty | tx];
     }
 

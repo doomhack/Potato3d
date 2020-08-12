@@ -122,7 +122,7 @@ namespace P3D
 
         void DrawTriangleScanlinePerspectiveCorrect(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture);
 
-        inline void DrawScanlinePixelLinear(pixel* fb, const pixel* texels, const fp u, const fp v, const unsigned int umask, const unsigned int vmask, const unsigned int vshift);
+        inline void DrawScanlinePixelLinear(pixel* fb, const pixel* texels, const fp u, const fp v);
 
         void DrawTriangleSplitFlat(const Vertex2d points[], const pixel color);
         void DrawTriangleTopFlat(const Vertex2d points[], const pixel color);

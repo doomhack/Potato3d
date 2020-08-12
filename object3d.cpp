@@ -86,7 +86,7 @@ namespace P3D
 
         render->BeginObject();
 
-        std::vector<const BspModelTriangle*> tris;
+        static std::vector<const BspModelTriangle*> tris;
 
         bool backface_cull = !(renderFlags & NoBackfaceCull);
 
@@ -126,6 +126,8 @@ namespace P3D
 
             render->DrawTriangle(&tri->tri, tex, tri->color, renderFlags);
         }
+
+        tris.clear();
 
         render->EndObject();
     }

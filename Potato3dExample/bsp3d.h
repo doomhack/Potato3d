@@ -81,7 +81,7 @@ namespace P3D
             return pAbs(a) / (pAbs(a) + pAbs(b));
         }
 
-        const fp epsilon = fp(0.01f);
+        const fp epsilon = fp(0.1f);
 
     };
 }
