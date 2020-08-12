@@ -840,6 +840,11 @@ namespace P3D
 
         DrawSpan(y, pos, delta, texture, color);
 
+        ConsolidateSpans(s_buffer);
+    }
+
+    void Render::ConsolidateSpans(SpanBuffer* s_buffer)
+    {
         //Consolidate spans.
         for(unsigned int i = 1; i < s_buffer->span_list.size(); i++)
         {
@@ -858,6 +863,7 @@ namespace P3D
             }
         }
     }
+
 
     void Render::DrawSpan(int y, TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color)
     {        
