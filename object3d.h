@@ -32,6 +32,8 @@ namespace P3D
 
         Render* GetRender();
 
+        bool update_frustrum_bb = true;
+
     private:
 
         void RenderBsp();

@@ -57,13 +57,13 @@ namespace P3D
 
         BspPlane best_plane = CheckPlane(triangles, 0, front, back, on);
 
-        best_score = pAbs(back - front) + (back + front + on)*10;
+        best_score = pAbs(back - front) + ((back + front + on) * 10);
 
         for(unsigned int i = 0; i < triangles.size(); i++)
         {
             BspPlane plane = CheckPlane(triangles, i, front, back, on);
 
-            int score = pAbs(back - front) + (back + front + on)*10;
+            int score = pAbs(back - front) + ((back + front + on) * 10);
 
             if (score < best_score)
             {
@@ -814,6 +814,7 @@ namespace P3D
                 bmt.tri = *nodeList[i]->front_tris[j]->tri;
                 bmt.color = nodeList[i]->front_tris[j]->color;
                 bmt.texture = -1;
+                bmt.tri_bb.AddTriangle(*nodeList[i]->front_tris[j]->tri);
 
                 const Texture* tex = nodeList[i]->front_tris[j]->texture;
 
@@ -860,6 +861,7 @@ namespace P3D
                 bmt.tri = *nodeList[i]->back_tris[j]->tri;
                 bmt.color = nodeList[i]->back_tris[j]->color;
                 bmt.texture = -1;
+                bmt.tri_bb.AddTriangle(*nodeList[i]->back_tris[j]->tri);
 
                 const Texture* tex = nodeList[i]->back_tris[j]->texture;
 

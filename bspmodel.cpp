@@ -21,14 +21,20 @@ namespace P3D
             {
                 for(int i = 0; i < n->front_tris.count; i++)
                 {
-                    out.push_back(GetTriangle(i + n->front_tris.offset));
+                    const BspModelTriangle* t = GetTriangle(i + n->front_tris.offset);
+
+                    if(frustrum.Intersect(t->tri_bb))
+                        out.push_back(t);
                 }
 
                 if(!backface_cull)
                 {
                     for(int i = 0; i < n->back_tris.count; i++)
                     {
-                        out.push_back(GetTriangle(i + n->back_tris.offset));
+                        const BspModelTriangle* t = GetTriangle(i + n->back_tris.offset);
+
+                        if(frustrum.Intersect(t->tri_bb))
+                            out.push_back(t);
                     }
                 }
             }
@@ -45,17 +51,22 @@ namespace P3D
             {
                 for(int i = 0; i < n->back_tris.count; i++)
                 {
-                    out.push_back(GetTriangle(i + n->back_tris.offset));
+                    const BspModelTriangle* t = GetTriangle(i + n->back_tris.offset);
+
+                    if(frustrum.Intersect(t->tri_bb))
+                        out.push_back(t);
                 }
 
                 if(!backface_cull)
                 {
                     for(int i = 0; i < n->front_tris.count; i++)
                     {
-                        out.push_back(GetTriangle(i + n->front_tris.offset));
+                        const BspModelTriangle* t = GetTriangle(i + n->front_tris.offset);
+
+                        if(frustrum.Intersect(t->tri_bb))
+                            out.push_back(t);
                     }
                 }
-
             }
 
             if(n->back_node)

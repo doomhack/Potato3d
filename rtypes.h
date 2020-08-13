@@ -21,11 +21,11 @@ namespace P3D
         V4<fp> pos;
         V2<fp> uv;
 
-        static const int uv_scale = 256;
+        static const unsigned int uv_shift = 8;
 
         void toPerspectiveCorrect()
         {
-            pos.w = fp(uv_scale) / pos.w;
+            pos.w = pScaledReciprocal(uv_shift, pos.w);
 
             uv.x = uv.x * pos.w;
             uv.y = uv.y * pos.w;

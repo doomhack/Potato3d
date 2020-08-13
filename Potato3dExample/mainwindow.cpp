@@ -146,6 +146,10 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     {
         object3d->CameraPos().y -= 1;
     }
+    else if(event->key() == Qt::Key_Space)
+    {
+        object3d->update_frustrum_bb = !object3d->update_frustrum_bb;
+    }
 
 }
 

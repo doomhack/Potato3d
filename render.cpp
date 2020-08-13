@@ -284,7 +284,7 @@ namespace P3D
         }
     }
 
-    fp Render::GetClipPointForVertex(const Vertex2d& vertex, ClipPlane clipPlane)
+    fp Render::GetClipPointForVertex(const Vertex2d& vertex, ClipPlane clipPlane) const
     {
         switch(clipPlane)
         {
@@ -805,9 +805,9 @@ namespace P3D
         {
             int overlap = x_start - (int)pos.x_left;
 
-            pos.w_left += (delta.w * overlap);
-            pos.u_left += (delta.u * overlap);
-            pos.v_left += (delta.v * overlap);
+            pos.w_left += pASR(delta.w * overlap, triFracShift);
+            pos.u_left += pASR(delta.u * overlap, triFracShift);
+            pos.v_left += pASR(delta.v * overlap, triFracShift);
         }
 
         pos.x_left = x_start;
@@ -897,13 +897,14 @@ namespace P3D
 #endif
 
         fp invw_0 = pReciprocal(w);
-        fp invw_15 = pReciprocal(w += (pASL(dw, 4)));
+        fp invw_15 = pReciprocal(w += dw);
 
         fp u0 = u * invw_0;
-        fp u15 = (u += (pASL(du, 4))) * invw_15;
+        fp u15 = (u += du) * invw_15;
+
 
         fp v0 = v * invw_0;
-        fp v15 = (v += (pASL(dv, 4))) * invw_15;
+        fp v15 = (v += dv) * invw_15;
 
         fp du16 = pASR(u15-u0, 4);
         fp dv16 = pASR(v15-v0, 4);
@@ -931,13 +932,14 @@ namespace P3D
             DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
 
             invw_0 = pReciprocal(w);
-            invw_15 = pReciprocal(w += (pASL(dw, 4)));
+            invw_15 = pReciprocal(w += dw);
 
             u0 = u * invw_0;
-            u15 = (u += (pASL(du, 4))) * invw_15;
+            u15 = (u += du) * invw_15;
+
 
             v0 = v * invw_0;
-            v15 = (v += (pASL(dv, 4))) * invw_15;
+            v15 = (v += dv) * invw_15;
 
             du16 = pASR(u15-u0, 4);
             dv16 = pASR(v15-v0, 4);
@@ -1008,11 +1010,10 @@ namespace P3D
         fp inv_x = 0;
 
         if(left.pos.y != other.pos.y)
-            inv_y = fp(1 << triFracShift) / (left.pos.y - other.pos.y);
-
+            inv_y = pScaledReciprocal(triFracShift, (left.pos.y - other.pos.y));
 
         if(right.pos.x != left.pos.x)
-            inv_x = pReciprocal(right.pos.x - left.pos.x);
+            inv_x = pScaledReciprocal(triFracShift, (right.pos.x - left.pos.x));
 
         x_delta.w = (right.pos.w - left.pos.w) * inv_x;
         x_delta.u = (right.uv.x - left.uv.x) * inv_x;
@@ -1031,7 +1032,7 @@ namespace P3D
         fp inv_y = 0;
 
         if(left.pos.y != other.pos.y)
-            inv_y = fp(1 << triFracShift) / (left.pos.y - other.pos.y);
+            inv_y = pScaledReciprocal(triFracShift, (left.pos.y - other.pos.y));
 
         y_delta.x_left = (left.pos.x - other.pos.x) * inv_y;
         y_delta.x_right = (right.pos.x - other.pos.x) * inv_y;

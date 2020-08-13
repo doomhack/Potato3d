@@ -111,7 +111,12 @@ namespace P3D
                 return V4<T>(x, y, z, w);
             else
             {
-                return V4<T>(x / w, y / w, z / w, w);
+                const unsigned int s = 4;
+
+                T iw = pScaledReciprocal(s, w);
+
+                return V4<T>( pASR(x * iw, s), pASR(y * iw, s), pASR(z * iw, s), w);
+                //return V4<T>(x / w, y / w, z / w, w);
             }
 
         }

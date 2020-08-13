@@ -106,7 +106,7 @@ namespace P3D
         void ClipPolygon(const Vertex2d clipSpacePointsIn[], const int vxCount, Vertex2d clipSpacePointsOut[], int& vxCountOut, ClipPlane clipPlane);
         void TriangulatePolygon(Vertex2d clipSpacePoints[], const int vxCount, const Texture *texture, const pixel color, const RenderFlags flags);
 
-        fp GetClipPointForVertex(const Vertex2d& vertex, ClipPlane clipPlane);
+        fp GetClipPointForVertex(const Vertex2d& vertex, ClipPlane clipPlane) const;
 
         void DrawTriangleCull(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags);
 
@@ -161,7 +161,7 @@ namespace P3D
 
         M4<fp> transformMatrix; //P*V*M
 
-        const unsigned int triFracShift = 3;
+        const unsigned int triFracShift = 4;
 
         RenderStats stats;
 

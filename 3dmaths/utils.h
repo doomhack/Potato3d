@@ -100,6 +100,8 @@ namespace P3D
 #endif
     }
 
+
+
     template <class T>
     constexpr inline T pReciprocal(T val)
     {
@@ -107,7 +109,7 @@ namespace P3D
     }
 
     template <>
-    constexpr inline FP pReciprocal(FP v)
+    inline FP pReciprocal(FP v)
     {
         FP result;
 
@@ -117,19 +119,30 @@ namespace P3D
         {
             result = FP::fromFPInt(reciprocalTable[val.toFPInt()]);
         }
+        else if(val < 4)
+        {
+            result = FP::fromFPInt(reciprocalTable[val.toFPInt() >> 2] >> 2);
+        }
+        else if(val < 16)
+        {
+            result = FP::fromFPInt(reciprocalTable[val.toFPInt() >> 4] >> 4);
+        }
+        else if(val < 256)
+        {
+            result = FP::fromFPInt(reciprocalTable[val.toFPInt() >> 8] >> 8);
+        }
         else
         {
-            if(val < 256)
-            {
-                result = FP::fromFPInt(reciprocalTable[val.toFPInt() >> 8] >> 8);
-            }
-            else
-            {
-                result = FP::fromFPInt(reciprocalTable[val.toFPInt() >> 15] >> 15);
-            }
+            result = FP::fromFPInt(reciprocalTable[val.toFPInt() >> 15] >> 15);
         }
 
         return v < 0 ? -result : result;
+    }
+
+    template <class T>
+    constexpr inline T pScaledReciprocal(unsigned int shift, T val)
+    {
+        return pReciprocal(pASR(val, shift));
     }
 }
 

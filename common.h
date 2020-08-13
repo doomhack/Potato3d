@@ -5,7 +5,9 @@
 
 namespace P3D
 {
+#ifndef __arm__
     #define RENDER_STATS
+#endif
 
     #define TEX_SHIFT 5
     #define TEX_SIZE (1u << TEX_SHIFT)

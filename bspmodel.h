@@ -26,6 +26,7 @@ namespace P3D
         Triangle3d tri;
         int texture;
         pixel color;
+        AABB tri_bb;
     } BspModelTriangle;
 
     typedef struct TriIndexList
@@ -80,6 +81,16 @@ namespace P3D
     private:
 
         void SortFrontToBackRecursive(const V3<fp>& p, const AABB& frustrum, const BspModelNode* n, std::vector<const BspModelTriangle *> &out, bool backface_cull) const;
+
+        bool TriAABBIntersect(const BspModelTriangle* tri, const AABB& aabb) const
+        {
+            AABB polybb;
+            polybb.AddPoint(tri->tri.verts[0].pos);
+            polybb.AddPoint(tri->tri.verts[1].pos);
+            polybb.AddPoint(tri->tri.verts[2].pos);
+
+            return (aabb.Intersect(polybb));
+        }
 
         const unsigned char* GetBasePtr() const
         {

@@ -70,7 +70,8 @@ namespace P3D
 
         viewMatrix.translate(V3<fp>(-cameraPos.x, -cameraPos.y, -cameraPos.z));
 
-        UpdateFrustrumAABB();
+        if(update_frustrum_bb)
+            UpdateFrustrumAABB();
 
         render->BeginFrame();
 
@@ -93,7 +94,7 @@ namespace P3D
         model->SortFrontToBack(cameraPos, viewFrustrumBB, tris, backface_cull);
 
         for(unsigned int i = 0; i < tris.size(); i++)
-        {
+        {            
             const BspModelTriangle* tri = tris[i];
 
             const BspNodeTexture* ntex = model->GetTexture(tri->texture);
