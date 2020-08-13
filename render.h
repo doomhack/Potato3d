@@ -59,17 +59,18 @@ namespace P3D
         Y_W_Bottom
     } ClipPlane;
 
-    typedef struct Span
+    typedef struct SpanNode
     {
-        int x_start;
-        int x_end;
-    } Span;
+        short x_start;
+        short x_end;
+        SpanNode* left = nullptr;
+        SpanNode* right = nullptr;
+    } SpanNode;
 
     typedef struct SpanBuffer
     {
-        std::vector<Span> span_list;
-        int min_opening = 0;
-        int max_opening = 0;
+        SpanNode* span_tree = nullptr;
+        int pixels_left = 0;
     } SpanBuffer;
 
     class Render
@@ -117,8 +118,9 @@ namespace P3D
         void DrawTriangleBottom(const Vertex2d *points, const Texture *texture, const RenderFlags flags);
 
         void ClipSpan(int y, TriEdgeTrace &pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color, const RenderFlags flags);
+        SpanNode* GetFreeSpanNode();
+
         void DrawSpan(int y, TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color);
-        void ConsolidateSpans(SpanBuffer* s_buffer);
 
         void DrawTriangleScanlinePerspectiveCorrect(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture);
 
@@ -168,6 +170,9 @@ namespace P3D
         SpanBuffer* spanBuffer = nullptr;
 
         int pixels_left;
+
+        SpanNode* span_pool;
+        unsigned int span_free_index;
     };
 
 }

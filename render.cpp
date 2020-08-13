@@ -46,6 +46,9 @@ namespace P3D
 
         spanBuffer = new SpanBuffer[screenHeight];
 
+        span_pool = new SpanNode[fbSize.y * 16];
+        span_free_index = 0;
+
         return true;
     }
 
@@ -55,10 +58,11 @@ namespace P3D
 
         for(int i = 0; i < fbSize.y; i++)
         {
-            spanBuffer[i].min_opening = 0;
-            spanBuffer[i].max_opening = fbSize.x-1;
-            spanBuffer[i].span_list.clear();
+            spanBuffer[i].pixels_left = fbSize.x;
+            spanBuffer[i].span_tree = nullptr;
         }
+
+        span_free_index = 0;
 
         pixels_left = fbSize.x * fbSize.y;
 
@@ -74,12 +78,7 @@ namespace P3D
 
     void Render::EndFrame()
     {
-#ifdef RENDER_STATS
-        for(int i = 0; i < fbSize.y; i++)
-        {
-            stats.span_count += spanBuffer[i].span_list.size();
-        }
-#endif
+
     }
 
     void Render::BeginObject()
@@ -685,22 +684,13 @@ namespace P3D
     {
         SpanBuffer* s_buffer = &spanBuffer[y];
 
-        int first_opening = s_buffer->min_opening;
-        int last_opening = s_buffer->max_opening;
-
-        if(last_opening < 0)
+        if(s_buffer->pixels_left <= 0)
             return;
 
         const int fb_width = fbSize.x;
 
         int x_start = pos.x_left;
         int x_end = pos.x_right;
-
-        if(first_opening > x_end)
-            return;
-
-        if(last_opening < x_start)
-            return;
 
         if( (x_end < x_start) || (x_end < 0) || (x_start >= fb_width) )
             return;
@@ -711,63 +701,54 @@ namespace P3D
         if(x_end >= fb_width)
             x_end = fb_width-1;
 
-        //Clip against spans already in buffer.
+        SpanNode* c_node = s_buffer->span_tree;
+        SpanNode** p_node = &s_buffer->span_tree;
 
-        Span* l_abutt = nullptr;
-        Span* r_abutt = nullptr;
-
-        if(x_start <= first_opening && x_end > first_opening)
-            first_opening = x_end + 1;
-
-        if(x_end >= last_opening && x_start < last_opening)
-            last_opening = x_start - 1;
-
-        for(unsigned int i = 0; i < s_buffer->span_list.size(); i++)
+        while(true)
         {
+            if(c_node == nullptr)
+                break;
+
 #ifdef RENDER_STATS
             stats.span_checks++;
 #endif
 
-            Span& other = s_buffer->span_list[i];
-
-            int x_start2 = other.x_start;
-            int x_end2 = other.x_end;
+            int x_start2 = c_node->x_start;
+            int x_end2 = c_node->x_end;
 
             //Fully occluded.
             if(x_start >= x_start2 && x_end <= x_end2)
                 return;
 
-            if(x_start2 <= first_opening)
+            //Fully to the left of.
+            if(x_end < x_start2)
             {
-                if(first_opening < x_end2)
-                    first_opening = x_end2 + 1;
-            }
+                if( (c_node->left == nullptr) && (x_end == x_start2 - 1) )
+                {
+                    c_node->x_start = x_start;
+                    p_node = nullptr;
 
-            if(x_end2 >= last_opening)
-            {
-                if(last_opening > x_start2)
-                    last_opening = x_start2 - 1;
+                    break;
+                }
+
+                p_node = &c_node->left;
+                c_node = c_node->left;
+                continue;
             }
 
             //Fully to the right of.
             if(x_start > x_end2)
             {
-                if(x_start == x_end2 + 1)
+                if( (c_node->right == nullptr) && (x_start == x_end2 + 1) )
                 {
-                    l_abutt = &other;
+                    c_node->x_end = x_end;
+                    p_node = nullptr;
+
+                    break;
                 }
 
-                continue;
-            }
-
-            //Fully to the left of.
-            if(x_end < x_start2)
-            {
-                if(x_end == x_start2 - 1)
-                {
-                    r_abutt = &other;
-                }
-
+                p_node = &c_node->right;
+                c_node = c_node->right;
                 continue;
             }
 
@@ -781,9 +762,19 @@ namespace P3D
 
                 ClipSpan(y, left_edge, delta, texture, color, flags);
 
-                //Adjust start point for right edge.
                 x_start = x_end2 + 1;
-                i = 0;
+
+                if(c_node->right == nullptr)
+                {
+                    c_node->x_end = x_end;
+                    p_node = nullptr;
+
+                    break;
+                }
+
+                p_node = &c_node->right;
+                c_node = c_node->right;
+
                 continue;
             }
 
@@ -791,14 +782,55 @@ namespace P3D
             if(x_start < x_start2)
             {
                 x_end = x_start2-1;
-                r_abutt = &other;
+
+                if(c_node->left == nullptr)
+                {
+                    c_node->x_start = x_start;
+                    p_node = nullptr;
+
+                    break;
+                }
+
+                p_node = &c_node->left;
+                c_node = c_node->left;
+
+                continue;
             }
-            //Right overlap.
             else
             {
+                //Right overlap.
+
                 x_start = x_end2 + 1;
-                l_abutt = &other;
+
+                if(c_node->right == nullptr)
+                {
+                    c_node->x_end = x_end;
+                    p_node = nullptr;
+
+                    break;
+                }
+
+                p_node = &c_node->right;
+                c_node = c_node->right;
+
+                continue;
             }
+        }
+
+
+
+        if(p_node)
+        {
+#ifdef RENDER_STATS
+            stats.span_count++;
+#endif
+            SpanNode* new_node = GetFreeSpanNode();
+            new_node->x_start = x_start;
+            new_node->x_end = x_end;
+            new_node->left = nullptr;
+            new_node->right = nullptr;
+
+            *p_node = new_node;
         }
 
         if(texture && x_start > (int)pos.x_left)
@@ -813,57 +845,18 @@ namespace P3D
         pos.x_left = x_start;
         pos.x_right = x_end;
 
-        if(l_abutt && r_abutt)
-        {
-            l_abutt->x_end = r_abutt->x_end;
-            *r_abutt = s_buffer->span_list.back();
-            s_buffer->span_list.pop_back();
-        }
-        else if(r_abutt)
-        {
-            r_abutt->x_start = x_start;
-        }
-        else if(l_abutt)
-        {
-            l_abutt->x_end = x_end;
-        }
-        else
-        {
-            Span span = {x_start, x_end};
-            s_buffer->span_list.push_back(span);
-        }
+        unsigned int p_count = (x_end - x_start) + 1;
 
-        pixels_left -= (x_end - x_start) + 1;
-
-        s_buffer->min_opening = first_opening;
-        s_buffer->max_opening = last_opening;
+        s_buffer->pixels_left -= p_count;
+        pixels_left -= p_count;
 
         DrawSpan(y, pos, delta, texture, color);
-
-        ConsolidateSpans(s_buffer);
     }
 
-    void Render::ConsolidateSpans(SpanBuffer* s_buffer)
+    SpanNode* Render::GetFreeSpanNode()
     {
-        //Consolidate spans.
-        for(unsigned int i = 1; i < s_buffer->span_list.size(); i++)
-        {
-            Span& s1 = s_buffer->span_list[i-1];
-            Span& s2 = s_buffer->span_list[i];
-
-            if(s1.x_start < s2.x_end && s1.x_end > s2.x_start)
-            {
-                s1.x_start = std::min(s1.x_start, s2.x_start);
-                s1.x_end = std::max(s1.x_end, s2.x_end);
-
-                s_buffer->span_list[i] = s_buffer->span_list.back();
-                s_buffer->span_list.pop_back();
-
-                i--;
-            }
-        }
+        return &span_pool[span_free_index++];
     }
-
 
     void Render::DrawSpan(int y, TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color)
     {        
