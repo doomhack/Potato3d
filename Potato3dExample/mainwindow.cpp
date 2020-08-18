@@ -12,7 +12,7 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
-    this->resize(1360, 720);
+    this->resize(960, 640);
     this->update();
 
     fpsTimer.start();
@@ -25,11 +25,12 @@ MainWindow::MainWindow(QWidget *parent)
 
     object3d = new P3D::Object3d();
 
-    object3d->Setup(screenWidth, screenHeight, 54, 25, 1500, (P3D::pixel*)frameBufferImage.bits());
+    //object3d->Setup(screenWidth, screenHeight, 54, 25, 1500, (P3D::pixel*)frameBufferImage.bits());
+    object3d->Setup(screenWidth, screenHeight, 45, 25, 1500, (P3D::pixel*)frameBufferImage.bits());
 
     object3d->SetBackgroundColor(qRgb(104,96,73));
 
-    P3D::Model3d* runway = LoadObjFile(":/models/temple.obj", ":/models/temple.mtl");
+    P3D::Model3d* runway = LoadObjFile(":/models/GF_City/city.obj", ":/models/GF_City/city.mtl");
 
     P3D::Bsp3d* bsp = new P3D::Bsp3d;
 

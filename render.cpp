@@ -716,108 +716,58 @@ namespace P3D
             int x_start2 = c_node->x_start;
             int x_end2 = c_node->x_end;
 
-            //Fully occluded.
-            if(x_start >= x_start2 && x_end <= x_end2)
-                return;
-
-            //Fully to the left of.
-            if(x_end < x_start2)
+            //Right of.
+            if(x_end > x_end2)
             {
-                if( (c_node->left == nullptr) && (x_end == x_start2 - 1) )
+                if(x_start <= (x_end2 + 1)) //Overlap right
                 {
-                    c_node->x_start = x_start;
-                    p_node = nullptr;
+                    if(x_start < x_start2) //Overlap both sides.
+                    {
+                        //Create new span for left edge.
+                        TriEdgeTrace left_edge = pos;
+                        left_edge.x_left = x_start;
+                        left_edge.x_right = x_start2 - 1;
 
-                    break;
+                        ClipSpan(y, left_edge, delta, texture, color, flags);
+                    }
+
+                    x_start = x_end2 + 1;
+
+                    if(c_node->right == nullptr)
+                    {
+                        c_node->x_end = x_end;
+
+                        p_node = nullptr;
+                        break;
+                    }
+                }
+
+                p_node = &c_node->right;
+                c_node = c_node->right;
+            }
+            else //left of.
+            {
+                //Fully occluded.
+                if(x_start >= x_start2)
+                    return;
+
+                if(x_end >= x_start2 - 1) //Overlap left
+                {
+                    x_end = x_start2 - 1;
+
+                    if(c_node->left == nullptr)
+                    {
+                        c_node->x_start = x_start;
+
+                        p_node = nullptr;
+                        break;
+                    }
                 }
 
                 p_node = &c_node->left;
                 c_node = c_node->left;
-                continue;
-            }
-
-            //Fully to the right of.
-            if(x_start > x_end2)
-            {
-                if( (c_node->right == nullptr) && (x_start == x_end2 + 1) )
-                {
-                    c_node->x_end = x_end;
-                    p_node = nullptr;
-
-                    break;
-                }
-
-                p_node = &c_node->right;
-                c_node = c_node->right;
-                continue;
-            }
-
-            //Overlaps both sides.
-            if(x_start < x_start2 && x_end > x_end2)
-            {
-                //Create new span for left edge.
-                TriEdgeTrace left_edge = pos;
-                left_edge.x_left = x_start;
-                left_edge.x_right = x_start2 - 1;
-
-                ClipSpan(y, left_edge, delta, texture, color, flags);
-
-                x_start = x_end2 + 1;
-
-                if(c_node->right == nullptr)
-                {
-                    c_node->x_end = x_end;
-                    p_node = nullptr;
-
-                    break;
-                }
-
-                p_node = &c_node->right;
-                c_node = c_node->right;
-
-                continue;
-            }
-
-            //Left overlap.
-            if(x_start < x_start2)
-            {
-                x_end = x_start2-1;
-
-                if(c_node->left == nullptr)
-                {
-                    c_node->x_start = x_start;
-                    p_node = nullptr;
-
-                    break;
-                }
-
-                p_node = &c_node->left;
-                c_node = c_node->left;
-
-                continue;
-            }
-            else
-            {
-                //Right overlap.
-
-                x_start = x_end2 + 1;
-
-                if(c_node->right == nullptr)
-                {
-                    c_node->x_end = x_end;
-                    p_node = nullptr;
-
-                    break;
-                }
-
-                p_node = &c_node->right;
-                c_node = c_node->right;
-
-                continue;
             }
         }
-
-
 
         if(p_node)
         {
