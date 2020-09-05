@@ -5,7 +5,7 @@
 
 #include "divide.h"
 
-//#define OVERFLOW_CHECK
+#define OVERFLOW_CHECK
 
 #ifdef OVERFLOW_CHECK
     #include <iostream>

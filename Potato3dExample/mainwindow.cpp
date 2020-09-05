@@ -12,7 +12,8 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
-    this->resize(1360, 720);
+
+    this->resize(960, 640);
     this->update();
 
     fpsTimer.start();
@@ -25,11 +26,12 @@ MainWindow::MainWindow(QWidget *parent)
 
     object3d = new P3D::Object3d();
 
-    object3d->Setup(screenWidth, screenHeight, 54, 25, 1500, (P3D::pixel*)frameBufferImage.bits());
+    //object3d->Setup(screenWidth, screenHeight, 54, 25, 1500, (P3D::pixel*)frameBufferImage.bits());
+    object3d->Setup(screenWidth, screenHeight, 45, 25, 1500, (P3D::pixel*)frameBufferImage.bits());
 
     object3d->SetBackgroundColor(qRgb(104,96,73));
 
-    P3D::Model3d* runway = LoadObjFile(":/models/DKR_Castle/castle.obj", ":/models/DKR_Castle/castle.mtl");
+    P3D::Model3d* runway = LoadObjFile(":/models/PW_Island/world.obj", ":/models/PW_Island/world.mtl");
 
     P3D::Bsp3d* bsp = new P3D::Bsp3d;
 
@@ -228,12 +230,11 @@ P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
 
                 QImage* image = new QImage(texBase + "/" + lastBit);
 
+                *image = image->scaled(TEX_SIZE, TEX_SIZE, Qt::IgnoreAspectRatio, Qt::SmoothTransformation).mirrored();
+
 #ifndef FB_32BIT
                 *image = image->convertToFormat(QImage::Format_RGB555);
 #endif
-
-                *image = image->scaled(TEX_SIZE, TEX_SIZE);
-
                 if(!image->isNull())
                 {
                     textureMap[currMtlName] = t;

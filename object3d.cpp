@@ -17,11 +17,13 @@ namespace P3D
     {
         this->render = new Render();
 
-        fp halfFrustrumWidth = zFar * std::tan((float)pD2R(fp(45)));
+        fp halfFrustrumWidth = zFar * std::tan((float)pD2R(fp(28)));
         fp halfFrustrumHeight = zFar * std::tan((float)pD2R(pASR(hFov, 1)));
 
         frustrumPoints[0] = V3<fp>(-halfFrustrumWidth, -halfFrustrumHeight, -zFar);
         frustrumPoints[1] = V3<fp>(halfFrustrumWidth, halfFrustrumHeight, -zFar);
+        frustrumPoints[2] = V3<fp>(-halfFrustrumWidth, halfFrustrumHeight, -zFar);
+        frustrumPoints[3] = V3<fp>(halfFrustrumWidth, -halfFrustrumHeight, -zFar);
 
         return render->Setup(screenWidth, screenHeight, hFov, zNear, zFar, framebuffer);
     }
@@ -42,6 +44,7 @@ namespace P3D
 
         M4<fp> camMatrix;
         camMatrix.setToIdentity();
+
         camMatrix.translate(V3<fp>(cameraPos.x,cameraPos.y,cameraPos.z));
 
         camMatrix.rotateX(cameraAngle.x);
@@ -52,9 +55,23 @@ namespace P3D
 
         V4<fp> t1 = camMatrix * frustrumPoints[0];
         V4<fp> t2 = camMatrix * frustrumPoints[1];
+        V4<fp> t3 = camMatrix * frustrumPoints[2];
+        V4<fp> t4 = camMatrix * frustrumPoints[3];
 
         viewFrustrumBB.AddPoint(V3<fp>(t1.x, t1.y, t1.z));
         viewFrustrumBB.AddPoint(V3<fp>(t2.x, t2.y, t2.z));
+        viewFrustrumBB.AddPoint(V3<fp>(t3.x, t3.y, t3.z));
+        viewFrustrumBB.AddPoint(V3<fp>(t4.x, t4.y, t4.z));
+
+/*
+        Triangle3d t;
+
+        t.verts[0].pos = V3<fp>(t1.x, t1.y, t1.z);
+        t.verts[1].pos = V3<fp>(t2.x, t2.y, t2.z);
+        t.verts[2].pos = V3<fp>(t3.x, t3.y, t3.z);
+
+        render->DrawTriangle(&t, nullptr, 12345, NoFlags);
+*/
     }
 
     void Object3d::RenderScene()

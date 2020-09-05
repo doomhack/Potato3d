@@ -33,7 +33,7 @@ private:
 
     QImage frameBufferImage;
 
-    static const int screenWidth = 720;
-    static const int screenHeight = 360;
+    static const int screenWidth = 640;
+    static const int screenHeight = 512;
 };
 #endif // MAINWINDOW_H

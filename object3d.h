@@ -52,7 +52,7 @@ namespace P3D
 
         RenderFlags renderFlags = RenderFlags::NoFlags;
 
-        V3<fp> frustrumPoints[2]; //Top left and bottom-right frustrum points.
+        V3<fp> frustrumPoints[4]; //Top left and bottom-right frustrum points.
 
         std::map<const BspNodeTexture*, const Texture*> textureMap;
     };
