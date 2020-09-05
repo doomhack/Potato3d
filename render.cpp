@@ -46,7 +46,7 @@ namespace P3D
 
         spanBuffer = new SpanBuffer[screenHeight];
 
-        span_pool = new SpanNode[fbSize.y * 16];
+        span_pool = new SpanNode[fbSize.y * SPAN_NODES_LINE];
         span_free_index = 0;
 
         return true;
@@ -775,6 +775,10 @@ namespace P3D
             stats.span_count++;
 #endif
             SpanNode* new_node = GetFreeSpanNode();
+
+            if(new_node == nullptr)
+                return;
+
             new_node->x_start = x_start;
             new_node->x_end = x_end;
             new_node->left = nullptr;
@@ -805,6 +809,9 @@ namespace P3D
 
     SpanNode* Render::GetFreeSpanNode()
     {
+        if(span_free_index >= (SPAN_NODES_LINE * fbSize.y))
+            return nullptr;
+
         return &span_pool[span_free_index++];
     }
 

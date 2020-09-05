@@ -12,6 +12,7 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
+
     this->resize(960, 640);
     this->update();
 
@@ -30,7 +31,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     object3d->SetBackgroundColor(qRgb(104,96,73));
 
-    P3D::Model3d* runway = LoadObjFile(":/models/GF_City/city.obj", ":/models/GF_City/city.mtl");
+    P3D::Model3d* runway = LoadObjFile(":/models/PW_Island/world.obj", ":/models/PW_Island/world.mtl");
 
     P3D::Bsp3d* bsp = new P3D::Bsp3d;
 
@@ -229,7 +230,7 @@ P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
 
                 QImage* image = new QImage(texBase + "/" + lastBit);
 
-                *image = image->scaled(TEX_SIZE, TEX_SIZE, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+                *image = image->scaled(TEX_SIZE, TEX_SIZE, Qt::IgnoreAspectRatio, Qt::SmoothTransformation).mirrored();
 
 #ifndef FB_32BIT
                 *image = image->convertToFormat(QImage::Format_RGB555);

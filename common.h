@@ -13,6 +13,8 @@ namespace P3D
     #define TEX_SIZE (1u << TEX_SHIFT)
     #define TEX_MASK (TEX_SIZE-1)
 
+    #define SPAN_NODES_LINE 16
+
     //#define USE_FLOAT
 
 #ifndef __arm__
