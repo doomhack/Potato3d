@@ -13,7 +13,7 @@ Very little division in the hot path. I've been able to use a reciprocal table t
 All math execept for one time set-up stuff is fixed point. Can also use float or doubles by just changing a #define.
 
 
-Renders textures perspective-correctish. Perspective correct tex corodinates are computed ever 16px and linear interpolated from there.
+Renders textures perspective-correctish. Perspective correct tex corodinates are computed every 16px and linear interpolated from there.
 
 
 Rendering is front-to-back with no Z-buffer and zero overdraw. But the span buffering is still a performance hog.
