@@ -1,7 +1,7 @@
 namespace P3D
 {
 
-const extern unsigned int reciprocalTable[65536] = {
+const extern unsigned int reciprocalTable[65537] = {
     0,
     4294967295,
     2147483648,
@@ -65537,6 +65537,7 @@ const extern unsigned int reciprocalTable[65536] = {
     65540,
     65539,
     65538,
-    65537
+    65537,
+    65536
 };
 }

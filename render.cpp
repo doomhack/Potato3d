@@ -847,13 +847,11 @@ namespace P3D
 #endif
 
         fp invw_0 = pReciprocal(w);
-        fp invw_15 = pReciprocal(w += dw);
-
         fp u0 = u * invw_0;
-        fp u15 = (u += du) * invw_15;
-
-
         fp v0 = v * invw_0;
+
+        fp invw_15 = pReciprocal(w += dw);
+        fp u15 = (u += du) * invw_15;
         fp v15 = (v += dv) * invw_15;
 
         fp du16 = pASR(u15-u0, 4);

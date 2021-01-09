@@ -108,6 +108,22 @@ namespace P3D
         return T(1)/val;
     }
 
+    //Count leading zeros. 16bit.
+    constexpr inline unsigned int clz16(unsigned int x)
+    {
+        x |= x >> 1;
+        x |= x >> 2;
+        x |= x >> 4;
+        x |= x >> 8;
+
+        x -= x >> 1 & 0x5555;
+        x = (x >> 2 & 0x3333) + (x & 0x3333);
+        x = (x >> 4) + x & 0x0f0f;
+        x += x >> 8;
+
+        return 16 - (x & 0x003f);
+    }
+
     template <>
     inline FP pReciprocal(FP v)
     {
@@ -115,25 +131,27 @@ namespace P3D
 
         FP val = v < 0 ? -v : v;
 
-        if(val < 1)
+        if(val <= 1)
         {
             result = FP::fromFPInt(reciprocalTable[val.toFPInt()]);
         }
-        else if(val < 4)
+        else if(val <= 2)
+        {
+            result = FP::fromFPInt(reciprocalTable[val.toFPInt() >> 1] >> 1);
+        }
+        else if(val <= 4)
         {
             result = FP::fromFPInt(reciprocalTable[val.toFPInt() >> 2] >> 2);
         }
-        else if(val < 16)
+        else if(val <= 8)
         {
-            result = FP::fromFPInt(reciprocalTable[val.toFPInt() >> 4] >> 4);
-        }
-        else if(val < 256)
-        {
-            result = FP::fromFPInt(reciprocalTable[val.toFPInt() >> 8] >> 8);
+            result = FP::fromFPInt(reciprocalTable[val.toFPInt() >> 3] >> 3);
         }
         else
         {
-            result = FP::fromFPInt(reciprocalTable[val.toFPInt() >> 15] >> 15);
+            const unsigned int shift = 16 - clz16(((val - FP::fromFPInt(1)).i()));
+
+            result = FP::fromFPInt(reciprocalTable[val.toFPInt() >> shift] >> shift);
         }
 
         return v < 0 ? -result : result;
