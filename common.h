@@ -21,6 +21,8 @@ namespace P3D
     //#define FB_32BIT //RGBX888 framebuffer format.
 #endif
 
+    #define FRONT_TO_BACK
+
     #define FAST_LERP
 
     #ifdef FB_32BIT

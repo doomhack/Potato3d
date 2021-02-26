@@ -273,23 +273,48 @@ namespace P3D
         {
             T x, y, z, w;
 
+
+            x = T(vector.x) * m[0][0] +
+                //T(vector.y) * m[1][0] +
+                T(vector.z) * m[2][0] +
+                m[3][0];
+
+            y = //T(vector.x) * m[0][1] +
+                T(vector.y) * m[1][1] +
+                //T(vector.z) * m[2][1] +
+                m[3][1];
+
+            z = T(vector.x) * m[0][2] +
+                //T(vector.y) * m[1][2] +
+                T(vector.z) * m[2][2] +
+                m[3][2];
+
+            w = T(vector.x) * m[0][3] +
+                //T(vector.y) * m[1][3] +
+                T(vector.z) * m[2][3] +
+                m[3][3];
+
+            /*
                 x = T(vector.x) * m[0][0] +
                     T(vector.y) * m[1][0] +
                     T(vector.z) * m[2][0] +
                     m[3][0];
+
                 y = T(vector.x) * m[0][1] +
                     T(vector.y) * m[1][1] +
                     T(vector.z) * m[2][1] +
                     m[3][1];
+
                 z = T(vector.x) * m[0][2] +
                     T(vector.y) * m[1][2] +
                     T(vector.z) * m[2][2] +
                     m[3][2];
+
                 w = T(vector.x) * m[0][3] +
                     T(vector.y) * m[1][3] +
                     T(vector.z) * m[2][3] +
                     m[3][3];
-
+                */
                 return V4<T>(x, y, z, w);
         }
 

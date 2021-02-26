@@ -44,10 +44,12 @@ namespace P3D
 
         projectionMatrix.perspective(hFov, aspectRatio, zNear, zFar);
 
+#ifdef FRONT_TO_BACK
         spanBuffer = new SpanBuffer[screenHeight];
 
         span_pool = new SpanNode[fbSize.y * SPAN_NODES_LINE];
-        span_free_index = 0;
+        span_free_index = 0;  
+#endif
 
         return true;
     }
@@ -56,6 +58,7 @@ namespace P3D
     {
         UpdateViewProjectionMatrix();
 
+#ifdef FRONT_TO_BACK
         for(int i = 0; i < fbSize.y; i++)
         {
             spanBuffer[i].pixels_left = fbSize.x;
@@ -65,6 +68,7 @@ namespace P3D
         span_free_index = 0;
 
         pixels_left = fbSize.x * fbSize.y;
+#endif
 
 #ifdef RENDER_STATS
         stats.triangles_drawn = 0;
@@ -145,8 +149,11 @@ namespace P3D
 
     void Render::DrawTriangle(const Triangle3d* tri, const Texture* texture, const pixel color, const RenderFlags flags)
     {
+
+#ifdef FRONT_TO_BACK
         if(pixels_left <= 0)
             return;
+#endif
 
 #ifdef RENDER_STATS
         stats.triangles_submitted++;
@@ -255,7 +262,7 @@ namespace P3D
 
             fp frac = GetLineIntersectionFrac(clipSpacePointsIn[i].pos.w, clipSpacePointsIn[i2].pos.w, b1, b2);
 
-            if(frac >= 0)
+            if(frac > 0)
             {
                 Vertex2d newVx;
 
@@ -308,17 +315,13 @@ namespace P3D
 
     fp Render::GetLineIntersectionFrac(const fp a1, const fp a2, const fp b1, const fp b2)
     {
-        if(a1 <= b1 && a2 <= b2)
-            return -1;
-        else if(a1 >= b1 && a2 >= b2)
-            return -2;
+        if((a1 <= b1 && a2 <= b2) || (a1 >= b1 && a2 >= b2))
+            return 0;
 
-        fp len_1 = (a1 - b1);
-        fp len_2 = (a2 - b2);
+        fp l1 = (a1 - b1);
 
-        fp dt = (len_1 - len_2);
+        return l1 / (l1 - a2 + b2);
 
-        return ((len_1) / dt);
     }
 
     void Render::DrawTriangleCull(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags)
@@ -371,7 +374,7 @@ namespace P3D
             //A flat top and flat bottom triangle.
 
             //How far down between vx0 -> vx2 are we spliting?
-            fp splitFrac = (points[1].pos.y - points[0].pos.y) / (points[2].pos.y - points[0].pos.y);
+            fp splitFrac = pApproxDiv((points[1].pos.y - points[0].pos.y), (points[2].pos.y - points[0].pos.y));
 
             //Interpolate new values for new vertex.
             Vertex2d triangle[4];
@@ -412,7 +415,7 @@ namespace P3D
             //A flat top and flat bottom triangle.
 
             //How far down between vx0 -> vx2 are we spliting?
-            fp splitFrac = (points[1].pos.y - points[0].pos.y) / (points[2].pos.y - points[0].pos.y);
+            fp splitFrac = pApproxDiv((points[1].pos.y - points[0].pos.y), (points[2].pos.y - points[0].pos.y));
 
             //Interpolate new values for new vertex.
             Vertex2d triangle[4];
@@ -682,11 +685,6 @@ namespace P3D
 
     void Render::ClipSpan(int y, TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color, const RenderFlags flags)
     {
-        SpanBuffer* s_buffer = &spanBuffer[y];
-
-        if(s_buffer->pixels_left <= 0)
-            return;
-
         const int fb_width = fbSize.x;
 
         int x_start = pos.x_left;
@@ -700,6 +698,13 @@ namespace P3D
 
         if(x_end >= fb_width)
             x_end = fb_width-1;
+
+#ifdef FRONT_TO_BACK
+
+        SpanBuffer* s_buffer = &spanBuffer[y];
+
+        if(s_buffer->pixels_left <= 0)
+            return;
 
         SpanNode* c_node = s_buffer->span_tree;
         SpanNode** p_node = &s_buffer->span_tree;
@@ -787,6 +792,13 @@ namespace P3D
             *p_node = new_node;
         }
 
+        unsigned int p_count = (x_end - x_start) + 1;
+
+        s_buffer->pixels_left -= p_count;
+        pixels_left -= p_count;
+
+#endif
+
         if(texture && x_start > (int)pos.x_left)
         {
             int overlap = x_start - (int)pos.x_left;
@@ -798,11 +810,6 @@ namespace P3D
 
         pos.x_left = x_start;
         pos.x_right = x_end;
-
-        unsigned int p_count = (x_end - x_start) + 1;
-
-        s_buffer->pixels_left -= p_count;
-        pixels_left -= p_count;
 
         DrawSpan(y, pos, delta, texture, color);
     }
@@ -884,7 +891,6 @@ namespace P3D
 
             u0 = u * invw_0;
             u15 = (u += du) * invw_15;
-
 
             v0 = v * invw_0;
             v15 = (v += dv) * invw_15;

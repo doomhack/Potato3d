@@ -107,8 +107,13 @@ namespace P3D
         static std::vector<const BspModelTriangle*> tris;
 
         bool backface_cull = !(renderFlags & NoBackfaceCull);
+        //backface_cull = false;
 
+#ifdef FRONT_TO_BACK
         model->SortFrontToBack(cameraPos, viewFrustrumBB, tris, backface_cull);
+#else
+        model->SortBackToFront(cameraPos, viewFrustrumBB, tris, backface_cull);
+#endif
 
         for(unsigned int i = 0; i < tris.size(); i++)
         {            
@@ -142,6 +147,7 @@ namespace P3D
                 }
             }
 
+            //render->DrawTriangle(&tri->tri, nullptr, tex ? tex->pixels[100] : tri->color, renderFlags);
             render->DrawTriangle(&tri->tri, tex, tri->color, renderFlags);
         }
 

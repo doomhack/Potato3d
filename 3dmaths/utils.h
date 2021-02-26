@@ -162,6 +162,13 @@ namespace P3D
     {
         return pReciprocal(pASR(val, shift));
     }
+
+    //Approx fixed point divide of a/b using reciprocal. -> a * (1/b).
+    template <class T>
+    constexpr inline T pApproxDiv(T a, T b)
+    {
+        return a * pReciprocal(b);
+    }
 }
 
 #endif // UTILS_H

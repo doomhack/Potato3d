@@ -838,6 +838,17 @@ namespace P3D
                         QByteArray pxl((const char*)nodeList[i]->front_tris[j]->texture->pixels,
                                        nodeList[i]->front_tris[j]->texture->width * nodeList[i]->front_tris[j]->texture->height * sizeof(pixel));
 
+                        unsigned short* p = (unsigned short*)pxl.data();
+
+                        for(int i = 0; i < pxl.length() / 2; i++)
+                        {
+                            unsigned short r = p[i] & 0x7C00;
+                            unsigned short g = p[i] & 0x3E0;
+                            unsigned short b = p[i] & 0x1F;
+
+                            p[i] = (r >> 10) | g | (b << 10);
+                        }
+
                         texturePixels.append(pxl);
 
                         bmt.texture = modelTextureList.length();
@@ -865,30 +876,33 @@ namespace P3D
 
                 const Texture* tex = nodeList[i]->back_tris[j]->texture;
 
-                if(textureList.contains(tex))
+                if(tex)
                 {
-                    bmt.texture = textureList.indexOf(tex);
-                }
-                else
-                {
-                    BspNodeTexture bnt;
-                    bnt.alpha = nodeList[i]->back_tris[j]->texture->alpha;
-                    bnt.width = nodeList[i]->back_tris[j]->texture->width;
-                    bnt.height = nodeList[i]->back_tris[j]->texture->height;
-                    bnt.u_mask = nodeList[i]->back_tris[j]->texture->u_mask;
-                    bnt.v_mask = nodeList[i]->back_tris[j]->texture->v_mask;
-                    bnt.v_shift = nodeList[i]->back_tris[j]->texture->v_shift;
-                    bnt.texture_pixels_offset = texturePixels.length() / sizeof(pixel);
+                    if(textureList.contains(tex))
+                    {
+                        bmt.texture = textureList.indexOf(tex);
+                    }
+                    else
+                    {
+                        BspNodeTexture bnt;
+                        bnt.alpha = nodeList[i]->back_tris[j]->texture->alpha;
+                        bnt.width = nodeList[i]->back_tris[j]->texture->width;
+                        bnt.height = nodeList[i]->back_tris[j]->texture->height;
+                        bnt.u_mask = nodeList[i]->back_tris[j]->texture->u_mask;
+                        bnt.v_mask = nodeList[i]->back_tris[j]->texture->v_mask;
+                        bnt.v_shift = nodeList[i]->back_tris[j]->texture->v_shift;
+                        bnt.texture_pixels_offset = texturePixels.length() / sizeof(pixel);
 
-                    QByteArray pxl((const char*)nodeList[i]->back_tris[j]->texture->pixels,
-                                   nodeList[i]->back_tris[j]->texture->width * nodeList[i]->back_tris[j]->texture->height * sizeof(pixel));
+                        QByteArray pxl((const char*)nodeList[i]->back_tris[j]->texture->pixels,
+                                       nodeList[i]->back_tris[j]->texture->width * nodeList[i]->back_tris[j]->texture->height * sizeof(pixel));
 
-                    texturePixels.append(pxl);
+                        texturePixels.append(pxl);
 
-                    bmt.texture = modelTextureList.length();
+                        bmt.texture = modelTextureList.length();
 
-                    modelTextureList.append(bnt);
-                    textureList.append(tex);
+                        modelTextureList.append(bnt);
+                        textureList.append(tex);
+                    }
                 }
 
                 modelTriList.append(bmt);

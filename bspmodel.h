@@ -65,6 +65,9 @@ namespace P3D
 
         void SortFrontToBack(const V3<fp>& p, const AABB& frustrum, std::vector<const BspModelTriangle*>& out, bool backface_cull) const;
 
+        void SortBackToFront(const V3<fp>& p, const AABB& frustrum, std::vector<const BspModelTriangle*>& out, bool backface_cull) const;
+
+
         const BspNodeTexture* GetTexture(int n) const
         {
             if(n == -1)
@@ -81,6 +84,9 @@ namespace P3D
     private:
 
         void SortFrontToBackRecursive(const V3<fp>& p, const AABB& frustrum, const BspModelNode* n, std::vector<const BspModelTriangle *> &out, bool backface_cull) const;
+
+        void SortBackToFrontRecursive(const V3<fp>& p, const AABB& frustrum, const BspModelNode* n, std::vector<const BspModelTriangle *> &out, bool backface_cull) const;
+
 
         bool TriAABBIntersect(const BspModelTriangle* tri, const AABB& aabb) const
         {
