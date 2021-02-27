@@ -273,7 +273,7 @@ namespace P3D
         {
             T x, y, z, w;
 
-
+#if 0
             x = T(vector.x) * m[0][0] +
                 //T(vector.y) * m[1][0] +
                 T(vector.z) * m[2][0] +
@@ -293,8 +293,7 @@ namespace P3D
                 //T(vector.y) * m[1][3] +
                 T(vector.z) * m[2][3] +
                 m[3][3];
-
-            /*
+#else
                 x = T(vector.x) * m[0][0] +
                     T(vector.y) * m[1][0] +
                     T(vector.z) * m[2][0] +
@@ -314,7 +313,8 @@ namespace P3D
                     T(vector.y) * m[1][3] +
                     T(vector.z) * m[2][3] +
                     m[3][3];
-                */
+#endif
+
                 return V4<T>(x, y, z, w);
         }
 
@@ -507,6 +507,62 @@ namespace P3D
 
             // Apply the projection.
             *this *= m;
+        }
+
+        constexpr V4<T> inverted() const
+        {
+            V4<T> inv;
+            inv.m = {0};
+
+            T det = matrixDet4(m);
+            if (det == 0)
+            {
+                return M4<T>();
+            }
+
+            det = pReciprocal(det);
+
+            inv.m[0][0] =  matrixDet3(m, 1, 2, 3, 1, 2, 3) * det;
+            inv.m[0][1] = -matrixDet3(m, 0, 2, 3, 1, 2, 3) * det;
+            inv.m[0][2] =  matrixDet3(m, 0, 1, 3, 1, 2, 3) * det;
+            inv.m[0][3] = -matrixDet3(m, 0, 1, 2, 1, 2, 3) * det;
+            inv.m[1][0] = -matrixDet3(m, 1, 2, 3, 0, 2, 3) * det;
+            inv.m[1][1] =  matrixDet3(m, 0, 2, 3, 0, 2, 3) * det;
+            inv.m[1][2] = -matrixDet3(m, 0, 1, 3, 0, 2, 3) * det;
+            inv.m[1][3] =  matrixDet3(m, 0, 1, 2, 0, 2, 3) * det;
+            inv.m[2][0] =  matrixDet3(m, 1, 2, 3, 0, 1, 3) * det;
+            inv.m[2][1] = -matrixDet3(m, 0, 2, 3, 0, 1, 3) * det;
+            inv.m[2][2] =  matrixDet3(m, 0, 1, 3, 0, 1, 3) * det;
+            inv.m[2][3] = -matrixDet3(m, 0, 1, 2, 0, 1, 3) * det;
+            inv.m[3][0] = -matrixDet3(m, 1, 2, 3, 0, 1, 2) * det;
+            inv.m[3][1] =  matrixDet3(m, 0, 2, 3, 0, 1, 2) * det;
+            inv.m[3][2] = -matrixDet3(m, 0, 1, 3, 0, 1, 2) * det;
+            inv.m[3][3] =  matrixDet3(m, 0, 1, 2, 0, 1, 2) * det;
+
+            return inv;
+        }
+
+        constexpr inline T matrixDet4(const T m[4][4]) const
+        {
+            T det;
+            det  = m[0][0] * matrixDet3(m, 1, 2, 3, 1, 2, 3);
+            det -= m[1][0] * matrixDet3(m, 0, 2, 3, 1, 2, 3);
+            det += m[2][0] * matrixDet3(m, 0, 1, 3, 1, 2, 3);
+            det -= m[3][0] * matrixDet3(m, 0, 1, 2, 1, 2, 3);
+            return det;
+        }
+
+        constexpr inline T matrixDet3(const T m[4][4], int col0, int col1, int col2, int row0, int row1, int row2)
+        {
+            return m[col0][row0] *
+                        (m[col1][row1] * m[col2][row2] -
+                         m[col1][row2] * m[col2][row1]) -
+                   m[col1][row0] *
+                        (m[col0][row1] * m[col2][row2] -
+                         m[col0][row2] * m[col2][row1]) +
+                   m[col2][row0] *
+                        (m[col0][row1] * m[col1][row2] -
+                         m[col0][row2] * m[col1][row1]);
         }
 
     private:

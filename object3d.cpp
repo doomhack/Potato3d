@@ -1,8 +1,20 @@
 #include "common.h"
 #include "object3d.h"
 
+#include <string.h>
+
 namespace P3D
 {
+
+#ifdef USE_TEXTURE_CACHE
+    static unsigned short texCacheEntries[TEX_CACHE_ENTRIES] = {65535};
+    #ifndef __arm__
+        static pixel texCache[TEX_CACHE_SIZE/sizeof(pixel)];
+    #else
+        static pixel* texCache = ((unsigned short*)0x6014000);
+    #endif
+#endif
+
     Object3d::Object3d()
     {
         renderFlags = (RenderFlags)(0);
@@ -63,7 +75,7 @@ namespace P3D
         viewFrustrumBB.AddPoint(V3<fp>(t3.x, t3.y, t3.z));
         viewFrustrumBB.AddPoint(V3<fp>(t4.x, t4.y, t4.z));
 
-/*
+
         Triangle3d t;
 
         t.verts[0].pos = V3<fp>(t1.x, t1.y, t1.z);
@@ -71,7 +83,7 @@ namespace P3D
         t.verts[2].pos = V3<fp>(t3.x, t3.y, t3.z);
 
         render->DrawTriangle(&t, nullptr, 12345, NoFlags);
-*/
+
     }
 
     void Object3d::RenderScene()
@@ -107,7 +119,6 @@ namespace P3D
         static std::vector<const BspModelTriangle*> tris;
 
         bool backface_cull = !(renderFlags & NoBackfaceCull);
-        //backface_cull = false;
 
 #ifdef FRONT_TO_BACK
         model->SortFrontToBack(cameraPos, viewFrustrumBB, tris, backface_cull);
@@ -121,30 +132,42 @@ namespace P3D
 
             const BspNodeTexture* ntex = model->GetTexture(tri->texture);
 
-            const Texture* tex = nullptr;
+            Texture* tex = nullptr;
 
             if(ntex)
             {
-                if(textureMap.count(ntex) == 0)
+                tex = textureMap[ntex];
+
+                if(tex == nullptr)
                 {
-                    Texture* t = new Texture;
+                    tex = new Texture;
 
-                    t->alpha = ntex->alpha;
-                    t->width = ntex->width;
-                    t->height = ntex->height;
-                    t->u_mask = ntex->u_mask;
-                    t->v_mask = ntex->v_mask;
-                    t->v_shift = ntex ->v_shift;
-                    t->pixels = model->GetTexturePixels(ntex->texture_pixels_offset);
-
-                    tex = t;
-
+                    tex->alpha = ntex->alpha;
+                    tex->width = ntex->width;
+                    tex->height = ntex->height;
+                    tex->u_mask = ntex->u_mask;
+                    tex->v_mask = ntex->v_mask;
+                    tex->v_shift = ntex ->v_shift;
+#ifndef USE_TEXTURE_CACHE
+                    tex->pixels = model->GetTexturePixels(ntex->texture_pixels_offset);
+#endif
                     textureMap[ntex] = tex;
                 }
-                else
+
+
+#ifdef USE_TEXTURE_CACHE
+                const unsigned int cacheKey = tri->texture & (TEX_CACHE_ENTRIES - 1);
+
+                pixel* texCacheSlot = &texCache[TEX_SIZE_PIXELS * cacheKey];
+
+                if(texCacheEntries[cacheKey] != tri->texture)
                 {
-                    tex = textureMap[ntex];
+                    FastCopy32((unsigned int*)texCacheSlot, (unsigned int*)model->GetTexturePixels(ntex->texture_pixels_offset), TEX_SIZE_BYTES);
+                    texCacheEntries[cacheKey] = tri->texture;
                 }
+
+                tex->pixels = texCacheSlot;
+#endif
             }
 
             //render->DrawTriangle(&tri->tri, nullptr, tex ? tex->pixels[100] : tri->color, renderFlags);

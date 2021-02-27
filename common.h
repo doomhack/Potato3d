@@ -12,6 +12,14 @@ namespace P3D
     #define TEX_SHIFT 5
     #define TEX_SIZE (1u << TEX_SHIFT)
     #define TEX_MASK (TEX_SIZE-1)
+    #define TEX_SIZE_PIXELS (TEX_SIZE * TEX_SIZE)
+    #define TEX_SIZE_BYTES (TEX_SIZE_PIXELS * sizeof(pixel))
+
+    #define USE_TEXTURE_CACHE
+
+    #define TEX_CACHE_SIZE 16*1024
+    #define TEX_CACHE_ENTRIES (TEX_CACHE_SIZE/TEX_SIZE_BYTES)
+
 
     #define SPAN_NODES_LINE 16
 

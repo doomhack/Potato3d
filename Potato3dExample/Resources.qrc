@@ -817,5 +817,7 @@
         <file>models/q1entry/wmet4_4.png</file>
         <file>models/q1entry/wood1_1.png</file>
         <file>models/q1entry/z_exit.png</file>
+        <file>models/PW_Island/world2.mtl</file>
+        <file>models/PW_Island/world2.obj</file>
     </qresource>
 </RCC>

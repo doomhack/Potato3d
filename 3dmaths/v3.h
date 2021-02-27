@@ -25,6 +25,11 @@ namespace P3D
             return *this;
         }
 
+        constexpr bool operator==(const V3& r)
+        {
+            return ((x == r.x) && (y == r.y) && (z == r.z));
+        }
+
         constexpr V3 operator+(const V3& r) const
         {
             V3 v(x,y,z);
@@ -38,6 +43,12 @@ namespace P3D
         }
 
         constexpr V3 operator*(const V3& r) const
+        {
+            V3 v(x,y,z);
+            return v*=r;
+        }
+
+        constexpr V3 operator*(const T& r) const
         {
             V3 v(x,y,z);
             return v*=r;
@@ -70,6 +81,15 @@ namespace P3D
             return *this;
         }
 
+        V3& operator*=(const T& r)
+        {
+            x *= r;
+            y *= r;
+            z *= r;
+
+            return *this;
+        }
+
         V3 CrossProduct(const V3& r) const
         {
             V3 v;
@@ -98,6 +118,24 @@ namespace P3D
             v.x = (float)(xd / len);
             v.y = (float)(yd / len);
             v.z = (float)(zd / len);
+
+            return v;
+        }
+
+        V3 Normalised() const
+        {
+            V3 v;
+
+            double len = x*x+y*y+z*z;
+
+            if(len == 0)
+                return *this;
+
+            len = std::sqrt(len);
+
+            v.x = (float)((float)x / len);
+            v.y = (float)((float)y / len);
+            v.z = (float)((float)z / len);
 
             return v;
         }

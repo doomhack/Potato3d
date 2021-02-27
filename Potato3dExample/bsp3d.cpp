@@ -803,8 +803,6 @@ namespace P3D
             bn.node_bb = nodeList[i]->node_bb;
             bn.child_bb = nodeList[i]->child_node_bb;
 
-
-
             bn.front_tris.count = nodeList[i]->front_tris.size();
             bn.front_tris.offset = modelTriList.length();
 
@@ -895,6 +893,17 @@ namespace P3D
 
                         QByteArray pxl((const char*)nodeList[i]->back_tris[j]->texture->pixels,
                                        nodeList[i]->back_tris[j]->texture->width * nodeList[i]->back_tris[j]->texture->height * sizeof(pixel));
+
+                        unsigned short* p = (unsigned short*)pxl.data();
+
+                        for(int i = 0; i < pxl.length() / 2; i++)
+                        {
+                            unsigned short r = p[i] & 0x7C00;
+                            unsigned short g = p[i] & 0x3E0;
+                            unsigned short b = p[i] & 0x1F;
+
+                            p[i] = (r >> 10) | g | (b << 10);
+                        }
 
                         texturePixels.append(pxl);
 

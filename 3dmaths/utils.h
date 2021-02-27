@@ -76,6 +76,29 @@ namespace P3D
         return -v;
     }
 
+
+    inline void FastCopy32(unsigned int* dest, const unsigned int* src, const unsigned int len)
+    {
+    #ifdef __arm__
+        const int words = len >> 2;
+
+        DMA3COPY(src, dest, DMA_DST_INC | DMA_SRC_INC | DMA32 | DMA_IMMEDIATE | words)
+    #else
+        memcpy(dest, src, len & 0xfffffffc);
+    #endif
+    }
+
+    inline void FastCopy16(unsigned int* dest, const unsigned int* src, const unsigned int len)
+    {
+    #ifdef __arm__
+        const int words = len >> 1;
+
+        DMA3COPY(src, dest, DMA_DST_INC | DMA_SRC_INC | DMA16 | DMA_IMMEDIATE | words)
+    #else
+        memcpy(dest, src, len & 0xfffffffe);
+    #endif
+    }
+
     inline void FastFill32(unsigned int* dest, volatile unsigned int value, unsigned int words)
     {
 #ifndef __arm__

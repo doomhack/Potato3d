@@ -54,7 +54,13 @@ namespace P3D
 
         V3<fp> frustrumPoints[4]; //Top left and bottom-right frustrum points.
 
-        std::map<const BspNodeTexture*, const Texture*> textureMap;
+        fp halfFrustrumWidth;
+        fp halfFrustrumHeight;
+
+        fp zFar;
+
+
+        std::map<const BspNodeTexture*, Texture*> textureMap;
     };
 }
 

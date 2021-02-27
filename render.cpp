@@ -221,11 +221,6 @@ namespace P3D
         if(-z0 > w0 && -z1 > w1 && -z2 > w2)
             return;
 
-        //All points behind clipping plane.
-        if(w0 < zNear && w1 < zNear && w2 < zNear)
-            return;
-
-
         Vertex2d outputVxA[8];
         Vertex2d outputVxB[8];
         int countA = 0;
