@@ -54,28 +54,21 @@ namespace P3D
     {
         viewFrustrumBB = AABB();
 
-        M4<fp> camMatrix;
-        camMatrix.setToIdentity();
-
-        camMatrix.translate(V3<fp>(cameraPos.x,cameraPos.y,cameraPos.z));
-
-        camMatrix.rotateX(cameraAngle.x);
-        camMatrix.rotateY(cameraAngle.y);
-        camMatrix.rotateZ(cameraAngle.z);
-
-        viewFrustrumBB.AddPoint(cameraPos);
+        M4<fp> camMatrix = render->GetMatrix(MatrixType::View).Inverted();
 
         V4<fp> t1 = camMatrix * frustrumPoints[0];
         V4<fp> t2 = camMatrix * frustrumPoints[1];
         V4<fp> t3 = camMatrix * frustrumPoints[2];
         V4<fp> t4 = camMatrix * frustrumPoints[3];
 
+        viewFrustrumBB.AddPoint(cameraPos);
+
         viewFrustrumBB.AddPoint(V3<fp>(t1.x, t1.y, t1.z));
         viewFrustrumBB.AddPoint(V3<fp>(t2.x, t2.y, t2.z));
         viewFrustrumBB.AddPoint(V3<fp>(t3.x, t3.y, t3.z));
         viewFrustrumBB.AddPoint(V3<fp>(t4.x, t4.y, t4.z));
 
-
+/*
         Triangle3d t;
 
         t.verts[0].pos = V3<fp>(t1.x, t1.y, t1.z);
@@ -83,7 +76,7 @@ namespace P3D
         t.verts[2].pos = V3<fp>(t3.x, t3.y, t3.z);
 
         render->DrawTriangle(&t, nullptr, 12345, NoFlags);
-
+*/
     }
 
     void Object3d::RenderScene()

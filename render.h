@@ -47,7 +47,8 @@ namespace P3D
     {
         Model,
         View,
-        Projection
+        Projection,
+        Transform
     } MatrixType;
 
     typedef enum ClipPlane

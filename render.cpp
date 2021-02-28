@@ -132,6 +132,9 @@ namespace P3D
             case MatrixType::Projection:
                 return this->projectionMatrix;
 
+            case MatrixType::Transform:
+                return this->projectionMatrix;
+
             default: //Shouldn't get here. Shut up compiler.
                 return this->viewMatrix;
         }
