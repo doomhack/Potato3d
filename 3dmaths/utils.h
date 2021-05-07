@@ -21,14 +21,7 @@ namespace P3D
     template <class T>
     constexpr inline T pLerp(T a, T b, T frac)
     {
-
-    #ifdef FAST_LERP
         return a + frac * (b - a);
-    #else
-        T ifrac = T(1) - frac;
-
-        return (a * ifrac) + (b * frac);
-    #endif
     }
 
     template <class T>
@@ -148,11 +141,12 @@ namespace P3D
     }
 
     template <>
-    inline FP pReciprocal(FP v)
+    constexpr inline FP pReciprocal(FP v)
     {
         FP result;
 
         FP val = v < 0 ? -v : v;
+
 
         if(val <= 1)
         {

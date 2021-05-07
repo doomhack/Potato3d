@@ -43,6 +43,11 @@ namespace P3D
             return std::numeric_limits<short>::min();
         }
 
+        constexpr FP& operator=(const FP& r)
+        {
+            n = r.n;   return *this;
+        }
+
         constexpr FP& operator=(const int r)
         {
     #ifdef OVERFLOW_CHECK

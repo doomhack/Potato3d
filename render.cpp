@@ -272,22 +272,6 @@ namespace P3D
         }
     }
 
-    void Render::TriangulatePolygon(Vertex2d clipSpacePoints[], const int vxCount, const Texture *texture, const pixel color, const RenderFlags flags)
-    {
-        if(vxCount < 3)
-            return;
-
-        DrawTriangleCull(clipSpacePoints, texture, color, flags);
-
-        int rounds = vxCount - 3;
-
-        for(int i = 0; i < rounds; i++)
-        {
-            clipSpacePoints[i+1] = clipSpacePoints[0];
-            DrawTriangleCull(&clipSpacePoints[i+1], texture, color, flags);
-        }
-    }
-
     fp Render::GetClipPointForVertex(const Vertex2d& vertex, ClipPlane clipPlane) const
     {
         switch(clipPlane)
@@ -322,9 +306,29 @@ namespace P3D
 
     }
 
+    void Render::TriangulatePolygon(Vertex2d clipSpacePoints[], const int vxCount, const Texture *texture, const pixel color, const RenderFlags flags)
+    {
+        if(vxCount < 3)
+            return;
+
+        DrawTriangleCull(clipSpacePoints, texture, color, flags);
+
+        int rounds = vxCount - 3;
+
+        for(int i = 0; i < rounds; i++)
+        {
+            clipSpacePoints[i+1] = clipSpacePoints[0];
+            DrawTriangleCull(&clipSpacePoints[i+1], texture, color, flags);
+        }
+    }
+
     void Render::DrawTriangleCull(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags)
     {
         Vertex2d screenSpacePoints[3];
+
+#ifdef POLYGON_NOISE_SIZE
+        fp xmin = fbSize.x, xmax = 0, ymin = fbSize.y, ymax = 0;
+#endif
 
         for(int i = 0; i < 3; i++)
         {
@@ -332,6 +336,11 @@ namespace P3D
 
             screenSpacePoints[i].pos.x = fracToX(screenSpacePoints[i].pos.x);
             screenSpacePoints[i].pos.y = fracToY(screenSpacePoints[i].pos.y);
+
+#ifdef POLYGON_NOISE_SIZE
+            xmin = (screenSpacePoints[i].pos.x < xmin) ? screenSpacePoints[i].pos.x : xmin;
+            xmax = screenSpacePoints[i].pos.x > xmax ? screenSpacePoints[i].pos.x : xmax;
+#endif
 
             if(texture)
             {
@@ -341,6 +350,34 @@ namespace P3D
         }
 
         SortPointsByY(screenSpacePoints);
+
+#ifdef POLYGON_NOISE_SIZE
+        ymin = screenSpacePoints[0].pos.y;
+        ymax = screenSpacePoints[2].pos.y;
+
+        if(( pRound(xmax - xmin) * pRound(ymax - ymin)) < POLYGON_NOISE_SIZE)
+        {
+            if  (
+                    (clipSpacePoints[0].pos.z > POLYGON_NOISE_Z_THREASHOLD) &&
+                    (clipSpacePoints[1].pos.z > POLYGON_NOISE_Z_THREASHOLD) &&
+                    (clipSpacePoints[2].pos.z > POLYGON_NOISE_Z_THREASHOLD)
+                )
+            {
+                return;
+            }
+        }
+#endif
+
+#ifdef POLYGON_TEXTURE_Z_THREASHOLD
+        if  (
+                (clipSpacePoints[0].pos.z > POLYGON_TEXTURE_Z_THREASHOLD) &&
+                (clipSpacePoints[1].pos.z > POLYGON_TEXTURE_Z_THREASHOLD) &&
+                (clipSpacePoints[2].pos.z > POLYGON_TEXTURE_Z_THREASHOLD)
+            )
+        {
+            texture = nullptr;
+        }
+#endif
 
 #ifdef RENDER_STATS
         stats.triangles_drawn++;
@@ -575,7 +612,6 @@ namespace P3D
         if((bottom.pos.x >= fbSize.x && left.pos.x >= fbSize.x) || (right.pos.x < 0 && bottom.pos.x < 0))
             return;
 
-
         int yStart = (bottom.pos.y);
         int yEnd = (left.pos.y);
 
@@ -683,6 +719,14 @@ namespace P3D
 
     void Render::ClipSpan(int y, TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color, const RenderFlags flags)
     {
+
+#ifdef FRONT_TO_BACK
+        SpanBuffer* s_buffer = &spanBuffer[y];
+
+        if(s_buffer->pixels_left <= 0)
+            return;
+#endif
+
         const int fb_width = fbSize.x;
 
         int x_start = pos.x_left;
@@ -698,11 +742,6 @@ namespace P3D
             x_end = fb_width-1;
 
 #ifdef FRONT_TO_BACK
-
-        SpanBuffer* s_buffer = &spanBuffer[y];
-
-        if(s_buffer->pixels_left <= 0)
-            return;
 
         SpanNode* c_node = s_buffer->span_tree;
         SpanNode** p_node = &s_buffer->span_tree;
@@ -833,7 +872,7 @@ namespace P3D
     }
 
     void Render:: DrawTriangleScanlinePerspectiveCorrect(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture)
-    {
+    {        
         int x_start = pos.x_left;
         int x_end = pos.x_right;
 
@@ -882,7 +921,7 @@ namespace P3D
             DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
             DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
             DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++;
 
             invw_0 = pReciprocal(w);
             invw_15 = pReciprocal(w += dw);

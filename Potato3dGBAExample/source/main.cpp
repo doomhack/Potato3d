@@ -109,7 +109,9 @@ int main()
     const P3D::BspModel* runway = (const P3D::BspModel*)modeldata;
     obj3d->SetModel(runway);
 
-    obj3d->SetBackgroundColor(0);
+    obj3d->SetBackgroundColor(RGB8(0x4d, 0xc9, 0xff));
+
+    //obj3d->SetBackgroundColor(0);
 
     while(true)
     {

@@ -44,6 +44,15 @@ namespace P3D
         void SortBackToFrontRecursive(const V3<fp>& p, const AABB &frustrum, const BspNode* n, std::vector<BspTriangle*>& out, bool backface_cull) const;
 
         void TraverseNodesRecursive(const BspNode* n, QList<const BspNode *> &nodeList) const;
+
+        static constexpr unsigned short RGB5_to_BGR5(unsigned short rgb5)
+        {
+            unsigned short r = rgb5 & 0x7C00;
+            unsigned short g = rgb5 & 0x3E0;
+            unsigned short b = rgb5 & 0x1F;
+
+            return (r >> 10) | g | (b << 10);
+        }
     };
 
     class Bsp3d
@@ -82,6 +91,7 @@ namespace P3D
         }
 
         const fp epsilon = fp(0.1f);
+
 
     };
 }

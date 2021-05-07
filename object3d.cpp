@@ -163,7 +163,6 @@ namespace P3D
 #endif
             }
 
-            //render->DrawTriangle(&tri->tri, nullptr, tex ? tex->pixels[100] : tri->color, renderFlags);
             render->DrawTriangle(&tri->tri, tex, tri->color, renderFlags);
         }
 

@@ -1,5 +1,5 @@
 TEMPLATE = app
-CONFIG += console c++11
+CONFIG += console c++14
 CONFIG -= app_bundle
 CONFIG -= qt
 
@@ -12,7 +12,7 @@ SOURCES += \
     source/bspmodel.iwram.cpp \
     source/main.cpp \
     source/model.cpp \
-    source/object3d.iwram.cpp \
+    source/object3d.cpp \
     source/recip.cpp \
     source/render.iwram.cpp
 

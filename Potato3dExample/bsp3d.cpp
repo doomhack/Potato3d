@@ -810,7 +810,7 @@ namespace P3D
             {
                 BspModelTriangle bmt;
                 bmt.tri = *nodeList[i]->front_tris[j]->tri;
-                bmt.color = nodeList[i]->front_tris[j]->color;
+                bmt.color = RGB5_to_BGR5(nodeList[i]->front_tris[j]->color);
                 bmt.texture = -1;
                 bmt.tri_bb.AddTriangle(*nodeList[i]->front_tris[j]->tri);
 
@@ -840,11 +840,7 @@ namespace P3D
 
                         for(int i = 0; i < pxl.length() / 2; i++)
                         {
-                            unsigned short r = p[i] & 0x7C00;
-                            unsigned short g = p[i] & 0x3E0;
-                            unsigned short b = p[i] & 0x1F;
-
-                            p[i] = (r >> 10) | g | (b << 10);
+                            p[i] = RGB5_to_BGR5(p[i]);
                         }
 
                         texturePixels.append(pxl);
@@ -868,7 +864,7 @@ namespace P3D
             {
                 BspModelTriangle bmt;
                 bmt.tri = *nodeList[i]->back_tris[j]->tri;
-                bmt.color = nodeList[i]->back_tris[j]->color;
+                bmt.color = RGB5_to_BGR5(nodeList[i]->back_tris[j]->color);
                 bmt.texture = -1;
                 bmt.tri_bb.AddTriangle(*nodeList[i]->back_tris[j]->tri);
 
@@ -898,11 +894,7 @@ namespace P3D
 
                         for(int i = 0; i < pxl.length() / 2; i++)
                         {
-                            unsigned short r = p[i] & 0x7C00;
-                            unsigned short g = p[i] & 0x3E0;
-                            unsigned short b = p[i] & 0x1F;
-
-                            p[i] = (r >> 10) | g | (b << 10);
+                            p[i] = RGB5_to_BGR5(p[i]);
                         }
 
                         texturePixels.append(pxl);

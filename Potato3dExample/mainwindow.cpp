@@ -31,7 +31,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     object3d->SetBackgroundColor(0);
 
-    P3D::Model3d* runway = LoadObjFile(":/models/temple.obj", ":/models/temple.mtl");
+    P3D::Model3d* runway = LoadObjFile(":/models/Mk64Beach/Mk64Kb.obj", ":/models/Mk64Beach/Mk64Kb.mtl");
 
     P3D::Bsp3d* bsp = new P3D::Bsp3d;
 
@@ -232,6 +232,8 @@ P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
 
                 *image = image->scaled(TEX_SIZE, TEX_SIZE, Qt::IgnoreAspectRatio, Qt::SmoothTransformation).mirrored();
 
+                textureColors[currMtlName] = image->scaled(1,1, Qt::IgnoreAspectRatio, Qt::SmoothTransformation).pixel(0,0);
+
 #ifndef FB_32BIT
                 *image = image->convertToFormat(QImage::Format_RGB555);
 #endif
@@ -330,7 +332,14 @@ P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
             }
 
             currentMesh->texture = textureMap.value(elements[1]);
-            currentMesh->color = textureColors.value(elements[1]);
+
+            QRgb cx = textureColors.value(elements[1]);
+
+#ifndef FB_32BIT
+            currentMesh->color = ((qRed(cx) >> 3) << 10) | ((qGreen(cx) >> 3) << 5) | ((qBlue(cx) >> 3));
+#else
+            currentMesh->color = cx;
+#endif
         }
     }
 
