@@ -18,11 +18,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     fpsTimer.start();
 
-#ifdef FB_32BIT
-    frameBufferImage = QImage(screenWidth, screenHeight, QImage::Format::Format_RGB32);
-#else
     frameBufferImage = QImage(screenWidth, screenHeight, QImage::Format::Format_RGB555);
-#endif
 
     object3d = new P3D::Object3d();
 
@@ -234,9 +230,8 @@ P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
 
                 textureColors[currMtlName] = image->scaled(1,1, Qt::IgnoreAspectRatio, Qt::SmoothTransformation).pixel(0,0);
 
-#ifndef FB_32BIT
                 *image = image->convertToFormat(QImage::Format_RGB555);
-#endif
+
                 if(!image->isNull())
                 {
                     textureMap[currMtlName] = t;
@@ -335,11 +330,7 @@ P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
 
             QRgb cx = textureColors.value(elements[1]);
 
-#ifndef FB_32BIT
             currentMesh->color = ((qRed(cx) >> 3) << 10) | ((qGreen(cx) >> 3) << 5) | ((qBlue(cx) >> 3));
-#else
-            currentMesh->color = cx;
-#endif
         }
     }
 

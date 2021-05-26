@@ -24,29 +24,19 @@ namespace P3D
     #define SPAN_NODES_LINE 16
 
     //Polys with 2d bounding box area area smaller than this are skipped as 'noise'.
-    #define POLYGON_NOISE_SIZE (4)
+    //#define POLYGON_NOISE_SIZE (8)
 
     //
-    #define POLYGON_NOISE_Z_THREASHOLD 500
+    //#define POLYGON_NOISE_Z_THREASHOLD 500
 
-    #define POLYGON_TEXTURE_Z_THREASHOLD 1000
+    //#define POLYGON_TEXTURE_Z_THREASHOLD 1500
 
     //#define USE_FLOAT
 
-#ifndef __arm__
-    //#define FB_32BIT //RGBX888 framebuffer format.
-#endif
-
     #define FRONT_TO_BACK
 
-    #ifdef FB_32BIT
-        typedef unsigned int pixel;
-        const pixel alphaMask = 0xffffff;
-    #else
-        typedef unsigned short pixel;
-        const pixel alphaMask = 0x7fff;
-    #endif
-
+    typedef unsigned short pixel;
+    const pixel alphaMask = 0x7fff;
 
     #ifdef USE_FLOAT
         typedef double fp;
