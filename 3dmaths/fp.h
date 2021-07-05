@@ -149,23 +149,23 @@ namespace P3D
         constexpr FP& operator*=(const float& r)      {return *this*=FP(r);}
 
         //Divide
-        FP operator/(const FP& r) const
+        constexpr FP operator/(const FP& r) const
         {
             FP v(r); v.n = FixedDiv(n, r.n);
             return v;
         }
 
-        FP operator/(const int r) const       {FP v(r);   return *this/v;}
-        FP operator/(const float r) const     {FP v(r);   return *this/v;}
+        constexpr FP operator/(const int r) const       {FP v(r);   return *this/v;}
+        constexpr FP operator/(const float r) const     {FP v(r);   return *this/v;}
 
-        FP& operator/=(const FP& r)
+        constexpr FP& operator/=(const FP& r)
         {
             n = FixedDiv(n, r.n);
             return *this;
         }
 
-        FP& operator/=(const int& r)              {return *this/=FP(r);}
-        FP& operator/=(const float& r)            {return *this/=FP(r);}
+        constexpr FP& operator/=(const int& r)              {return *this/=FP(r);}
+        constexpr FP& operator/=(const float& r)            {return *this/=FP(r);}
 
         //Equality
         constexpr bool operator==(const FP& r) const        {return n == r.n;}

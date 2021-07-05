@@ -25,9 +25,10 @@ MainWindow::MainWindow(QWidget *parent)
     //object3d->Setup(screenWidth, screenHeight, 54, 25, 1500, (P3D::pixel*)frameBufferImage.bits());
     object3d->Setup(screenWidth, screenHeight, 45, 25, 2500, (P3D::pixel*)frameBufferImage.bits());
 
-    object3d->SetBackgroundColor(0);
+    object3d->SetBackgroundColor(16000);
 
-    P3D::Model3d* runway = LoadObjFile(":/models/Mk64Beach/Mk64Kb.obj", ":/models/Mk64Beach/Mk64Kb.mtl");
+
+    P3D::Model3d* runway = LoadObjFile(":/models/temple.obj", ":/models/temple.mtl");
 
     P3D::Bsp3d* bsp = new P3D::Bsp3d;
 

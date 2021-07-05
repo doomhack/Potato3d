@@ -98,13 +98,10 @@ namespace P3D
     void Render::ClearFramebuffer(pixel color)
     {
         const unsigned int buffSize = fbSize.x * fbSize.y * sizeof(pixel);
-#ifdef FB_32
-        FastFill32((unsigned int*)frameBuffer, color, buffSize >> 2);
-#else
+
         unsigned int c32 = color;
 
         FastFill32((unsigned int*)frameBuffer, c32 | c32 << 16, buffSize >> 2);
-#endif
     }
 
     void Render::UpdateTransformMatrix()
@@ -194,51 +191,42 @@ namespace P3D
         fp w1 = clipSpacePoints[1].pos.w;
         fp w2 = clipSpacePoints[2].pos.w;
 
-        fp x0 = clipSpacePoints[0].pos.x;
-        fp x1 = clipSpacePoints[1].pos.x;
-        fp x2 = clipSpacePoints[2].pos.x;
+        fp min_0 = pMin3(clipSpacePoints[0].pos.x, clipSpacePoints[0].pos.y, clipSpacePoints[0].pos.z);
+        fp min_1 = pMin3(clipSpacePoints[1].pos.x, clipSpacePoints[1].pos.y, clipSpacePoints[1].pos.z);
+        fp min_2 = pMin3(clipSpacePoints[2].pos.x, clipSpacePoints[2].pos.y, clipSpacePoints[2].pos.z);
 
-        fp y0 = clipSpacePoints[0].pos.y;
-        fp y1 = clipSpacePoints[1].pos.y;
-        fp y2 = clipSpacePoints[2].pos.y;
-
-        fp z0 = clipSpacePoints[0].pos.z;
-        fp z1 = clipSpacePoints[1].pos.z;
-        fp z2 = clipSpacePoints[2].pos.z;
-
-        if(x0 > w0 && x1 > w1 && x2 > w2)
+        if(min_0 > w0 && min_1 > w1 && min_2 > w2)
             return;
 
-        if(-x0 > w0 && -x1 > w1 && -x2 > w2)
+        fp max_0 = pMax3(clipSpacePoints[0].pos.x, clipSpacePoints[0].pos.y, clipSpacePoints[0].pos.z);
+        fp max_1 = pMax3(clipSpacePoints[1].pos.x, clipSpacePoints[1].pos.y, clipSpacePoints[1].pos.z);
+        fp max_2 = pMax3(clipSpacePoints[2].pos.x, clipSpacePoints[2].pos.y, clipSpacePoints[2].pos.z);
+
+        if(-max_0 > w0 && -max_1 > w1 && -max_2 > w2)
             return;
 
-        if(y0 > w0 && y1 > w1 && y2 > w2)
-            return;
+        if (max_0 <= w0 && max_1 <= w1 && max_2 <= w2 && -min_0 <= w0 && -min_1 <= w1 && -min_2 <= w2)
+        {
+            DrawTriangleCull(clipSpacePoints, texture, color, flags);
+        }
+        else
+        {
+            Vertex2d outputVxA[8];
+            Vertex2d outputVxB[8];
+            int countA = 0;
+            int countB = 0;
 
-        if(-y0 > w0 && -y1 > w1 && -y2 > w2)
-            return;
+            //As we clip against each frustrum plane, we swap the buffers
+            //so the output of the last clip is used as input to the next.
+            ClipPolygon(clipSpacePoints, 3, outputVxA, countA, W_Near);
+            ClipPolygon(outputVxA, countA, outputVxB, countB, X_W_Left);
+            ClipPolygon(outputVxB, countB, outputVxA, countA, X_W_Right);
+            ClipPolygon(outputVxA, countA, outputVxB, countB, Y_W_Top);
+            ClipPolygon(outputVxB, countB, outputVxA, countA, Y_W_Bottom);
 
-        if(z0 > w0 && z1 > w1 && z2 > w2)
-            return;
-
-        if(-z0 > w0 && -z1 > w1 && -z2 > w2)
-            return;
-
-        Vertex2d outputVxA[8];
-        Vertex2d outputVxB[8];
-        int countA = 0;
-        int countB = 0;
-
-        //As we clip against each frustrum plane, we swap the buffers
-        //so the output of the last clip is used as input to the next.
-        ClipPolygon(clipSpacePoints, 3, outputVxA, countA, W_Near);
-        ClipPolygon(outputVxA, countA, outputVxB, countB, X_W_Left);
-        ClipPolygon(outputVxB, countB, outputVxA, countA, X_W_Right);
-        ClipPolygon(outputVxA, countA, outputVxB, countB, Y_W_Top);
-        ClipPolygon(outputVxB, countB, outputVxA, countA, Y_W_Bottom);
-
-        //Now outputVxA and CountA contain the final result.
-        TriangulatePolygon(outputVxA, countA, texture, color, flags);
+            //Now outputVxA and CountA contain the final result.
+            TriangulatePolygon(outputVxA, countA, texture, color, flags);
+        }
     }
 
     void Render::ClipPolygon(const Vertex2d clipSpacePointsIn[], const int vxCount, Vertex2d clipSpacePointsOut[], int& vxCountOut, ClipPlane clipPlane)
@@ -418,7 +406,7 @@ namespace P3D
             triangle[1] = points[1];
 
             //x pos
-            triangle[2].pos.x = pRound(pLerp(points[0].pos.x, points[2].pos.x, splitFrac));
+            triangle[2].pos.x = pLerp(points[0].pos.x, points[2].pos.x, splitFrac);
             triangle[2].pos.y = points[1].pos.y;
 
             //uv coords.
@@ -459,7 +447,7 @@ namespace P3D
             triangle[1] = points[1];
 
             //x pos
-            triangle[2].pos.x = pRound(pLerp(points[0].pos.x, points[2].pos.x, splitFrac));
+            triangle[2].pos.x = pLerp(points[0].pos.x, points[2].pos.x, splitFrac);
             triangle[2].pos.y = points[1].pos.y;
 
             triangle[3] = points[2];
@@ -890,22 +878,22 @@ namespace P3D
         stats.scanlines_drawn++;
 #endif
 
-        fp invw_0 = pReciprocal(w);
-        fp u0 = u * invw_0;
-        fp v0 = v * invw_0;
-
-        fp invw_15 = pReciprocal(w += dw);
-        fp u15 = (u += du) * invw_15;
-        fp v15 = (v += dv) * invw_15;
-
-        fp du16 = pASR(u15-u0, 4);
-        fp dv16 = pASR(v15-v0, 4);
-
         unsigned int l = count >> 4;
         unsigned int r = count & 15;
 
         while(l--)
         {
+            fp invw_0 = pReciprocal(w);
+            fp u0 = u * invw_0;
+            fp v0 = v * invw_0;
+
+            fp invw_15 = pReciprocal(w += dw);
+            fp u15 = (u += du) * invw_15;
+            fp v15 = (v += dv) * invw_15;
+
+            fp du16 = pASR(u15-u0, 4);
+            fp dv16 = pASR(v15-v0, 4);
+
             DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
             DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
             DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
@@ -922,37 +910,39 @@ namespace P3D
             DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
             DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
             DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++;
-
-            invw_0 = pReciprocal(w);
-            invw_15 = pReciprocal(w += dw);
-
-            u0 = u * invw_0;
-            u15 = (u += du) * invw_15;
-
-            v0 = v * invw_0;
-            v15 = (v += dv) * invw_15;
-
-            du16 = pASR(u15-u0, 4);
-            dv16 = pASR(v15-v0, 4);
         }
 
-        switch(r)
+        if(r)
         {
-            case 15:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-            case 14:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-            case 13:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-            case 12:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-            case 11:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-            case 10:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-            case 9:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-            case 8:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-            case 7:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-            case 6:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-            case 5:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-            case 4:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-            case 3:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-            case 2:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-            case 1:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0);
+            fp invw_0 = pReciprocal(w);
+            fp u0 = u * invw_0;
+            fp v0 = v * invw_0;
+
+            fp invw_15 = pReciprocal(w += dw);
+            fp u15 = (u += du) * invw_15;
+            fp v15 = (v += dv) * invw_15;
+
+            fp du16 = pASR(u15-u0, 4);
+            fp dv16 = pASR(v15-v0, 4);
+
+            switch(r)
+            {
+                case 15:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+                case 14:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+                case 13:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+                case 12:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+                case 11:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+                case 10:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+                case 9:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+                case 8:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+                case 7:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+                case 6:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+                case 5:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+                case 4:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+                case 3:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+                case 2:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
+                case 1:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0);
+            }
         }
     }
 

@@ -3,7 +3,7 @@
 
 
 #ifdef __arm__
-    extern "C" unsigned int udiv64_arm (unsigned int a, unsigned int b, unsigned int c);
+    extern "C" constexpr unsigned int udiv64_arm (unsigned int a, unsigned int b, unsigned int c);
 #endif
 
 template <class T>
@@ -13,7 +13,7 @@ constexpr inline T FixedDiv(T a, T b)
 }
 
 template<>
-inline int FixedDiv(int a, int b)
+constexpr inline int FixedDiv(int a, int b)
 {
 #ifndef __arm__
 

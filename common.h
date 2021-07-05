@@ -15,13 +15,13 @@ namespace P3D
     #define TEX_SIZE_PIXELS (TEX_SIZE * TEX_SIZE)
     #define TEX_SIZE_BYTES (TEX_SIZE_PIXELS * sizeof(pixel))
 
-    //#define USE_TEXTURE_CACHE
+    #define USE_TEXTURE_CACHE
 
     #define TEX_CACHE_SIZE 16*1024
     #define TEX_CACHE_ENTRIES (TEX_CACHE_SIZE/TEX_SIZE_BYTES)
 
 
-    #define SPAN_NODES_LINE 16
+    #define SPAN_NODES_LINE 16u
 
     //Polys with 2d bounding box area area smaller than this are skipped as 'noise'.
     //#define POLYGON_NOISE_SIZE (8)
@@ -36,7 +36,7 @@ namespace P3D
     #define FRONT_TO_BACK
 
     typedef unsigned short pixel;
-    const pixel alphaMask = 0x7fff;
+    //const pixel alphaMask = 0x7fff;
 
     #ifdef USE_FLOAT
         typedef double fp;
