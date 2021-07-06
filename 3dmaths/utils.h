@@ -76,11 +76,22 @@ namespace P3D
     }
 
     template <class T>
+    constexpr inline T pMin(T a, T b)
+    {
+        return a < b ? a : b;
+    }
+
+    template <class T>
     constexpr inline T pMax3(T a, T b, T c)
     {
         return a > b ? (a > c ? a : c) : (b > c ? b : c);
     }
 
+    template <class T>
+    constexpr inline T pMax(T a, T b)
+    {
+        return a > b ? a : b;
+    }
 
     inline void FastCopy32(unsigned int* dest, const unsigned int* src, const unsigned int len)
     {

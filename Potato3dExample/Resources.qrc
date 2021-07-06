@@ -1190,5 +1190,15 @@
         <file>models/cross_course/lambert256.png</file>
         <file>models/Mk64Beach/Mk64Kb2.mtl</file>
         <file>models/Mk64Beach/Mk64Kb2.obj</file>
+        <file>models/Plane/plane.mtl</file>
+        <file>models/Plane/plane.obj</file>
+        <file>models/Plane/C1W.png</file>
+        <file>models/Plane/2B68BF8F_c.bmp</file>
+        <file>models/Plane/481EB30_c.bmp</file>
+        <file>models/Plane/plane2.mtl</file>
+        <file>models/Plane/plane2.obj</file>
+        <file>models/PW_Island/test.blend</file>
+        <file>models/PW_Island/test.mtl</file>
+        <file>models/PW_Island/test.obj</file>
     </qresource>
 </RCC>

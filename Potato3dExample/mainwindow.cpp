@@ -23,12 +23,12 @@ MainWindow::MainWindow(QWidget *parent)
     object3d = new P3D::Object3d();
 
     //object3d->Setup(screenWidth, screenHeight, 54, 25, 1500, (P3D::pixel*)frameBufferImage.bits());
-    object3d->Setup(screenWidth, screenHeight, 45, 25, 2500, (P3D::pixel*)frameBufferImage.bits());
+    object3d->Setup(screenWidth, screenHeight, 45, 25, 1500, (P3D::pixel*)frameBufferImage.bits());
 
     object3d->SetBackgroundColor(16000);
 
 
-    P3D::Model3d* runway = LoadObjFile(":/models/temple.obj", ":/models/temple.mtl");
+    P3D::Model3d* runway = LoadObjFile(":/models/PW_Island/test.obj", ":/models/PW_Island/test.mtl");
 
     P3D::Bsp3d* bsp = new P3D::Bsp3d;
 

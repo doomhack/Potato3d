@@ -191,16 +191,22 @@ namespace P3D
         fp w1 = clipSpacePoints[1].pos.w;
         fp w2 = clipSpacePoints[2].pos.w;
 
-        fp min_0 = pMin3(clipSpacePoints[0].pos.x, clipSpacePoints[0].pos.y, clipSpacePoints[0].pos.z);
-        fp min_1 = pMin3(clipSpacePoints[1].pos.x, clipSpacePoints[1].pos.y, clipSpacePoints[1].pos.z);
-        fp min_2 = pMin3(clipSpacePoints[2].pos.x, clipSpacePoints[2].pos.y, clipSpacePoints[2].pos.z);
+        if(w0 < zNear && w1 < zNear && w2 < zNear)
+            return;
+
+        if(w0 > zFar && w1 > zFar && w2 > zFar)
+            return;
+
+        fp min_0 = pMin(clipSpacePoints[0].pos.x, clipSpacePoints[0].pos.y);
+        fp min_1 = pMin(clipSpacePoints[1].pos.x, clipSpacePoints[1].pos.y);
+        fp min_2 = pMin(clipSpacePoints[2].pos.x, clipSpacePoints[2].pos.y);
 
         if(min_0 > w0 && min_1 > w1 && min_2 > w2)
             return;
 
-        fp max_0 = pMax3(clipSpacePoints[0].pos.x, clipSpacePoints[0].pos.y, clipSpacePoints[0].pos.z);
-        fp max_1 = pMax3(clipSpacePoints[1].pos.x, clipSpacePoints[1].pos.y, clipSpacePoints[1].pos.z);
-        fp max_2 = pMax3(clipSpacePoints[2].pos.x, clipSpacePoints[2].pos.y, clipSpacePoints[2].pos.z);
+        fp max_0 = pMax(clipSpacePoints[0].pos.x, clipSpacePoints[0].pos.y);
+        fp max_1 = pMax(clipSpacePoints[1].pos.x, clipSpacePoints[1].pos.y);
+        fp max_2 = pMax(clipSpacePoints[2].pos.x, clipSpacePoints[2].pos.y);
 
         if(-max_0 > w0 && -max_1 > w1 && -max_2 > w2)
             return;
