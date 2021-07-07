@@ -803,7 +803,7 @@ namespace P3D
             bn.node_bb = nodeList[i]->node_bb;
             bn.child_bb = nodeList[i]->child_node_bb;
 
-            bn.front_tris.count = nodeList[i]->front_tris.size();
+            bn.front_tris.count = nodeList[i]->front_tris.size() & 0xffff;
             bn.front_tris.offset = modelTriList.length();
 
             for(unsigned int j = 0; j < nodeList[i]->front_tris.size(); j++)
@@ -857,7 +857,7 @@ namespace P3D
 
 
 
-            bn.back_tris.count = nodeList[i]->back_tris.size();
+            bn.back_tris.count = nodeList[i]->back_tris.size() & 0xffff;
             bn.back_tris.offset = modelTriList.length();
 
             for(unsigned int j = 0; j < nodeList[i]->back_tris.size(); j++)

@@ -373,25 +373,25 @@ namespace P3D
         stats.triangles_drawn++;
 #endif
 
+        DrawTriangleSplit(screenSpacePoints, texture, color, flags);
+    }
+
+    void Render::DrawTriangleSplit(Vertex2d *points, const Texture *texture, const pixel color, RenderFlags flags)
+    {
         if(texture)
-            DrawTriangleSplit(screenSpacePoints, texture, flags);
-        else
-            DrawTriangleSplitFlat(screenSpacePoints, color);
-    }
-
-    void Render::DrawTriangleSplit(Vertex2d *points, const Texture *texture, RenderFlags flags)
-    {
-        points[0].toPerspectiveCorrect();
-        points[1].toPerspectiveCorrect();
-        points[2].toPerspectiveCorrect();
+        {
+            points[0].toPerspectiveCorrect();
+            points[1].toPerspectiveCorrect();
+            points[2].toPerspectiveCorrect();
+        }
 
         if(points[1].pos.y == points[2].pos.y)
         {
-            DrawTriangleTop(points, texture, flags);
+            DrawTriangleTop(points, texture, color, flags);
         }
         else if(points[0].pos.y == points[1].pos.y)
         {
-            DrawTriangleBottom(points, texture, flags);
+            DrawTriangleBottom(points, texture, color, flags);
         }
         else
         {
@@ -411,52 +411,20 @@ namespace P3D
             triangle[2].pos.x = pLerp(points[0].pos.x, points[2].pos.x, splitFrac);
             triangle[2].pos.y = points[1].pos.y;
 
-            //uv coords.
-            triangle[2].uv.x = pLerp(points[0].uv.x, points[2].uv.x, splitFrac);
-            triangle[2].uv.y = pLerp(points[0].uv.y, points[2].uv.y, splitFrac);
+            if(texture)
+            {
+                //uv coords.
+                triangle[2].uv.x = pLerp(points[0].uv.x, points[2].uv.x, splitFrac);
+                triangle[2].uv.y = pLerp(points[0].uv.y, points[2].uv.y, splitFrac);
 
-            triangle[2].pos.w = pLerp(points[0].pos.w, points[2].pos.w, splitFrac);
+                triangle[2].pos.w = pLerp(points[0].pos.w, points[2].pos.w, splitFrac);
 
-            triangle[3] = points[2];
-
-            DrawTriangleTop(triangle, texture, flags);
-            DrawTriangleBottom(&triangle[1], texture, flags);
-        }
-    }
-
-    void Render::DrawTriangleSplitFlat(const Vertex2d points[], const pixel color)
-    {
-        if(points[1].pos.y == points[2].pos.y)
-        {
-            DrawTriangleTopFlat(points, color);
-        }
-        else if(points[0].pos.y == points[1].pos.y)
-        {
-            DrawTriangleBottomFlat(points, color);
-        }
-        else
-        {
-            //Now we split the polygon into two triangles.
-            //A flat top and flat bottom triangle.
-
-            //How far down between vx0 -> vx2 are we spliting?
-            fp splitFrac = pApproxDiv((points[1].pos.y - points[0].pos.y), (points[2].pos.y - points[0].pos.y));
-
-            //Interpolate new values for new vertex.
-            Vertex2d triangle[4];
-
-            triangle[0] = points[0];
-            triangle[1] = points[1];
-
-            //x pos
-            triangle[2].pos.x = pLerp(points[0].pos.x, points[2].pos.x, splitFrac);
-            triangle[2].pos.y = points[1].pos.y;
+            }
 
             triangle[3] = points[2];
 
-            DrawTriangleTopFlat(triangle, color);
-
-            DrawTriangleBottomFlat(&triangle[1], color);
+            DrawTriangleTop(triangle, texture, color, flags);
+            DrawTriangleBottom(&triangle[1], texture, color, flags);
         }
     }
 
@@ -472,11 +440,11 @@ namespace P3D
             std::swap(points[1], points[2]);
     }
 
-    void Render::DrawTriangleTop(const Vertex2d *points, const Texture *texture, const RenderFlags flags)
+    void Render::DrawTriangleTop(const Vertex2d *points, const Texture *texture, const pixel color, const RenderFlags flags)
     {
         TriEdgeTrace pos;
         TriDrawXDeltaZWUV x_delta;
-        TriDrawYDeltaZWUV y_delta, y_delta_sum;
+        TriDrawYDeltaZWUV y_delta, y_delta_sum = {0,0,0,0,0};
 
         const Vertex2d& top     = points[0];
         const Vertex2d& left    = (points[1].pos.x < points[2].pos.x) ? points[1] : points[2];
@@ -491,29 +459,24 @@ namespace P3D
         if(yEnd < 0 || yStart > fbSize.y)
             return;
 
-
-        GetTriangleLerpDeltasZWUV(left, right, top, x_delta, y_delta);
+        if(texture)
+            GetTriangleLerpDeltasZWUV(left, right, top, x_delta, y_delta);
+        else
+            GetTriangleLerpDeltasZ(left, right, top, y_delta);
 
         if(yStart < 0)
         {
             y_delta_sum.x_left = (y_delta.x_left * -yStart);
             y_delta_sum.x_right = (y_delta.x_right * -yStart);
 
-            y_delta_sum.u = (y_delta.u * -yStart);
-            y_delta_sum.v = (y_delta.v * -yStart);
-            y_delta_sum.w = (y_delta.w * -yStart);
+            if(texture)
+            {
+                y_delta_sum.u = (y_delta.u * -yStart);
+                y_delta_sum.v = (y_delta.v * -yStart);
+                y_delta_sum.w = (y_delta.w * -yStart);
+            }
 
             yStart = 0;
-        }
-        else
-        {
-            y_delta_sum.x_left = 0;
-            y_delta_sum.x_right = 0;
-
-            y_delta_sum.w = 0;
-            y_delta_sum.u = 0;
-            y_delta_sum.v = 0;
-
         }
 
         if(yEnd >= fbSize.y)
@@ -524,76 +487,29 @@ namespace P3D
             pos.x_left = top.pos.x + pASR(y_delta_sum.x_left, triFracShift);
             pos.x_right = top.pos.x + pASR(y_delta_sum.x_right, triFracShift);
 
-            pos.u_left = top.uv.x + pASR(y_delta_sum.u, triFracShift);
-            pos.v_left = top.uv.y + pASR(y_delta_sum.v, triFracShift);
-            pos.w_left = top.pos.w + pASR(y_delta_sum.w, triFracShift);
-
-            ClipSpan(y, pos, x_delta, texture, 0, flags);
-
             y_delta_sum.x_left += y_delta.x_left;
             y_delta_sum.x_right += y_delta.x_right;
-            y_delta_sum.w += y_delta.w;
 
-            y_delta_sum.u += y_delta.u;
-            y_delta_sum.v += y_delta.v;
+            if(texture)
+            {
+                pos.u_left = top.uv.x + pASR(y_delta_sum.u, triFracShift);
+                pos.v_left = top.uv.y + pASR(y_delta_sum.v, triFracShift);
+                pos.w_left = top.pos.w + pASR(y_delta_sum.w, triFracShift);
+
+                y_delta_sum.w += y_delta.w;
+                y_delta_sum.u += y_delta.u;
+                y_delta_sum.v += y_delta.v;
+            }
+
+            ClipSpan(y, pos, x_delta, texture, color, flags);
         }
     }
 
-    void Render::DrawTriangleTopFlat(const Vertex2d points[], const pixel color)
-    {
-        TriEdgeTrace pos;
-        TriDrawYDeltaZ y_delta, y_delta_sum;
-        TriDrawXDeltaZWUV x_delta;
-
-
-        const Vertex2d& top     = points[0];
-        const Vertex2d& left    = (points[1].pos.x < points[2].pos.x) ? points[1] : points[2];
-        const Vertex2d& right   = (points[1].pos.x < points[2].pos.x) ? points[2] : points[1];
-
-        if((top.pos.x >= fbSize.x && left.pos.x >= fbSize.x) || (right.pos.x < 0 && top.pos.x < 0))
-            return;
-
-        int yStart = top.pos.y;
-        int yEnd = left.pos.y;
-
-        if(yEnd < 0 || yStart > fbSize.y)
-            return;
-
-        GetTriangleLerpDeltasZ(left, right, top, y_delta);
-
-        if(yStart < 0)
-        {
-            y_delta_sum.x_left = (y_delta.x_left * -yStart);
-            y_delta_sum.x_right = (y_delta.x_right * -yStart);
-
-            yStart = 0;
-        }
-        else
-        {
-            y_delta_sum.x_left = 0;
-            y_delta_sum.x_right = 0;
-        }
-
-        if(yEnd >= fbSize.y)
-            yEnd = fbSize.y-1;
-
-        for (int y = yStart; y <= yEnd; y++)
-        {
-            pos.x_left = top.pos.x + pASR(y_delta_sum.x_left, triFracShift);
-            pos.x_right = top.pos.x + pASR(y_delta_sum.x_right, triFracShift);
-
-            ClipSpan(y, pos, x_delta, nullptr, color, NoFlags);
-
-            y_delta_sum.x_left += y_delta.x_left;
-            y_delta_sum.x_right += y_delta.x_right;
-        }
-    }
-
-    void Render::DrawTriangleBottom(const Vertex2d *points, const Texture *texture, const RenderFlags flags)
+    void Render::DrawTriangleBottom(const Vertex2d *points, const Texture *texture, const pixel color, const RenderFlags flags)
     {
         TriEdgeTrace pos;
         TriDrawXDeltaZWUV x_delta;
-        TriDrawYDeltaZWUV y_delta, y_delta_sum;
+        TriDrawYDeltaZWUV y_delta, y_delta_sum = {0,0,0,0,0};
 
         const Vertex2d& bottom  = points[2];
         const Vertex2d& left    = (points[0].pos.x < points[1].pos.x) ? points[0] : points[1];
@@ -608,7 +524,11 @@ namespace P3D
         if(yStart < 0 || yEnd >= fbSize.y)
             return;
 
-        GetTriangleLerpDeltasZWUV(left, right, bottom, x_delta, y_delta);
+        if(texture)
+            GetTriangleLerpDeltasZWUV(left, right, bottom, x_delta, y_delta);
+        else
+            GetTriangleLerpDeltasZ(left, right, bottom, y_delta);
+
 
         if(yStart >= fbSize.y)
         {
@@ -617,20 +537,14 @@ namespace P3D
             y_delta_sum.x_left = (y_delta.x_left * overflow);
             y_delta_sum.x_right = (y_delta.x_right * overflow);
 
-            y_delta_sum.w = (y_delta.w * overflow);
-            y_delta_sum.u = (y_delta.u * overflow);
-            y_delta_sum.v = (y_delta.v * overflow);
+            if(texture)
+            {
+                y_delta_sum.w = (y_delta.w * overflow);
+                y_delta_sum.u = (y_delta.u * overflow);
+                y_delta_sum.v = (y_delta.v * overflow);
+            }
 
             yStart = fbSize.y-1;
-        }
-        else
-        {
-            y_delta_sum.x_left = 0;
-            y_delta_sum.x_right = 0;
-
-            y_delta_sum.w = 0;
-            y_delta_sum.u = 0;
-            y_delta_sum.v = 0;
         }
 
         if(yEnd < 0)
@@ -641,69 +555,21 @@ namespace P3D
             pos.x_left = bottom.pos.x - pASR(y_delta_sum.x_left, triFracShift);
             pos.x_right = bottom.pos.x - pASR(y_delta_sum.x_right, triFracShift);
 
-            pos.w_left = bottom.pos.w - pASR(y_delta_sum.w, triFracShift);
-            pos.u_left = bottom.uv.x - pASR(y_delta_sum.u, triFracShift);
-            pos.v_left = bottom.uv.y - pASR(y_delta_sum.v, triFracShift);
-
-            ClipSpan(y, pos, x_delta, texture, 0, flags);
-
             y_delta_sum.x_left += y_delta.x_left;
             y_delta_sum.x_right += y_delta.x_right;
 
-            y_delta_sum.w += y_delta.w;
-            y_delta_sum.u += y_delta.u;
-            y_delta_sum.v += y_delta.v;
-        }
-    }
+            if(texture)
+            {
+                pos.w_left = bottom.pos.w - pASR(y_delta_sum.w, triFracShift);
+                pos.u_left = bottom.uv.x - pASR(y_delta_sum.u, triFracShift);
+                pos.v_left = bottom.uv.y - pASR(y_delta_sum.v, triFracShift);
 
-    void Render::DrawTriangleBottomFlat(const Vertex2d points[], const pixel color)
-    {
-        TriEdgeTrace pos;
-        TriDrawYDeltaZ y_delta, y_delta_sum;
-        TriDrawXDeltaZWUV x_delta;
+                y_delta_sum.w += y_delta.w;
+                y_delta_sum.u += y_delta.u;
+                y_delta_sum.v += y_delta.v;
+            }
 
-        const Vertex2d& bottom  = points[2];
-        const Vertex2d& left    = (points[0].pos.x < points[1].pos.x) ? points[0] : points[1];
-        const Vertex2d& right   = (points[0].pos.x < points[1].pos.x) ? points[1] : points[0];
-
-        if((bottom.pos.x >= fbSize.x && left.pos.x >= fbSize.x) || (right.pos.x < 0 && bottom.pos.x < 0))
-            return;
-
-        int yStart = bottom.pos.y;
-        int yEnd = left.pos.y;
-
-        if(yStart < 0 || yEnd >= fbSize.y)
-            return;
-
-        GetTriangleLerpDeltasZ(left, right, bottom, y_delta);
-
-        if(yStart >= fbSize.y)
-        {
-            int overflow = yStart - (fbSize.y-1);
-
-            y_delta_sum.x_left = (y_delta.x_left * overflow);
-            y_delta_sum.x_right = (y_delta.x_right * overflow);
-
-            yStart = fbSize.y-1;
-        }
-        else
-        {
-            y_delta_sum.x_left = 0;
-            y_delta_sum.x_right = 0;
-        }
-
-        if(yEnd < 0)
-            yEnd = 0;
-
-        for (int y = yStart; y >= yEnd; y--)
-        {
-            pos.x_left = bottom.pos.x - pASR(y_delta_sum.x_left, triFracShift);
-            pos.x_right = bottom.pos.x - pASR(y_delta_sum.x_right, triFracShift);
-
-            ClipSpan(y, pos, x_delta, nullptr, color, NoFlags);
-
-            y_delta_sum.x_left += y_delta.x_left;
-            y_delta_sum.x_right += y_delta.x_right;
+            ClipSpan(y, pos, x_delta, texture, color, flags);
         }
     }
 
@@ -1009,7 +875,7 @@ namespace P3D
         y_delta.v = (left.uv.y - other.uv.y) * inv_y;
     }
 
-    void Render::GetTriangleLerpDeltasZ(const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, TriDrawYDeltaZ &y_delta)
+    void Render::GetTriangleLerpDeltasZ(const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, TriDrawYDeltaZWUV &y_delta)
     {
         //Use reciprocal table for these.
         fp inv_y = 0;

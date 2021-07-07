@@ -38,11 +38,6 @@ namespace P3D
         fp v;
     } TriDrawYDeltaZWUV;
 
-    typedef struct TriDrawYDeltaZ
-    {
-        fp x_left, x_right;
-    } TriDrawYDeltaZ;
-
     typedef enum MatrixType
     {
         Model,
@@ -114,9 +109,9 @@ namespace P3D
 
         fp GetLineIntersectionFrac(const fp a1, const fp a2, const fp b1, const fp b2);
 
-        void DrawTriangleSplit(Vertex2d *points, const Texture *texture, RenderFlags flags);
-        void DrawTriangleTop(const Vertex2d *points, const Texture *texture, const RenderFlags flags);
-        void DrawTriangleBottom(const Vertex2d *points, const Texture *texture, const RenderFlags flags);
+        void DrawTriangleSplit(Vertex2d *points, const Texture *texture, const pixel color, RenderFlags flags);
+        void DrawTriangleTop(const Vertex2d *points, const Texture *texture, const pixel color, const RenderFlags flags);
+        void DrawTriangleBottom(const Vertex2d *points, const Texture *texture, const pixel color, const RenderFlags flags);
 
         void ClipSpan(int y, TriEdgeTrace &pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color, const RenderFlags flags);
         SpanNode* GetFreeSpanNode();
@@ -141,7 +136,7 @@ namespace P3D
         void LerpVertexXYZWUV(Vertex2d& out, const Vertex2d& left, const Vertex2d& right, fp frac);
 
         void GetTriangleLerpDeltasZWUV(const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, TriDrawXDeltaZWUV& x_delta, TriDrawYDeltaZWUV &y_delta);
-        void GetTriangleLerpDeltasZ(const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, TriDrawYDeltaZ &y_delta);
+        void GetTriangleLerpDeltasZ(const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, TriDrawYDeltaZWUV &y_delta);
 
 
         int fracToY(fp frac);

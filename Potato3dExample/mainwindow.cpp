@@ -51,6 +51,8 @@ MainWindow::~MainWindow()
 
 void MainWindow::paintEvent(QPaintEvent *event)
 {
+    Q_UNUSED(event)
+
     static unsigned int frameCount = 0;
     static unsigned int currentFps = 0;
 
