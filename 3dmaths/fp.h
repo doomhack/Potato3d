@@ -16,7 +16,7 @@ namespace P3D
     class FP
     {
     public:
-        constexpr FP() : n(0)                               {}
+        FP()                                                {}
 
         constexpr FP(const FP& r)   : n(r.n)                {}
         constexpr FP(int v)         : n(v << fracbits)      {}
@@ -28,7 +28,7 @@ namespace P3D
         constexpr int i() const                             {return n >> fracbits;}
         constexpr float f() const                           {return (float)n / one;}
 
-        static constexpr FP fromFPInt(const int r)          {FP v; v.n = r; return v;}
+        static constexpr FP fromFPInt(const int r)          {FP v(0); v.n = r; return v;}
         constexpr int toFPInt() const                       {return n;}
 
         constexpr int intMul(int r) const                   {return ((long long int)n * r) >> fracbits;}
@@ -122,7 +122,7 @@ namespace P3D
         constexpr FP& operator-=(const int& r)              {return *this-=FP(r);}
         constexpr FP& operator-=(const float& r)            {return *this-=FP(r);}
 
-        constexpr FP operator-() const                      {FP r; r.n = -n; return r;}
+        constexpr FP operator-() const                      {FP r(0); r.n = -n; return r;}
 
         //Multiply
         constexpr FP operator*(const FP& r) const          {FP v(r);   return v*=*this;}

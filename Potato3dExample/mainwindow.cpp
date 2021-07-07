@@ -28,7 +28,7 @@ MainWindow::MainWindow(QWidget *parent)
     object3d->SetBackgroundColor(16000);
 
 
-    P3D::Model3d* runway = LoadObjFile(":/models/PW_Island/test.obj", ":/models/PW_Island/test.mtl");
+    P3D::Model3d* runway = LoadObjFile(":/models/Mk64Beach/Mk64Kb.obj", ":/models/Mk64Beach/Mk64Kb.mtl");
 
     P3D::Bsp3d* bsp = new P3D::Bsp3d;
 

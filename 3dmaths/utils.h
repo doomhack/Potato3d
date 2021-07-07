@@ -70,21 +70,9 @@ namespace P3D
     }
 
     template <class T>
-    constexpr inline T pMin3(T a, T b, T c)
-    {
-        return a < b ? (a < c ? a : c) : (b < c ? b : c);
-    }
-
-    template <class T>
     constexpr inline T pMin(T a, T b)
     {
         return a < b ? a : b;
-    }
-
-    template <class T>
-    constexpr inline T pMax3(T a, T b, T c)
-    {
-        return a > b ? (a > c ? a : c) : (b > c ? b : c);
     }
 
     template <class T>
@@ -139,59 +127,26 @@ namespace P3D
 #endif
     }
 
-
-
     template <class T>
     constexpr inline T pReciprocal(T val)
     {
         return T(1)/val;
     }
 
-    //Count leading zeros. 16bit.
-    constexpr inline unsigned int clz16(unsigned int x)
-    {
-        x |= x >> 1;
-        x |= x >> 2;
-        x |= x >> 4;
-        x |= x >> 8;
-
-        x -= x >> 1 & 0x5555;
-        x = (x >> 2 & 0x3333) + (x & 0x3333);
-        x = (x >> 4) + x & 0x0f0f;
-        x += x >> 8;
-
-        return 16 - (x & 0x003f);
-    }
-
     template <>
     constexpr inline FP pReciprocal(FP v)
     {
-        FP result;
-
         FP val = v < 0 ? -v : v;
 
-        if(val <= 1)
-        {
-            result = FP::fromFPInt(reciprocalTable[val.toFPInt()]);
-        }
-        else if(val <= 2)
-        {
-            result = FP::fromFPInt(reciprocalTable[val.toFPInt() >> 1] >> 1);
-        }
-        else if(val <= 4)
-        {
-            result = FP::fromFPInt(reciprocalTable[val.toFPInt() >> 2] >> 2);
-        }
-        else if(val <= 8)
-        {
-            result = FP::fromFPInt(reciprocalTable[val.toFPInt() >> 3] >> 3);
-        }
-        else
-        {
-            const unsigned int shift = 16 - clz16(((val - FP::fromFPInt(1)).i()));
+        unsigned int shift = 0;
 
-            result = FP::fromFPInt(reciprocalTable[val.toFPInt() >> shift] >> shift);
+        while(val > 1)
+        {
+            val = (val >> 1u);
+            shift++;
         }
+
+        FP result = FP::fromFPInt(reciprocalTable[val.toFPInt()] >> shift);
 
         return v < 0 ? -result : result;
     }

@@ -256,11 +256,7 @@ namespace P3D
 
             if(frac > 0)
             {
-                Vertex2d newVx;
-
-                LerpVertexXYZWUV(newVx, clipSpacePointsIn[i], clipSpacePointsIn[i2], frac);
-
-                clipSpacePointsOut[vxCountOut] = newVx;
+                LerpVertexXYZWUV(clipSpacePointsOut[vxCountOut], clipSpacePointsIn[i], clipSpacePointsIn[i2], frac);
                 vxCountOut++;
             }
         }
