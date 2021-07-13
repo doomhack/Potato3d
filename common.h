@@ -23,6 +23,9 @@ namespace P3D
 
     #define SPAN_NODES_LINE 16u
 
+    #define USE_VERTEX_CACHE
+    #define VERTEX_CACHE_SIZE 2048u
+
 
     //#define USE_FLOAT
 

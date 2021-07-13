@@ -28,6 +28,7 @@ MainWindow::MainWindow(QWidget *parent)
     object3d->SetBackgroundColor(16000);
 
 
+    //P3D::Model3d* runway = LoadObjFile(":/models/Mk64Beach/Mk64Kb.obj", ":/models/Mk64Beach/Mk64Kb.mtl");
     P3D::Model3d* runway = LoadObjFile(":/models/Streets/Streets.obj", ":/models/Streets/Streets.mtl");
     //P3D::Model3d* runway = LoadObjFile(":/models/Streets/poly_test.obj", ":/models/Streets/poly_test.mtl");
 
@@ -299,10 +300,6 @@ P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
             float u = (elements[1].toFloat() * TEX_SIZE);
             float v = (elements[2].toFloat() * TEX_SIZE);
 
-            //(u < 0) ? u += 0.5f : u -= 0.5f;
-
-            //(v < 0) ? v += 0.5f : v -= 0.5f;
-
             uvs.append(P3D::V2<P3D::fp>(u, v));
         }
 
@@ -318,6 +315,7 @@ P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
                 QStringList vtx_elelments = tri.split("/");
 
                 t3d->verts[t].pos = vertexes.at(vtx_elelments[0].toInt() - 1);
+                t3d->verts[t].vertex_id = vtx_elelments[0].toInt() - 1;
                 t3d->verts[t].uv = uvs.at(vtx_elelments[1].toInt() - 1);
             }
 
@@ -341,6 +339,8 @@ P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
             currentMesh->color = ((qRed(cx) >> 3) << 10) | ((qGreen(cx) >> 3) << 5) | ((qBlue(cx) >> 3));
         }
     }
+
+    model->vertex_id_count = vertexes.length();
 
     if(currentMesh->tris.size())
         model->mesh.push_back(currentMesh);

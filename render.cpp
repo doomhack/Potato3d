@@ -44,6 +44,11 @@ namespace P3D
 
         projectionMatrix.perspective(hFov, aspectRatio, zNear, zFar);
 
+#ifdef USE_VERTEX_CACHE
+        transformedVertexCache = new V4<fp>[VERTEX_CACHE_SIZE];
+        transformedVertexCacheIndexes = new unsigned char[VERTEX_CACHE_SIZE];
+#endif
+
 #ifdef FRONT_TO_BACK
         spanBuffer = new SpanBuffer[screenHeight];
 
@@ -68,6 +73,10 @@ namespace P3D
         span_free_index = 0;
 
         pixels_left = fbSize.x * fbSize.y;
+#endif
+
+#ifdef USE_VERTEX_CACHE
+        FastFill32((unsigned int*)transformedVertexCacheIndexes, 0, VERTEX_CACHE_SIZE / 4);
 #endif
 
 #ifdef RENDER_STATS
@@ -173,13 +182,37 @@ namespace P3D
 
     Vertex2d Render::TransformVertex(const Vertex3d* vertex)
     {
-#ifdef RENDER_STATS
-        stats.vertex_transformed++;
-#endif
 
         Vertex2d screenspace;
 
+#ifdef USE_VERTEX_CACHE
+        if( (vertex->vertex_id != vertex->no_vx_id) && transformedVertexCacheIndexes[vertex->vertex_id])
+        {
+            screenspace.pos = transformedVertexCache[vertex->vertex_id];
+        }
+        else
+        {
+            screenspace.pos = transformMatrix * vertex->pos;
+
+            if(vertex->vertex_id != vertex->no_vx_id)
+            {
+                transformedVertexCache[vertex->vertex_id] = screenspace.pos;
+                transformedVertexCacheIndexes[vertex->vertex_id] = 1;
+            }
+
+    #ifdef RENDER_STATS
+            stats.vertex_transformed++;
+    #endif
+        }
+#else
+
+    #ifdef RENDER_STATS
+            stats.vertex_transformed++;
+    #endif
+
         screenspace.pos = transformMatrix * vertex->pos;
+#endif
+
         screenspace.uv = vertex->uv;
 
         return screenspace;
@@ -333,18 +366,18 @@ namespace P3D
 
 /*
 #if 1
-        screenSpacePoints[0].pos.x = fracToX(-1.0f);
-        screenSpacePoints[0].pos.y = fracToY(1.0f);
+        screenSpacePoints[0].pos.x = fracToX(-0.5f);
+        screenSpacePoints[0].pos.y = fracToY(0.5f);
         screenSpacePoints[0].uv.x = 0;
         screenSpacePoints[0].uv.y = 0;
 
-        screenSpacePoints[1].pos.x = fracToX(1.0f);
-        screenSpacePoints[1].pos.y = fracToY(1.0f);
+        screenSpacePoints[1].pos.x = fracToX(0.5f);
+        screenSpacePoints[1].pos.y = fracToY(0.5f);
         screenSpacePoints[1].uv.x = 64;
         screenSpacePoints[1].uv.y = 0;
 
-        screenSpacePoints[2].pos.x = fracToX(1.0f);
-        screenSpacePoints[2].pos.y = fracToY(-1.0f);
+        screenSpacePoints[2].pos.x = fracToX(0.5f);
+        screenSpacePoints[2].pos.y = fracToY(-0.5f);
         screenSpacePoints[2].uv.x = 64;
         screenSpacePoints[2].uv.y = 64;
 
@@ -400,7 +433,7 @@ namespace P3D
             triangle[1] = points[1];
 
             //x pos
-            triangle[2].pos.x = pLerp(points[0].pos.x, points[2].pos.x, splitFrac);
+            triangle[2].pos.x = pRound(pLerp(points[0].pos.x, points[2].pos.x, splitFrac));
             triangle[2].pos.y = points[1].pos.y;
 
             if(texture)
@@ -447,8 +480,8 @@ namespace P3D
         if((top.pos.x >= fbSize.x && left.pos.x >= fbSize.x) || (right.pos.x < 0 && top.pos.x < 0))
             return;
 
-        int yStart = (top.pos.y);
-        int yEnd =   (left.pos.y);
+        int yStart = (int)(top.pos.y);
+        int yEnd =   (int)(left.pos.y);
 
 
         if(yEnd < 0 || yStart > fbSize.y)
@@ -459,37 +492,36 @@ namespace P3D
         else
             GetTriangleLerpDeltasZ(left, right, top, y_delta);
 
+
+        if(yEnd > fbSize.y)
+            yEnd = fbSize.y;
+
         if(yStart < 0)
-            yStart = 0;
-
-        if(yEnd >= fbSize.y)
         {
-            int overflow = yEnd - (fbSize.y - 1);
-
-            y_delta_sum.x_left = (y_delta.x_left * overflow);
-            y_delta_sum.x_right = (y_delta.x_right * overflow);
+            y_delta_sum.x_left = (y_delta.x_left * -yStart);
+            y_delta_sum.x_right = (y_delta.x_right * -yStart);
 
             if(texture)
             {
-                y_delta_sum.u = (y_delta.u * overflow);
-                y_delta_sum.v = (y_delta.v * overflow);
+                y_delta_sum.u = (y_delta.u * -yStart);
+                y_delta_sum.v = (y_delta.v * -yStart);
             }
 
-            yEnd = fbSize.y - 1;
+            yStart = 0;
         }
 
-        for(int y = yEnd; y >= yStart; y--)
+        for(int y = yStart; y < yEnd; y++)
         {
-            pos.x_left = left.pos.x - pASR(y_delta_sum.x_left, triFracShift);
-            pos.x_right = right.pos.x - pASR(y_delta_sum.x_right, triFracShift);
+            pos.x_left = top.pos.x + pASR(y_delta_sum.x_left, triFracShift);
+            pos.x_right = top.pos.x + pASR(y_delta_sum.x_right, triFracShift);
 
             y_delta_sum.x_left += y_delta.x_left;
             y_delta_sum.x_right += y_delta.x_right;
 
             if(texture)
             {
-                pos.u_left = left.uv.x - pASR(y_delta_sum.u, triFracShift);
-                pos.v_left = left.uv.y - pASR(y_delta_sum.v, triFracShift);
+                pos.u_left = top.uv.x + pASR(y_delta_sum.u, triFracShift);
+                pos.v_left = top.uv.y + pASR(y_delta_sum.v, triFracShift);
 
                 y_delta_sum.u += y_delta.u;
                 y_delta_sum.v += y_delta.v;
@@ -514,8 +546,8 @@ namespace P3D
         if((bottom.pos.x >= fbSize.x && left.pos.x >= fbSize.x) || (right.pos.x < 0 && bottom.pos.x < 0))
             return;
 
-        int yStart = (left.pos.y);
-        int yEnd = (bottom.pos.y);
+        int yStart = (int)(left.pos.y);
+        int yEnd = (int)(bottom.pos.y);
 
         if(yEnd < 0 || yStart > fbSize.y)
             return;
@@ -525,8 +557,8 @@ namespace P3D
         else
             GetTriangleLerpDeltasZ(left, right, bottom, y_delta);
 
-        if(yEnd >= fbSize.y)
-            yEnd = fbSize.y-1;
+        if(yEnd > fbSize.y)
+            yEnd = fbSize.y;
 
         if(yStart < 0)
         {
@@ -535,14 +567,14 @@ namespace P3D
 
             if(texture)
             {
-                y_delta_sum.u = (y_delta.u * -yStart);
-                y_delta_sum.v = (y_delta.v * -yStart);
+                y_delta_sum.u += (y_delta.u * -yStart);
+                y_delta_sum.v += (y_delta.v * -yStart);
             }
 
             yStart = 0;
         }
 
-        for (int y = yStart; y <= yEnd; y++)
+        for (int y = yStart; y < yEnd; y++)
         {
             pos.x_left = left.pos.x + pASR(y_delta_sum.x_left, triFracShift);
             pos.x_right = right.pos.x + pASR(y_delta_sum.x_right, triFracShift);
@@ -575,8 +607,8 @@ namespace P3D
 
         const int fb_width = fbSize.x;
 
-        int x_start = (pos.x_left);
-        int x_end = (pos.x_right);
+        int x_start = pRound(pos.x_left);
+        int x_end = pRound(pos.x_right);
 
         if( (x_end < x_start) || (x_end < 0) || (x_start >= fb_width) )
             return;
@@ -718,8 +750,8 @@ namespace P3D
 
     void Render:: DrawTriangleScanlineAffine(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture)
     {        
-        int x_start = pos.x_left;
-        int x_end = pos.x_right;
+        int x_start = (int)pos.x_left;
+        int x_end = (int)pos.x_right;
 
         fp u = pos.u_left, v = pos.v_left;
         fp du = pASR(delta.u, triFracShift), dv = pASR(delta.v, triFracShift);
@@ -793,8 +825,8 @@ namespace P3D
 
     void Render::DrawTriangleScanlineFlat(int y, const TriEdgeTrace& pos, const pixel color)
     {
-        int x_start = pos.x_left;
-        int x_end = pos.x_right;
+        int x_start = (int)pos.x_left;
+        int x_end = (int)pos.x_right;
 
         unsigned int count = (x_end - x_start) + 1;
 
@@ -853,18 +885,18 @@ namespace P3D
         y_delta.x_right = (right.pos.x - other.pos.x) * inv_y;
     }
 
-    int Render::fracToY(fp frac)
+    fp Render::fracToY(fp frac)
     {
         fp halfFbY = fbSize.y >> 1;
 
-        return (halfFbY * -frac) + halfFbY;
+        return pRound((halfFbY * -frac) + halfFbY);
     }
 
-    int Render::fracToX(fp frac)
+    fp Render::fracToX(fp frac)
     {
         fp halfFbX = fbSize.x >> 1;
 
-        return (halfFbX * frac) + halfFbX;
+        return pRound((halfFbX * frac) + halfFbX);
     }
 
     RenderStats Render::GetRenderStats()

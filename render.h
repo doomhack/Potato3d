@@ -128,8 +128,8 @@ namespace P3D
         void GetTriangleLerpDeltasZ(const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, TriDrawYDeltaZWUV &y_delta);
 
 
-        int fracToY(fp frac);
-        int fracToX(fp frac);
+        fp fracToY(fp frac);
+        fp fracToX(fp frac);
 
 
 
@@ -158,6 +158,9 @@ namespace P3D
 
         SpanNode* span_pool;
         unsigned int span_free_index;
+
+        V4<fp>* transformedVertexCache = nullptr;
+        unsigned char* transformedVertexCacheIndexes = nullptr;
     };
 
 }

@@ -28,7 +28,7 @@ namespace P3D
     template <class T>
     constexpr inline int pRound(T val)
     {
-        return val + T(0.5);
+        return (int)(val + T(0.5));
     }
 
     template <>

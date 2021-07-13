@@ -12,7 +12,10 @@ namespace P3D
     {
     public:
         V3<fp> pos;
+        unsigned int vertex_id = no_vx_id;
         V2<fp> uv;
+
+        static const unsigned int no_vx_id = -1;
     };
 
     class Vertex2d
@@ -60,6 +63,7 @@ namespace P3D
     public:
         V3<fp> pos = V3<fp>(0,0,0);
         std::vector<Mesh3d*> mesh;
+        unsigned int vertex_id_count = 0;
     };
 
     class AABB

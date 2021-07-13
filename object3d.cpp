@@ -111,7 +111,7 @@ namespace P3D
 
         static std::vector<const BspModelTriangle*> tris;
 
-        bool backface_cull = false;//!(renderFlags & NoBackfaceCull);
+        bool backface_cull = !(renderFlags & NoBackfaceCull);
 
 #ifdef FRONT_TO_BACK
         model->SortFrontToBack(cameraPos, viewFrustrumBB, tris, backface_cull);
