@@ -23,12 +23,13 @@ MainWindow::MainWindow(QWidget *parent)
     object3d = new P3D::Object3d();
 
     //object3d->Setup(screenWidth, screenHeight, 54, 25, 1500, (P3D::pixel*)frameBufferImage.bits());
-    object3d->Setup(screenWidth, screenHeight, 45, 25, 1500, (P3D::pixel*)frameBufferImage.bits());
+    object3d->Setup(screenWidth, screenHeight, 45, 25, 2500, (P3D::pixel*)frameBufferImage.bits());
 
     object3d->SetBackgroundColor(16000);
 
 
-    P3D::Model3d* runway = LoadObjFile(":/models/Mk64Beach/Mk64Kb.obj", ":/models/Mk64Beach/Mk64Kb.mtl");
+    P3D::Model3d* runway = LoadObjFile(":/models/Streets/Streets.obj", ":/models/Streets/Streets.mtl");
+    //P3D::Model3d* runway = LoadObjFile(":/models/Streets/poly_test.obj", ":/models/Streets/poly_test.mtl");
 
     P3D::Bsp3d* bsp = new P3D::Bsp3d;
 
@@ -295,8 +296,12 @@ P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
 
         if(elements[0] == "vt")
         {
-            float u = elements[1].toFloat();
-            float v = elements[2].toFloat();
+            float u = (elements[1].toFloat() * TEX_SIZE);
+            float v = (elements[2].toFloat() * TEX_SIZE);
+
+            //(u < 0) ? u += 0.5f : u -= 0.5f;
+
+            //(v < 0) ? v += 0.5f : v -= 0.5f;
 
             uvs.append(P3D::V2<P3D::fp>(u, v));
         }

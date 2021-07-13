@@ -257,6 +257,7 @@ namespace P3D
             if(frac > 0)
             {
                 LerpVertexXYZWUV(clipSpacePointsOut[vxCountOut], clipSpacePointsIn[i], clipSpacePointsIn[i2], frac);
+
                 vxCountOut++;
             }
         }
@@ -316,10 +317,6 @@ namespace P3D
     {
         Vertex2d screenSpacePoints[3];
 
-#ifdef POLYGON_NOISE_SIZE
-        fp xmin = fbSize.x, xmax = 0, ymin = fbSize.y, ymax = 0;
-#endif
-
         for(int i = 0; i < 3; i++)
         {
             screenSpacePoints[i].pos = clipSpacePoints[i].pos.ToScreenSpace();
@@ -327,47 +324,49 @@ namespace P3D
             screenSpacePoints[i].pos.x = fracToX(screenSpacePoints[i].pos.x);
             screenSpacePoints[i].pos.y = fracToY(screenSpacePoints[i].pos.y);
 
-#ifdef POLYGON_NOISE_SIZE
-            xmin = (screenSpacePoints[i].pos.x < xmin) ? screenSpacePoints[i].pos.x : xmin;
-            xmax = screenSpacePoints[i].pos.x > xmax ? screenSpacePoints[i].pos.x : xmax;
-#endif
-
             if(texture)
             {
-                screenSpacePoints[i].uv.x = clipSpacePoints[i].uv.x * (int)texture->width;
-                screenSpacePoints[i].uv.y = clipSpacePoints[i].uv.y * (int)texture->height;
+                screenSpacePoints[i].uv.x = clipSpacePoints[i].uv.x;
+                screenSpacePoints[i].uv.y = clipSpacePoints[i].uv.y;
             }
         }
 
+/*
+#if 1
+        screenSpacePoints[0].pos.x = fracToX(-1.0f);
+        screenSpacePoints[0].pos.y = fracToY(1.0f);
+        screenSpacePoints[0].uv.x = 0;
+        screenSpacePoints[0].uv.y = 0;
+
+        screenSpacePoints[1].pos.x = fracToX(1.0f);
+        screenSpacePoints[1].pos.y = fracToY(1.0f);
+        screenSpacePoints[1].uv.x = 64;
+        screenSpacePoints[1].uv.y = 0;
+
+        screenSpacePoints[2].pos.x = fracToX(1.0f);
+        screenSpacePoints[2].pos.y = fracToY(-1.0f);
+        screenSpacePoints[2].uv.x = 64;
+        screenSpacePoints[2].uv.y = 64;
+
+#else
+
+        screenSpacePoints[0].pos.x = fracToX(-1.0f);
+        screenSpacePoints[0].pos.y = fracToY(1.0f);
+        screenSpacePoints[0].uv.x = 0;
+        screenSpacePoints[0].uv.y = 0;
+
+        screenSpacePoints[1].pos.x = fracToX(1.0f);
+        screenSpacePoints[1].pos.y = fracToY(-1.0f);
+        screenSpacePoints[1].uv.x = 64;
+        screenSpacePoints[1].uv.y = 64;
+
+        screenSpacePoints[2].pos.x = fracToX(-1.0f);
+        screenSpacePoints[2].pos.y = fracToY(-1.0f);
+        screenSpacePoints[2].uv.x = 0;
+        screenSpacePoints[2].uv.y = 64;
+#endif
+*/
         SortPointsByY(screenSpacePoints);
-
-#ifdef POLYGON_NOISE_SIZE
-        ymin = screenSpacePoints[0].pos.y;
-        ymax = screenSpacePoints[2].pos.y;
-
-        if(( pRound(xmax - xmin) * pRound(ymax - ymin)) < POLYGON_NOISE_SIZE)
-        {
-            if  (
-                    (clipSpacePoints[0].pos.z > POLYGON_NOISE_Z_THREASHOLD) &&
-                    (clipSpacePoints[1].pos.z > POLYGON_NOISE_Z_THREASHOLD) &&
-                    (clipSpacePoints[2].pos.z > POLYGON_NOISE_Z_THREASHOLD)
-                )
-            {
-                return;
-            }
-        }
-#endif
-
-#ifdef POLYGON_TEXTURE_Z_THREASHOLD
-        if  (
-                (clipSpacePoints[0].pos.z > POLYGON_TEXTURE_Z_THREASHOLD) &&
-                (clipSpacePoints[1].pos.z > POLYGON_TEXTURE_Z_THREASHOLD) &&
-                (clipSpacePoints[2].pos.z > POLYGON_TEXTURE_Z_THREASHOLD)
-            )
-        {
-            texture = nullptr;
-        }
-#endif
 
 #ifdef RENDER_STATS
         stats.triangles_drawn++;
@@ -378,13 +377,6 @@ namespace P3D
 
     void Render::DrawTriangleSplit(Vertex2d *points, const Texture *texture, const pixel color, RenderFlags flags)
     {
-        if(texture)
-        {
-            points[0].toPerspectiveCorrect();
-            points[1].toPerspectiveCorrect();
-            points[2].toPerspectiveCorrect();
-        }
-
         if(points[1].pos.y == points[2].pos.y)
         {
             DrawTriangleTop(points, texture, color, flags);
@@ -442,9 +434,11 @@ namespace P3D
 
     void Render::DrawTriangleTop(const Vertex2d *points, const Texture *texture, const pixel color, const RenderFlags flags)
     {
+        //Flat bottom triangle.
+
         TriEdgeTrace pos;
         TriDrawXDeltaZWUV x_delta;
-        TriDrawYDeltaZWUV y_delta, y_delta_sum = {0,0,0,0,0};
+        TriDrawYDeltaZWUV y_delta, y_delta_sum = {0,0,0,0};
 
         const Vertex2d& top     = points[0];
         const Vertex2d& left    = (points[1].pos.x < points[2].pos.x) ? points[1] : points[2];
@@ -454,7 +448,8 @@ namespace P3D
             return;
 
         int yStart = (top.pos.y);
-        int yEnd = (left.pos.y);
+        int yEnd =   (left.pos.y);
+
 
         if(yEnd < 0 || yStart > fbSize.y)
             return;
@@ -465,38 +460,37 @@ namespace P3D
             GetTriangleLerpDeltasZ(left, right, top, y_delta);
 
         if(yStart < 0)
+            yStart = 0;
+
+        if(yEnd >= fbSize.y)
         {
-            y_delta_sum.x_left = (y_delta.x_left * -yStart);
-            y_delta_sum.x_right = (y_delta.x_right * -yStart);
+            int overflow = yEnd - (fbSize.y - 1);
+
+            y_delta_sum.x_left = (y_delta.x_left * overflow);
+            y_delta_sum.x_right = (y_delta.x_right * overflow);
 
             if(texture)
             {
-                y_delta_sum.u = (y_delta.u * -yStart);
-                y_delta_sum.v = (y_delta.v * -yStart);
-                y_delta_sum.w = (y_delta.w * -yStart);
+                y_delta_sum.u = (y_delta.u * overflow);
+                y_delta_sum.v = (y_delta.v * overflow);
             }
 
-            yStart = 0;
+            yEnd = fbSize.y - 1;
         }
 
-        if(yEnd >= fbSize.y)
-            yEnd = fbSize.y-1;
-
-        for (int y = yStart; y <= yEnd; y++)
+        for(int y = yEnd; y >= yStart; y--)
         {
-            pos.x_left = top.pos.x + pASR(y_delta_sum.x_left, triFracShift);
-            pos.x_right = top.pos.x + pASR(y_delta_sum.x_right, triFracShift);
+            pos.x_left = left.pos.x - pASR(y_delta_sum.x_left, triFracShift);
+            pos.x_right = right.pos.x - pASR(y_delta_sum.x_right, triFracShift);
 
             y_delta_sum.x_left += y_delta.x_left;
             y_delta_sum.x_right += y_delta.x_right;
 
             if(texture)
             {
-                pos.u_left = top.uv.x + pASR(y_delta_sum.u, triFracShift);
-                pos.v_left = top.uv.y + pASR(y_delta_sum.v, triFracShift);
-                pos.w_left = top.pos.w + pASR(y_delta_sum.w, triFracShift);
+                pos.u_left = left.uv.x - pASR(y_delta_sum.u, triFracShift);
+                pos.v_left = left.uv.y - pASR(y_delta_sum.v, triFracShift);
 
-                y_delta_sum.w += y_delta.w;
                 y_delta_sum.u += y_delta.u;
                 y_delta_sum.v += y_delta.v;
             }
@@ -507,9 +501,11 @@ namespace P3D
 
     void Render::DrawTriangleBottom(const Vertex2d *points, const Texture *texture, const pixel color, const RenderFlags flags)
     {
+        //Flat top triangle.
+
         TriEdgeTrace pos;
         TriDrawXDeltaZWUV x_delta;
-        TriDrawYDeltaZWUV y_delta, y_delta_sum = {0,0,0,0,0};
+        TriDrawYDeltaZWUV y_delta, y_delta_sum = {0,0,0,0};
 
         const Vertex2d& bottom  = points[2];
         const Vertex2d& left    = (points[0].pos.x < points[1].pos.x) ? points[0] : points[1];
@@ -518,10 +514,10 @@ namespace P3D
         if((bottom.pos.x >= fbSize.x && left.pos.x >= fbSize.x) || (right.pos.x < 0 && bottom.pos.x < 0))
             return;
 
-        int yStart = (bottom.pos.y);
-        int yEnd = (left.pos.y);
+        int yStart = (left.pos.y);
+        int yEnd = (bottom.pos.y);
 
-        if(yStart < 0 || yEnd >= fbSize.y)
+        if(yEnd < 0 || yStart > fbSize.y)
             return;
 
         if(texture)
@@ -529,42 +525,36 @@ namespace P3D
         else
             GetTriangleLerpDeltasZ(left, right, bottom, y_delta);
 
+        if(yEnd >= fbSize.y)
+            yEnd = fbSize.y-1;
 
-        if(yStart >= fbSize.y)
+        if(yStart < 0)
         {
-            int overflow = yStart - (fbSize.y-1);
-
-            y_delta_sum.x_left = (y_delta.x_left * overflow);
-            y_delta_sum.x_right = (y_delta.x_right * overflow);
+            y_delta_sum.x_left = (y_delta.x_left * -yStart);
+            y_delta_sum.x_right = (y_delta.x_right * -yStart);
 
             if(texture)
             {
-                y_delta_sum.w = (y_delta.w * overflow);
-                y_delta_sum.u = (y_delta.u * overflow);
-                y_delta_sum.v = (y_delta.v * overflow);
+                y_delta_sum.u = (y_delta.u * -yStart);
+                y_delta_sum.v = (y_delta.v * -yStart);
             }
 
-            yStart = fbSize.y-1;
+            yStart = 0;
         }
 
-        if(yEnd < 0)
-            yEnd = 0;
-
-        for (int y = yStart; y >= yEnd; y--)
+        for (int y = yStart; y <= yEnd; y++)
         {
-            pos.x_left = bottom.pos.x - pASR(y_delta_sum.x_left, triFracShift);
-            pos.x_right = bottom.pos.x - pASR(y_delta_sum.x_right, triFracShift);
+            pos.x_left = left.pos.x + pASR(y_delta_sum.x_left, triFracShift);
+            pos.x_right = right.pos.x + pASR(y_delta_sum.x_right, triFracShift);
 
             y_delta_sum.x_left += y_delta.x_left;
             y_delta_sum.x_right += y_delta.x_right;
 
             if(texture)
             {
-                pos.w_left = bottom.pos.w - pASR(y_delta_sum.w, triFracShift);
-                pos.u_left = bottom.uv.x - pASR(y_delta_sum.u, triFracShift);
-                pos.v_left = bottom.uv.y - pASR(y_delta_sum.v, triFracShift);
+                pos.u_left = left.uv.x + pASR(y_delta_sum.u, triFracShift);
+                pos.v_left = left.uv.y + pASR(y_delta_sum.v, triFracShift);
 
-                y_delta_sum.w += y_delta.w;
                 y_delta_sum.u += y_delta.u;
                 y_delta_sum.v += y_delta.v;
             }
@@ -585,8 +575,8 @@ namespace P3D
 
         const int fb_width = fbSize.x;
 
-        int x_start = pos.x_left;
-        int x_end = pos.x_right;
+        int x_start = (pos.x_left);
+        int x_end = (pos.x_right);
 
         if( (x_end < x_start) || (x_end < 0) || (x_start >= fb_width) )
             return;
@@ -692,13 +682,12 @@ namespace P3D
 
 #endif
 
-        if(texture && x_start > (int)pos.x_left)
+        if(texture)
         {
-            int overlap = x_start - (int)pos.x_left;
+            fp preStepX = (fp(x_start) - pos.x_left);
 
-            pos.w_left += pASR(delta.w * overlap, triFracShift);
-            pos.u_left += pASR(delta.u * overlap, triFracShift);
-            pos.v_left += pASR(delta.v * overlap, triFracShift);
+            pos.u_left += pASR((delta.u * preStepX), triFracShift);
+            pos.v_left += pASR((delta.v * preStepX), triFracShift);
         }
 
         pos.x_left = x_start;
@@ -723,17 +712,17 @@ namespace P3D
         }
         else
         {
-            DrawTriangleScanlinePerspectiveCorrect(y, pos, delta, texture);
+            DrawTriangleScanlineAffine(y, pos, delta, texture);
         }
     }
 
-    void Render:: DrawTriangleScanlinePerspectiveCorrect(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture)
+    void Render:: DrawTriangleScanlineAffine(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture)
     {        
         int x_start = pos.x_left;
         int x_end = pos.x_right;
 
-        fp u = pos.u_left, v = pos.v_left, w = pos.w_left;
-        fp du = delta.u, dv = delta.v, dw = delta.w;
+        fp u = pos.u_left, v = pos.v_left;
+        fp du = pASR(delta.u, triFracShift), dv = pASR(delta.v, triFracShift);
 
         unsigned int count = (x_end - x_start) + 1;
 
@@ -751,73 +740,51 @@ namespace P3D
 
         while(l--)
         {
-            fp invw_0 = pReciprocal(w);
-            fp u0 = u * invw_0;
-            fp v0 = v * invw_0;
-
-            fp invw_15 = pReciprocal(w += dw);
-            fp u15 = (u += du) * invw_15;
-            fp v15 = (v += dv) * invw_15;
-
-            fp du16 = pASR(u15-u0, 4);
-            fp dv16 = pASR(v15-v0, 4);
-
-            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-            DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++;
+            DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+            DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+            DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+            DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+            DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+            DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+            DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+            DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+            DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+            DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+            DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+            DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+            DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+            DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+            DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+            DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
         }
 
         if(r)
         {
-            fp invw_0 = pReciprocal(w);
-            fp u0 = u * invw_0;
-            fp v0 = v * invw_0;
-
-            fp invw_15 = pReciprocal(w += dw);
-            fp u15 = (u += du) * invw_15;
-            fp v15 = (v += dv) * invw_15;
-
-            fp du16 = pASR(u15-u0, 4);
-            fp dv16 = pASR(v15-v0, 4);
-
             switch(r)
             {
-                case 15:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-                case 14:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-                case 13:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-                case 12:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-                case 11:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-                case 10:    DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-                case 9:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-                case 8:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-                case 7:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-                case 6:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-                case 5:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-                case 4:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-                case 3:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-                case 2:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0); fb++; u0 += du16; v0 += dv16;
-                case 1:     DrawScanlinePixelLinear(fb, t_pxl, u0, v0);
+                case 15:    DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+                case 14:    DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+                case 13:    DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+                case 12:    DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+                case 11:    DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+                case 10:    DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+                case 9:     DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+                case 8:     DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+                case 7:     DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+                case 6:     DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+                case 5:     DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+                case 4:     DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+                case 3:     DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+                case 2:     DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+                case 1:     DrawScanlinePixelLinear(fb, t_pxl, u, v);
             }
         }
     }
 
     inline void Render::DrawScanlinePixelLinear(pixel* fb, const pixel* texels, const fp u, const fp v)
     {
-        unsigned int tx = (int)u;
-        unsigned int ty = (int)v;
+        unsigned int tx = (int) (u);
+        unsigned int ty = (int) (v);
 
         tx = tx & TEX_MASK;
         ty = (ty & TEX_MASK) << TEX_SHIFT;
@@ -864,13 +831,12 @@ namespace P3D
         if(right.pos.x != left.pos.x)
             inv_x = pScaledReciprocal(triFracShift, (right.pos.x - left.pos.x));
 
-        x_delta.w = (right.pos.w - left.pos.w) * inv_x;
         x_delta.u = (right.uv.x - left.uv.x) * inv_x;
         x_delta.v = (right.uv.y - left.uv.y) * inv_x;
 
         y_delta.x_left = (left.pos.x - other.pos.x) * inv_y;
         y_delta.x_right = (right.pos.x - other.pos.x) * inv_y;
-        y_delta.w = (left.pos.w - other.pos.w) * inv_y;
+
         y_delta.u = (left.uv.x - other.uv.x) * inv_y;
         y_delta.v = (left.uv.y - other.uv.y) * inv_y;
     }
@@ -889,20 +855,16 @@ namespace P3D
 
     int Render::fracToY(fp frac)
     {
-        fp y = fp(2)-(frac + fp(1));
+        fp halfFbY = fbSize.y >> 1;
 
-        fp sy = pASR(y * fbSize.y, 1) + fp(0.5f);
-
-        return sy;
+        return (halfFbY * -frac) + halfFbY;
     }
 
     int Render::fracToX(fp frac)
     {
-        fp x = frac + fp(1);
+        fp halfFbX = fbSize.x >> 1;
 
-        fp sx = pASR(x * fbSize.x, 1) + fp(0.5f);
-
-        return sx;
+        return (halfFbX * frac) + halfFbX;
     }
 
     RenderStats Render::GetRenderStats()

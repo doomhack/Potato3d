@@ -23,13 +23,6 @@ namespace P3D
 
     #define SPAN_NODES_LINE 16u
 
-    //Polys with 2d bounding box area area smaller than this are skipped as 'noise'.
-    //#define POLYGON_NOISE_SIZE (1)
-
-    //
-    //#define POLYGON_NOISE_Z_THREASHOLD 500
-
-    //#define POLYGON_TEXTURE_Z_THREASHOLD 1500
 
     //#define USE_FLOAT
 

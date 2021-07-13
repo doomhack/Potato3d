@@ -20,16 +20,6 @@ namespace P3D
     public:
         V4<fp> pos;
         V2<fp> uv;
-
-        static const unsigned int uv_shift = 8;
-
-        void toPerspectiveCorrect()
-        {
-            pos.w = pScaledReciprocal(uv_shift, pos.w);
-
-            uv.x = uv.x * pos.w;
-            uv.y = uv.y * pos.w;
-        }
     };
 
     class Triangle3d

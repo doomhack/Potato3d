@@ -1200,5 +1200,27 @@
         <file>models/PW_Island/test.blend</file>
         <file>models/PW_Island/test.mtl</file>
         <file>models/PW_Island/test.obj</file>
+        <file>models/Streets/1B6E6570_c.bmp</file>
+        <file>models/Streets/3AB7B2BC_c.png</file>
+        <file>models/Streets/Streets.mtl</file>
+        <file>models/Streets/Streets.obj</file>
+        <file>models/Streets/shop_front2.png</file>
+        <file>models/Streets/shop_front5.png</file>
+        <file>models/Streets/shop_front8.png</file>
+        <file>models/Streets/building_house1.png</file>
+        <file>models/Streets/tempImgEd0288.bmp</file>
+        <file>models/Streets/apartment_block7.png</file>
+        <file>models/Streets/building_front2.png</file>
+        <file>models/Streets/shop_front6.png</file>
+        <file>models/Streets/shop_front16.png</file>
+        <file>models/Streets/shop_front17_derelict.png</file>
+        <file>models/Streets/wall_shutter2.png</file>
+        <file>models/Streets/trak_tile_g.png</file>
+        <file>models/Streets/building_lb1.png</file>
+        <file>models/Streets/building_liver.png</file>
+        <file>models/Streets/4B998E96_c.bmp</file>
+        <file>models/Streets/223E35B7_c.bmp</file>
+        <file>models/Streets/poly_test.mtl</file>
+        <file>models/Streets/poly_test.obj</file>
     </qresource>
 </RCC>

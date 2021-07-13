@@ -10,22 +10,12 @@ namespace P3D
     typedef struct TriEdgeTrace
     {
         fp x_left, x_right;
-        fp w_left;
         fp u_left;
         fp v_left;
     } TriEdgeTrace;
 
-    typedef struct TriDrawPos
-    {
-        fp x;
-        fp w;
-        fp u;
-        fp v;
-    } TriDrawPos;
-
     typedef struct TriDrawXDeltaZWUV
     {
-        fp w;
         fp u;
         fp v;
     } TriDrawXDeltaZWUV;
@@ -33,7 +23,6 @@ namespace P3D
     typedef struct TriDrawYDeltaZWUV
     {
         fp x_left, x_right;
-        fp w;
         fp u;
         fp v;
     } TriDrawYDeltaZWUV;
@@ -118,7 +107,7 @@ namespace P3D
 
         void DrawSpan(int y, TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color);
 
-        void DrawTriangleScanlinePerspectiveCorrect(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture);
+        void DrawTriangleScanlineAffine(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture);
 
         inline void DrawScanlinePixelLinear(pixel* fb, const pixel* texels, const fp u, const fp v);
 
