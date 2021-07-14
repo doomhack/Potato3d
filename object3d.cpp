@@ -163,7 +163,7 @@ namespace P3D
 #endif
             }
 
-            render->DrawTriangle(&tri->tri, nullptr, tri->color, renderFlags);
+            render->DrawTriangle(&tri->tri, tex, tri->color, renderFlags);
         }
 
         tris.clear();

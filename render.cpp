@@ -728,11 +728,17 @@ namespace P3D
 
     void Render:: DrawTriangleScanlineAffine(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture)
     {        
-        int x_start = (int)pos.x_left;
-        int x_end = (int)pos.x_right;
+        int x_start = pos.x_left;
+        int x_end = pos.x_right;
 
-        fp u = pos.u_left, v = pos.v_left;
-        fp du = pASR(delta.u, triFracShift), dv = pASR(delta.v, triFracShift);
+        //fp u = pos.u_left, v = pos.v_left;
+        //fp du = pASR(delta.u, triFracShift), dv = pASR(delta.v, triFracShift);
+
+        unsigned int u = pos.u_left.toFPInt() << 10;
+        unsigned int v = pos.v_left.toFPInt() << 10;
+
+        unsigned int du = delta.u.toFPInt() << 6;
+        unsigned int dv = delta.v.toFPInt() << 6;
 
         unsigned int count = (x_end - x_start) + 1;
 
@@ -772,32 +778,31 @@ namespace P3D
         {
             switch(r)
             {
-                case 15:    DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-                case 14:    DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-                case 13:    DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-                case 12:    DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-                case 11:    DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-                case 10:    DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-                case 9:     DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-                case 8:     DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-                case 7:     DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-                case 6:     DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-                case 5:     DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-                case 4:     DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-                case 3:     DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-                case 2:     DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-                case 1:     DrawScanlinePixelLinear(fb, t_pxl, u, v);
+            case 15:    DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+            case 14:    DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+            case 13:    DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+            case 12:    DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+            case 11:    DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+            case 10:    DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+            case 9:     DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+            case 8:     DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+            case 7:     DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+            case 6:     DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+            case 5:     DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+            case 4:     DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+            case 3:     DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+            case 2:     DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+            case 1:     DrawScanlinePixelLinear(fb, t_pxl, u, v);
             }
         }
     }
 
-    inline void Render::DrawScanlinePixelLinear(fb_pixel* fb, const pixel* texels, const fp u, const fp v)
+    inline void Render::DrawScanlinePixelLinear(fb_pixel* fb, const pixel* texels, const unsigned int u, const unsigned int v)
     {
-        unsigned int tx = (int) (u);
-        unsigned int ty = (int) (v);
+        unsigned int tx = (u >> 26);
+        unsigned int ty = (v >> 26);
 
-        tx = tx & TEX_MASK;
-        ty = (ty & TEX_MASK) << TEX_SHIFT;
+        ty = (ty << TEX_SHIFT);
 
 #ifdef PIXEL_WRITE_BYTE_MIRRORS
         *(unsigned char*)fb = texels[ty | tx];

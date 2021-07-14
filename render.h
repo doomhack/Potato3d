@@ -109,7 +109,7 @@ namespace P3D
 
         void DrawTriangleScanlineAffine(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture);
 
-        inline void DrawScanlinePixelLinear(fb_pixel *fb, const pixel* texels, const fp u, const fp v);
+        inline void DrawScanlinePixelLinear(fb_pixel* fb, const pixel* texels, const unsigned int u, const unsigned int v);
 
         void DrawTriangleSplitFlat(const Vertex2d points[], const pixel color);
         void DrawTriangleTopFlat(const Vertex2d points[], const pixel color);
