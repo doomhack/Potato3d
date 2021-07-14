@@ -33,8 +33,10 @@ namespace P3D
     class BspTree
     {
     public:
-        BspTree() {};
+        BspTree(const Model3d* mdl) {model = mdl;};
         BspNode* root = nullptr;
+        const Model3d* model;
+
 
         void SortBackToFront(const V3<fp>& p, const AABB &frustrum, std::vector<BspTriangle*>& out, bool backface_cull = true) const;
 
@@ -91,6 +93,7 @@ namespace P3D
         }
 
         const fp epsilon = fp(0.1f);
+        const Model3d* model;
 
 
     };

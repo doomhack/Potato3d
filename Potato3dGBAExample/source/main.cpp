@@ -93,21 +93,29 @@ int main()
     //Set gamepak wait states and prefetch.
     REG_WAITCNT = 0x46DA;
 
-    //Bit5 = unlocked vram at h-blank.
-    SetMode(MODE_5 | BG2_ENABLE | BIT(5));
-
-    REG_BG2PA=170;
-    REG_BG2PD=205;
-    REG_BG2X=0;
-    REG_BG2Y=0;
+    SetMode(MODE_4 | BG2_ENABLE | BIT(5));
 
     obj3d = new P3D::Object3d();
 
-    obj3d->Setup(160, 128, 45, 25, 2500, I_GetBackBuffer());
+    obj3d->Setup(120, 160, 45, 25, 1500, I_GetBackBuffer());
 
 
     const P3D::BspModel* runway = (const P3D::BspModel*)modeldata;
     obj3d->SetModel(runway);
+
+    unsigned short* pal_ram = (unsigned short*)0x5000000;
+
+    for(int i = 0; i< 256; i++)
+    {
+        unsigned int c = runway->GetColorMapColor(i);
+
+        unsigned int r = (c >> 16) & 0xff;
+        unsigned int g = (c >> 8) & 0xff;
+        unsigned int b = (c) & 0xff;
+
+        pal_ram[i] = RGB8(r, g, b);
+    }
+
 
     obj3d->SetBackgroundColor(RGB8(0x4d, 0xc9, 0xff));
 

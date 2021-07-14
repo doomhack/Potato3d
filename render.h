@@ -63,7 +63,7 @@ namespace P3D
     public:
         explicit Render();
 
-        bool Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov = 54, fp zNear = 5, fp zFar = 1024, pixel* framebuffer = nullptr);
+        bool Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov = 54, fp zNear = 5, fp zFar = 1024, fb_pixel *framebuffer = nullptr);
 
         void BeginFrame();
         void EndFrame();
@@ -80,8 +80,8 @@ namespace P3D
 
         M4<fp>& GetMatrix(MatrixType matrix);
 
-        void SetFramebuffer(pixel* frameBuffer);
-        pixel* GetFramebuffer();
+        void SetFramebuffer(fb_pixel* frameBuffer);
+        fb_pixel* GetFramebuffer();
 
         RenderStats GetRenderStats();
 
@@ -109,7 +109,7 @@ namespace P3D
 
         void DrawTriangleScanlineAffine(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture);
 
-        inline void DrawScanlinePixelLinear(pixel* fb, const pixel* texels, const fp u, const fp v);
+        inline void DrawScanlinePixelLinear(fb_pixel *fb, const pixel* texels, const fp u, const fp v);
 
         void DrawTriangleSplitFlat(const Vertex2d points[], const pixel color);
         void DrawTriangleTopFlat(const Vertex2d points[], const pixel color);
@@ -133,7 +133,7 @@ namespace P3D
 
 
 
-        pixel* frameBuffer;
+        fb_pixel* frameBuffer;
         V2<int> fbSize;
 
         fp zNear;

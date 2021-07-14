@@ -18,7 +18,7 @@ namespace P3D
         transformMatrix.setToIdentity();
     }
 
-    bool Render::Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov, fp zNear, fp zFar, pixel* frameBuffer)
+    bool Render::Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov, fp zNear, fp zFar, fb_pixel* frameBuffer)
     {
         if(screenWidth == 0 || screenHeight == 0)
             return false;
@@ -38,9 +38,9 @@ namespace P3D
         if(frameBuffer)
             this->frameBuffer = frameBuffer;
         else
-            this->frameBuffer = new pixel[screenWidth * screenHeight];
+            this->frameBuffer = new fb_pixel[screenWidth * screenHeight];
 
-        fp aspectRatio = fp((int)screenWidth) / fp((int)screenHeight);
+        fp aspectRatio = fp((int)screenWidth * 2) / fp((int)screenHeight);
 
         projectionMatrix.perspective(hFov, aspectRatio, zNear, zFar);
 
@@ -106,9 +106,9 @@ namespace P3D
 
     void Render::ClearFramebuffer(pixel color)
     {
-        const unsigned int buffSize = fbSize.x * fbSize.y * sizeof(pixel);
+        const unsigned int buffSize = fbSize.x * fbSize.y * sizeof(fb_pixel);
 
-        unsigned int c32 = color;
+        unsigned int c32 = (color | (color << 8));
 
         FastFill32((unsigned int*)frameBuffer, c32 | c32 << 16, buffSize >> 2);
     }
@@ -146,12 +146,12 @@ namespace P3D
         }
     }
 
-    void Render::SetFramebuffer(pixel* frameBuffer)
+    void Render::SetFramebuffer(fb_pixel* frameBuffer)
     {
         this->frameBuffer = frameBuffer;
     }
 
-    pixel* Render::GetFramebuffer()
+    fb_pixel* Render::GetFramebuffer()
     {
         return this->frameBuffer;
     }
@@ -759,7 +759,7 @@ namespace P3D
         unsigned int count = (x_end - x_start) + 1;
 
         int buffOffset = ((y * fbSize.x) + x_start);
-        pixel* fb = &frameBuffer[buffOffset];
+        fb_pixel* fb = &frameBuffer[buffOffset];
 
         const pixel* t_pxl = texture->pixels;
 
@@ -813,14 +813,19 @@ namespace P3D
         }
     }
 
-    inline void Render::DrawScanlinePixelLinear(pixel* fb, const pixel* texels, const fp u, const fp v)
+    inline void Render::DrawScanlinePixelLinear(fb_pixel* fb, const pixel* texels, const fp u, const fp v)
     {
         unsigned int tx = (int) (u);
         unsigned int ty = (int) (v);
 
         tx = tx & TEX_MASK;
         ty = (ty & TEX_MASK) << TEX_SHIFT;
-        *fb = texels[ty | tx];
+
+#ifdef PIXEL_WRITE_BYTE_MIRRORS
+        *(unsigned char*)fb = texels[ty | tx];
+#else
+        *fb = texels[ty | tx] | (texels[ty | tx] << 8);
+#endif
     }
 
     void Render::DrawTriangleScanlineFlat(int y, const TriEdgeTrace& pos, const pixel color)
@@ -831,13 +836,13 @@ namespace P3D
         unsigned int count = (x_end - x_start) + 1;
 
         int buffOffset = ((y * fbSize.x) + x_start);
-        pixel* fb = &frameBuffer[buffOffset];
+        fb_pixel* fb = &frameBuffer[buffOffset];
 
 #ifdef RENDER_STATS
         stats.scanlines_drawn++;
 #endif
 
-        FastFill16(fb, color, count);
+        FastFill16((unsigned short*)fb, color | color << 8, count);
     }
 
     void Render::LerpVertexXYZWUV(Vertex2d& out, const Vertex2d& left, const Vertex2d& right, fp frac)

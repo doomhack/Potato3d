@@ -11,7 +11,7 @@ namespace P3D
     #ifndef __arm__
         static pixel texCache[TEX_CACHE_SIZE/sizeof(pixel)];
     #else
-        static pixel* texCache = ((unsigned short*)0x6014000);
+        static pixel* texCache = ((pixel*)0x6014000);
     #endif
 #endif
 
@@ -25,11 +25,11 @@ namespace P3D
         this->render = render;
     }
 
-    bool Object3d::Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov, fp zNear, fp zFar, pixel* framebuffer)
+    bool Object3d::Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov, fp zNear, fp zFar, fb_pixel* framebuffer)
     {
         this->render = new Render();
 
-        fp halfFrustrumWidth = zFar * std::tan((float)pD2R(fp(28)));
+        fp halfFrustrumWidth = zFar * std::tan((float)pD2R(fp(31)));
         fp halfFrustrumHeight = zFar * std::tan((float)pD2R(pASR(hFov, 1)));
 
         frustrumPoints[0] = V3<fp>(-halfFrustrumWidth, -halfFrustrumHeight, -zFar);
@@ -68,7 +68,7 @@ namespace P3D
         viewFrustrumBB.AddPoint(V3<fp>(t3.x, t3.y, t3.z));
         viewFrustrumBB.AddPoint(V3<fp>(t4.x, t4.y, t4.z));
 
-/*
+
         Triangle3d t;
 
         t.verts[0].pos = V3<fp>(t1.x, t1.y, t1.z);
@@ -76,7 +76,7 @@ namespace P3D
         t.verts[2].pos = V3<fp>(t3.x, t3.y, t3.z);
 
         render->DrawTriangle(&t, nullptr, 12345, NoFlags);
-*/
+
     }
 
     void Object3d::RenderScene()
@@ -181,7 +181,7 @@ namespace P3D
         backgroundColor = color;
     }
 
-    void Object3d::SetFramebuffer(pixel* framebuffer)
+    void Object3d::SetFramebuffer(fb_pixel* framebuffer)
     {
         render->SetFramebuffer(framebuffer);
     }

@@ -64,6 +64,7 @@ namespace P3D
         V3<fp> pos = V3<fp>(0,0,0);
         std::vector<Mesh3d*> mesh;
         unsigned int vertex_id_count = 0;
+        unsigned int colormap[256];
     };
 
     class AABB
