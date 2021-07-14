@@ -487,28 +487,16 @@ namespace P3D
         if(yEnd < 0 || yStart > fbSize.y)
             return;
 
-        if(texture)
-            GetTriangleLerpDeltasZWUV(left, right, top, x_delta, y_delta);
-        else
-            GetTriangleLerpDeltasZ(left, right, top, y_delta);
-
-
         if(yEnd > fbSize.y)
             yEnd = fbSize.y;
 
         if(yStart < 0)
-        {
-            y_delta_sum.x_left = (y_delta.x_left * -yStart);
-            y_delta_sum.x_right = (y_delta.x_right * -yStart);
-
-            if(texture)
-            {
-                y_delta_sum.u = (y_delta.u * -yStart);
-                y_delta_sum.v = (y_delta.v * -yStart);
-            }
-
             yStart = 0;
-        }
+
+        if(texture)
+            GetTriangleLerpDeltasZWUV(left, right, top, x_delta, y_delta);
+        else
+            GetTriangleLerpDeltasZ(left, right, top, y_delta);
 
         for(int y = yStart; y < yEnd; y++)
         {
@@ -549,6 +537,12 @@ namespace P3D
         int yStart = (int)(left.pos.y);
         int yEnd = (int)(bottom.pos.y);
 
+        if(yEnd > fbSize.y)
+            yEnd = fbSize.y;
+
+        if(yStart < 0)
+            yStart = 0;
+
         if(yEnd < 0 || yStart > fbSize.y)
             return;
 
@@ -557,22 +551,6 @@ namespace P3D
         else
             GetTriangleLerpDeltasZ(left, right, bottom, y_delta);
 
-        if(yEnd > fbSize.y)
-            yEnd = fbSize.y;
-
-        if(yStart < 0)
-        {
-            y_delta_sum.x_left = (y_delta.x_left * -yStart);
-            y_delta_sum.x_right = (y_delta.x_right * -yStart);
-
-            if(texture)
-            {
-                y_delta_sum.u += (y_delta.u * -yStart);
-                y_delta_sum.v += (y_delta.v * -yStart);
-            }
-
-            yStart = 0;
-        }
 
         for (int y = yStart; y < yEnd; y++)
         {

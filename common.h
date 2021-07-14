@@ -29,7 +29,7 @@ namespace P3D
 
     //#define USE_FLOAT
 
-    #define FRONT_TO_BACK
+    //#define FRONT_TO_BACK
 
 
     #define PIXEL_DOUBLE

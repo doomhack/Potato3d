@@ -29,7 +29,7 @@ namespace P3D
     {
         this->render = new Render();
 
-        fp halfFrustrumWidth = zFar * std::tan((float)pD2R(fp(31)));
+        fp halfFrustrumWidth = zFar * std::tan((float)pD2R(fp(30)));
         fp halfFrustrumHeight = zFar * std::tan((float)pD2R(pASR(hFov, 1)));
 
         frustrumPoints[0] = V3<fp>(-halfFrustrumWidth, -halfFrustrumHeight, -zFar);
@@ -68,7 +68,7 @@ namespace P3D
         viewFrustrumBB.AddPoint(V3<fp>(t3.x, t3.y, t3.z));
         viewFrustrumBB.AddPoint(V3<fp>(t4.x, t4.y, t4.z));
 
-
+/*
         Triangle3d t;
 
         t.verts[0].pos = V3<fp>(t1.x, t1.y, t1.z);
@@ -76,7 +76,7 @@ namespace P3D
         t.verts[2].pos = V3<fp>(t3.x, t3.y, t3.z);
 
         render->DrawTriangle(&t, nullptr, 12345, NoFlags);
-
+*/
     }
 
     void Object3d::RenderScene()
@@ -163,7 +163,7 @@ namespace P3D
 #endif
             }
 
-            render->DrawTriangle(&tri->tri, tex, tri->color, renderFlags);
+            render->DrawTriangle(&tri->tri, nullptr, tri->color, renderFlags);
         }
 
         tris.clear();
