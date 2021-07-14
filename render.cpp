@@ -731,14 +731,25 @@ namespace P3D
         int x_start = pos.x_left;
         int x_end = pos.x_right;
 
-        //fp u = pos.u_left, v = pos.v_left;
-        //fp du = pASR(delta.u, triFracShift), dv = pASR(delta.v, triFracShift);
+#ifndef USE_FLOAT
+        unsigned int u = pos.u_left.toFPInt();
+        unsigned int v = pos.v_left.toFPInt();
+#else
+        unsigned int u = pASL(pos.u_left, 16);
+        unsigned int v = pASL(pos.v_left, 16);
+#endif
 
-        unsigned int u = pos.u_left.toFPInt() << 10;
-        unsigned int v = pos.v_left.toFPInt() << 10;
+        unsigned int uv = ((u << 10) & 0xffff0000) | ((v >> 6) & 0x0000ffff);
 
-        unsigned int du = delta.u.toFPInt() << 6;
-        unsigned int dv = delta.v.toFPInt() << 6;
+#ifndef USE_FLOAT
+        unsigned int du = delta.u.toFPInt() >> triFracShift;
+        unsigned int dv = delta.v.toFPInt() >> triFracShift;
+#else
+        unsigned int du = pASL(delta.u, 16 - triFracShift);
+        unsigned int dv = pASL(delta.v, 16 - triFracShift);
+#endif
+
+        unsigned int duv = ((du << 10) & 0xffff0000) | ((dv >> 6) & 0x0000ffff);
 
         unsigned int count = (x_end - x_start) + 1;
 
@@ -756,53 +767,51 @@ namespace P3D
 
         while(l--)
         {
-            DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-            DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-            DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-            DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-            DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-            DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-            DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-            DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-            DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-            DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-            DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-            DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-            DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-            DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-            DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-            DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
+            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
+            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
+            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
+            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
+            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
+            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
+            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
+            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
+            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
+            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
+            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
+            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
+            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
+            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
+            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
+            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
         }
 
         if(r)
         {
             switch(r)
             {
-            case 15:    DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-            case 14:    DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-            case 13:    DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-            case 12:    DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-            case 11:    DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-            case 10:    DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-            case 9:     DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-            case 8:     DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-            case 7:     DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-            case 6:     DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-            case 5:     DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-            case 4:     DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-            case 3:     DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-            case 2:     DrawScanlinePixelLinear(fb, t_pxl, u, v); fb++; u += du; v += dv;
-            case 1:     DrawScanlinePixelLinear(fb, t_pxl, u, v);
+            case 15:    DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
+            case 14:    DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
+            case 13:    DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
+            case 12:    DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
+            case 11:    DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
+            case 10:    DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
+            case 9:     DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
+            case 8:     DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
+            case 7:     DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
+            case 6:     DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
+            case 5:     DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
+            case 4:     DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
+            case 3:     DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
+            case 2:     DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
+            case 1:     DrawScanlinePixelLinear(fb, t_pxl, uv);
             }
         }
     }
 
-    inline void Render::DrawScanlinePixelLinear(fb_pixel* fb, const pixel* texels, const unsigned int u, const unsigned int v)
+    inline void Render::DrawScanlinePixelLinear(fb_pixel* fb, const pixel* texels, const unsigned int uv)
     {
-        unsigned int tx = (u >> 26);
-        unsigned int ty = (v >> 26);
-
-        ty = (ty << TEX_SHIFT);
+        unsigned int tx = (uv >> 26);
+        unsigned int ty = ((uv >> 4) & (TEX_MASK << TEX_SHIFT));
 
 #ifdef PIXEL_WRITE_BYTE_MIRRORS
         *(unsigned char*)fb = texels[ty | tx];

@@ -27,7 +27,7 @@ namespace P3D
     #define VERTEX_CACHE_SIZE 2048u
 
 
-    //#define USE_FLOAT
+    #define USE_FLOAT
 
     //#define FRONT_TO_BACK
 
