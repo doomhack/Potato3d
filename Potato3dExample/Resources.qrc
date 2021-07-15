@@ -1222,5 +1222,7 @@
         <file>models/Streets/223E35B7_c.bmp</file>
         <file>models/Streets/poly_test.mtl</file>
         <file>models/Streets/poly_test.obj</file>
+        <file>models/Streets/big.mtl</file>
+        <file>models/Streets/big.obj</file>
     </qresource>
 </RCC>

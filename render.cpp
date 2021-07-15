@@ -182,7 +182,6 @@ namespace P3D
 
     Vertex2d Render::TransformVertex(const Vertex3d* vertex)
     {
-
         Vertex2d screenspace;
 
 #ifdef USE_VERTEX_CACHE
@@ -218,7 +217,7 @@ namespace P3D
         return screenspace;
     }
 
-    void Render::DrawTriangleClip(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags)
+    void Render::DrawTriangleClip(Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags)
     {
         fp w0 = clipSpacePoints[0].pos.w;
         fp w1 = clipSpacePoints[1].pos.w;
@@ -246,7 +245,7 @@ namespace P3D
 
         if (max_0 <= w0 && max_1 <= w1 && max_2 <= w2 && -min_0 <= w0 && -min_1 <= w1 && -min_2 <= w2)
         {
-            DrawTriangleCull(clipSpacePoints, texture, color, flags);
+            TriangulatePolygon(clipSpacePoints, 3, texture, color, flags);
         }
         else
         {
@@ -335,81 +334,31 @@ namespace P3D
         if(vxCount < 3)
             return;
 
-        DrawTriangleCull(clipSpacePoints, texture, color, flags);
+        for(int i = 0; i < vxCount; i++)
+        {
+            clipSpacePoints[i].pos.ToScreenSpace();
+
+            clipSpacePoints[i].pos.x = fracToX(clipSpacePoints[i].pos.x);
+            clipSpacePoints[i].pos.y = fracToY(clipSpacePoints[i].pos.y);
+        }
+
+        DrawTriangleSplit(clipSpacePoints, texture, color, flags);
 
         int rounds = vxCount - 3;
 
         for(int i = 0; i < rounds; i++)
         {
             clipSpacePoints[i+1] = clipSpacePoints[0];
-            DrawTriangleCull(&clipSpacePoints[i+1], texture, color, flags);
+            DrawTriangleSplit(&clipSpacePoints[i+1], texture, color, flags);
         }
     }
 
-    void Render::DrawTriangleCull(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags)
+    void Render::DrawTriangleSplit(Vertex2d screenSpacePoints[], const Texture *texture, const pixel color, RenderFlags flags)
     {
-        Vertex2d screenSpacePoints[3];
+        Vertex2d points[3];
 
-        for(int i = 0; i < 3; i++)
-        {
-            screenSpacePoints[i].pos = clipSpacePoints[i].pos.ToScreenSpace();
+        SortPointsByY(screenSpacePoints, points);
 
-            screenSpacePoints[i].pos.x = fracToX(screenSpacePoints[i].pos.x);
-            screenSpacePoints[i].pos.y = fracToY(screenSpacePoints[i].pos.y);
-
-            if(texture)
-            {
-                screenSpacePoints[i].uv.x = clipSpacePoints[i].uv.x;
-                screenSpacePoints[i].uv.y = clipSpacePoints[i].uv.y;
-            }
-        }
-
-/*
-#if 1
-        screenSpacePoints[0].pos.x = fracToX(-0.5f);
-        screenSpacePoints[0].pos.y = fracToY(0.5f);
-        screenSpacePoints[0].uv.x = 0;
-        screenSpacePoints[0].uv.y = 0;
-
-        screenSpacePoints[1].pos.x = fracToX(0.5f);
-        screenSpacePoints[1].pos.y = fracToY(0.5f);
-        screenSpacePoints[1].uv.x = 64;
-        screenSpacePoints[1].uv.y = 0;
-
-        screenSpacePoints[2].pos.x = fracToX(0.5f);
-        screenSpacePoints[2].pos.y = fracToY(-0.5f);
-        screenSpacePoints[2].uv.x = 64;
-        screenSpacePoints[2].uv.y = 64;
-
-#else
-
-        screenSpacePoints[0].pos.x = fracToX(-1.0f);
-        screenSpacePoints[0].pos.y = fracToY(1.0f);
-        screenSpacePoints[0].uv.x = 0;
-        screenSpacePoints[0].uv.y = 0;
-
-        screenSpacePoints[1].pos.x = fracToX(1.0f);
-        screenSpacePoints[1].pos.y = fracToY(-1.0f);
-        screenSpacePoints[1].uv.x = 64;
-        screenSpacePoints[1].uv.y = 64;
-
-        screenSpacePoints[2].pos.x = fracToX(-1.0f);
-        screenSpacePoints[2].pos.y = fracToY(-1.0f);
-        screenSpacePoints[2].uv.x = 0;
-        screenSpacePoints[2].uv.y = 64;
-#endif
-*/
-        SortPointsByY(screenSpacePoints);
-
-#ifdef RENDER_STATS
-        stats.triangles_drawn++;
-#endif
-
-        DrawTriangleSplit(screenSpacePoints, texture, color, flags);
-    }
-
-    void Render::DrawTriangleSplit(Vertex2d *points, const Texture *texture, const pixel color, RenderFlags flags)
-    {
         if(points[1].pos.y == points[2].pos.y)
         {
             DrawTriangleTop(points, texture, color, flags);
@@ -453,19 +402,59 @@ namespace P3D
         }
     }
 
-    void Render::SortPointsByY(Vertex2d points[])
+    void Render::SortPointsByY(Vertex2d pointsIn[], Vertex2d pointsOut[])
     {
-        if(points[0].pos.y > points[1].pos.y)
-            std::swap(points[0], points[1]);
+        if(pointsIn[0].pos.y < pointsIn[1].pos.y)
+        {
+            if(pointsIn[1].pos.y < pointsIn[2].pos.y)
+            {
+                pointsOut[0] = pointsIn[0];
+                pointsOut[1] = pointsIn[1];
+                pointsOut[2] = pointsIn[2];
+            }
+            else
+            {
+                pointsOut[2] = pointsIn[1];
 
-        if(points[0].pos.y > points[2].pos.y)
-            std::swap(points[0], points[2]);
+                if(pointsIn[0].pos.y < pointsIn[2].pos.y)
+                {
+                    pointsOut[0] = pointsIn[0];
+                    pointsOut[1] = pointsIn[2];
+                }
+                else
+                {
+                    pointsOut[0] = pointsIn[2];
+                    pointsOut[1] = pointsIn[0];
+                }
+            }
+        }
+        else
+        {
+            if(pointsIn[1].pos.y < pointsIn[2].pos.y)
+            {
+                pointsOut[0] = pointsIn[1];
 
-        if(points[1].pos.y > points[2].pos.y)
-            std::swap(points[1], points[2]);
+                if(pointsIn[0].pos.y < pointsIn[2].pos.y)
+                {
+                    pointsOut[1] = pointsIn[0];
+                    pointsOut[2] = pointsIn[2];
+                }
+                else
+                {
+                    pointsOut[1] = pointsIn[2];
+                    pointsOut[2] = pointsIn[0];
+                }
+            }
+            else
+            {
+                pointsOut[0] = pointsIn[2];
+                pointsOut[1] = pointsIn[1];
+                pointsOut[2] = pointsIn[0];
+            }
+        }
     }
 
-    void Render::DrawTriangleTop(const Vertex2d *points, const Texture *texture, const pixel color, const RenderFlags flags)
+    void Render::DrawTriangleTop(const Vertex2d points[], const Texture *texture, const pixel color, const RenderFlags flags)
     {
         //Flat bottom triangle.
 
@@ -482,7 +471,6 @@ namespace P3D
 
         int yStart = (int)(top.pos.y);
         int yEnd =   (int)(left.pos.y);
-
 
         if(yEnd < 0 || yStart > fbSize.y)
             return;
@@ -517,9 +505,14 @@ namespace P3D
 
             ClipSpan(y, pos, x_delta, texture, color, flags);
         }
+
+#ifdef RENDER_STATS
+        stats.triangles_drawn++;
+#endif
+
     }
 
-    void Render::DrawTriangleBottom(const Vertex2d *points, const Texture *texture, const pixel color, const RenderFlags flags)
+    void Render::DrawTriangleBottom(const Vertex2d points[], const Texture *texture, const pixel color, const RenderFlags flags)
     {
         //Flat top triangle.
 
@@ -571,6 +564,11 @@ namespace P3D
 
             ClipSpan(y, pos, x_delta, texture, color, flags);
         }
+
+#ifdef RENDER_STATS
+        stats.triangles_drawn++;
+#endif
+
     }
 
     void Render::ClipSpan(int y, TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color, const RenderFlags flags)
@@ -728,15 +726,15 @@ namespace P3D
 
     void Render:: DrawTriangleScanlineAffine(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture)
     {        
-        int x_start = pos.x_left;
-        int x_end = pos.x_right;
+        int x_start = (int)pos.x_left;
+        int x_end = (int)pos.x_right;
 
 #ifndef USE_FLOAT
         unsigned int u = pos.u_left.toFPInt();
         unsigned int v = pos.v_left.toFPInt();
 #else
-        unsigned int u = pASL(pos.u_left, 16);
-        unsigned int v = pASL(pos.v_left, 16);
+        unsigned int u = (unsigned int)pASL(pos.u_left, 16);
+        unsigned int v = (unsigned int)pASL(pos.v_left, 16);
 #endif
 
         unsigned int uv = ((u << 10) & 0xffff0000) | ((v >> 6) & 0x0000ffff);
@@ -745,8 +743,8 @@ namespace P3D
         unsigned int du = delta.u.toFPInt() >> triFracShift;
         unsigned int dv = delta.v.toFPInt() >> triFracShift;
 #else
-        unsigned int du = pASL(delta.u, 16 - triFracShift);
-        unsigned int dv = pASL(delta.v, 16 - triFracShift);
+        unsigned int du = (unsigned int)pASL(delta.u, 16 - triFracShift);
+        unsigned int dv = (unsigned int)pASL(delta.v, 16 - triFracShift);
 #endif
 
         unsigned int duv = ((du << 10) & 0xffff0000) | ((dv >> 6) & 0x0000ffff);

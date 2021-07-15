@@ -87,20 +87,18 @@ namespace P3D
 
 
     private:
-        void DrawTriangleClip(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags);
+        void DrawTriangleClip(Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags);
 
         void ClipPolygon(const Vertex2d clipSpacePointsIn[], const int vxCount, Vertex2d clipSpacePointsOut[], int& vxCountOut, ClipPlane clipPlane);
         void TriangulatePolygon(Vertex2d clipSpacePoints[], const int vxCount, const Texture *texture, const pixel color, const RenderFlags flags);
 
         fp GetClipPointForVertex(const Vertex2d& vertex, ClipPlane clipPlane) const;
 
-        void DrawTriangleCull(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags);
-
         fp GetLineIntersectionFrac(const fp a1, const fp a2, const fp b1, const fp b2);
 
-        void DrawTriangleSplit(Vertex2d *points, const Texture *texture, const pixel color, RenderFlags flags);
-        void DrawTriangleTop(const Vertex2d *points, const Texture *texture, const pixel color, const RenderFlags flags);
-        void DrawTriangleBottom(const Vertex2d *points, const Texture *texture, const pixel color, const RenderFlags flags);
+        void DrawTriangleSplit(Vertex2d screenSpacePoints[], const Texture *texture, const pixel color, RenderFlags flags);
+        void DrawTriangleTop(const Vertex2d points[], const Texture *texture, const pixel color, const RenderFlags flags);
+        void DrawTriangleBottom(const Vertex2d points[], const Texture *texture, const pixel color, const RenderFlags flags);
 
         void ClipSpan(int y, TriEdgeTrace &pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color, const RenderFlags flags);
         SpanNode* GetFreeSpanNode();
@@ -118,7 +116,7 @@ namespace P3D
 
 
 
-        void SortPointsByY(Vertex2d points[]);
+        void SortPointsByY(Vertex2d pointsIn[], Vertex2d pointsOut[]);
 
         Vertex2d TransformVertex(const Vertex3d* vertex);
 
