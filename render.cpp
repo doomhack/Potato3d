@@ -18,7 +18,7 @@ namespace P3D
         transformMatrix.setToIdentity();
     }
 
-    bool Render::Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov, fp zNear, fp zFar, fb_pixel* frameBuffer)
+    bool Render::Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov, fp zNear, fp zFar, pixel* frameBuffer)
     {
         if(screenWidth == 0 || screenHeight == 0)
             return false;
@@ -38,9 +38,9 @@ namespace P3D
         if(frameBuffer)
             this->frameBuffer = frameBuffer;
         else
-            this->frameBuffer = new fb_pixel[screenWidth * screenHeight];
+            this->frameBuffer = new pixel[screenWidth * screenHeight];
 
-        fp aspectRatio = fp((int)screenWidth * 2) / fp((int)screenHeight);
+        fp aspectRatio = fp((int)screenWidth) / fp((int)screenHeight);
 
         projectionMatrix.perspective(hFov, aspectRatio, zNear, zFar);
 
@@ -106,7 +106,7 @@ namespace P3D
 
     void Render::ClearFramebuffer(pixel color)
     {
-        const unsigned int buffSize = fbSize.x * fbSize.y * sizeof(fb_pixel);
+        const unsigned int buffSize = fbSize.x * fbSize.y * sizeof(pixel);
 
         unsigned int c32 = (color | (color << 8));
 
@@ -146,12 +146,12 @@ namespace P3D
         }
     }
 
-    void Render::SetFramebuffer(fb_pixel* frameBuffer)
+    void Render::SetFramebuffer(pixel* frameBuffer)
     {
         this->frameBuffer = frameBuffer;
     }
 
-    fb_pixel* Render::GetFramebuffer()
+    pixel *Render::GetFramebuffer()
     {
         return this->frameBuffer;
     }
@@ -752,7 +752,7 @@ namespace P3D
         unsigned int count = (x_end - x_start) + 1;
 
         int buffOffset = ((y * fbSize.x) + x_start);
-        fb_pixel* fb = &frameBuffer[buffOffset];
+        pixel* fb = &frameBuffer[buffOffset];
 
         const pixel* t_pxl = texture->pixels;
 
@@ -760,62 +760,64 @@ namespace P3D
         stats.scanlines_drawn++;
 #endif
 
+        if(buffOffset & 1)
+        {
+            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv; count--;
+        }
+
         unsigned int l = count >> 4;
-        unsigned int r = count & 15;
 
         while(l--)
         {
-            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
-            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
-            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
-            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
-            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
-            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
-            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
-            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
-            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
-            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
-            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
-            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
-            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
-            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
-            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
-            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
+            DrawScanlinePixelLinearPair(fb, t_pxl, uv, uv+duv); fb+=2; uv += (duv << 1);
+            DrawScanlinePixelLinearPair(fb, t_pxl, uv, uv+duv); fb+=2; uv += (duv << 1);
+            DrawScanlinePixelLinearPair(fb, t_pxl, uv, uv+duv); fb+=2; uv += (duv << 1);
+            DrawScanlinePixelLinearPair(fb, t_pxl, uv, uv+duv); fb+=2; uv += (duv << 1);
+            DrawScanlinePixelLinearPair(fb, t_pxl, uv, uv+duv); fb+=2; uv += (duv << 1);
+            DrawScanlinePixelLinearPair(fb, t_pxl, uv, uv+duv); fb+=2; uv += (duv << 1);
+            DrawScanlinePixelLinearPair(fb, t_pxl, uv, uv+duv); fb+=2; uv += (duv << 1);
+            DrawScanlinePixelLinearPair(fb, t_pxl, uv, uv+duv); fb+=2; uv += (duv << 1);
         }
 
-        if(r)
+        unsigned int r = (count & 15) >> 1;
+
+        while(r--)
         {
-            switch(r)
-            {
-            case 15:    DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
-            case 14:    DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
-            case 13:    DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
-            case 12:    DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
-            case 11:    DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
-            case 10:    DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
-            case 9:     DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
-            case 8:     DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
-            case 7:     DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
-            case 6:     DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
-            case 5:     DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
-            case 4:     DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
-            case 3:     DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
-            case 2:     DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv;
-            case 1:     DrawScanlinePixelLinear(fb, t_pxl, uv);
-            }
+            DrawScanlinePixelLinearPair(fb, t_pxl, uv, uv+duv); fb+=2; uv += (duv << 1);
         }
+
+        if(count & 1)
+            DrawScanlinePixelLinear(fb, t_pxl, uv);
     }
 
-    inline void Render::DrawScanlinePixelLinear(fb_pixel* fb, const pixel* texels, const unsigned int uv)
+    inline void Render::DrawScanlinePixelLinearPair(pixel* fb, const pixel* texels, const unsigned int uv1, const unsigned int uv2)
+    {
+        unsigned int tx = (uv1 >> 26);
+        unsigned int ty = ((uv1 >> 4) & (TEX_MASK << TEX_SHIFT));
+
+        unsigned int tx2 = (uv2 >> 26);
+        unsigned int ty2 = ((uv2 >> 4) & (TEX_MASK << TEX_SHIFT));
+
+        *(unsigned short*)fb = ((texels[ty | tx]) | (texels[(ty2 | tx2)] << 8));
+    }
+
+    inline void Render::DrawScanlinePixelLinear(pixel *fb, const pixel* texels, const unsigned int uv)
     {
         unsigned int tx = (uv >> 26);
         unsigned int ty = ((uv >> 4) & (TEX_MASK << TEX_SHIFT));
 
-#ifdef PIXEL_WRITE_BYTE_MIRRORS
-        *(unsigned char*)fb = texels[ty | tx];
-#else
-        *fb = texels[ty | tx] | (texels[ty | tx] << 8);
-#endif
+        unsigned short texel = texels[(ty | tx)];
+
+        if((unsigned int)fb & 1)
+        {
+            unsigned short* p16 = (unsigned short*)(fb-1);
+            *p16 = (*p16 & 0xff) | (texel << 8);
+        }
+        else
+        {
+            unsigned short* p16 = (unsigned short*)(fb);
+            *p16 = (texel | (*p16 & 0xff00));
+        }
     }
 
     void Render::DrawTriangleScanlineFlat(int y, const TriEdgeTrace& pos, const pixel color)
@@ -826,7 +828,7 @@ namespace P3D
         unsigned int count = (x_end - x_start) + 1;
 
         int buffOffset = ((y * fbSize.x) + x_start);
-        fb_pixel* fb = &frameBuffer[buffOffset];
+        pixel* fb = &frameBuffer[buffOffset];
 
 #ifdef RENDER_STATS
         stats.scanlines_drawn++;

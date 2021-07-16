@@ -25,7 +25,7 @@ namespace P3D
         this->render = render;
     }
 
-    bool Object3d::Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov, fp zNear, fp zFar, fb_pixel* framebuffer)
+    bool Object3d::Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov, fp zNear, fp zFar, pixel *framebuffer)
     {
         this->render = new Render();
 
@@ -181,7 +181,7 @@ namespace P3D
         backgroundColor = color;
     }
 
-    void Object3d::SetFramebuffer(fb_pixel* framebuffer)
+    void Object3d::SetFramebuffer(pixel *framebuffer)
     {
         render->SetFramebuffer(framebuffer);
     }

@@ -19,12 +19,12 @@
 
 #define REG_WAITCNT	*((vu16 *)(0x4000204))
 
-unsigned short* I_GetBackBuffer()
+unsigned char* I_GetBackBuffer()
 {
     if(REG_DISPCNT & DCNT_PAGE)
-        return (unsigned short*)VID_PAGE1;
+        return (unsigned char*)VID_PAGE1;
 
-    return (unsigned short*)VID_PAGE2;
+    return (unsigned char*)VID_PAGE2;
 }
 
 void I_FinishUpdate_e32()
@@ -97,7 +97,7 @@ int main()
 
     obj3d = new P3D::Object3d();
 
-    obj3d->Setup(120, 160, 43, 25, 2500, I_GetBackBuffer());
+    obj3d->Setup(240, 160, 43, 25, 2500, I_GetBackBuffer());
 
 
     const P3D::BspModel* runway = (const P3D::BspModel*)modeldata;

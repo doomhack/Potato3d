@@ -18,12 +18,12 @@ MainWindow::MainWindow(QWidget *parent)
 
     fpsTimer.start();
 
-    frameBufferImage = QImage(screenWidth * 2, screenHeight, QImage::Format::Format_Indexed8);
+    frameBufferImage = QImage(screenWidth, screenHeight, QImage::Format::Format_Indexed8);
 
     object3d = new P3D::Object3d();
 
     //object3d->Setup(screenWidth, screenHeight, 54, 25, 1500, (P3D::pixel*)frameBufferImage.bits());
-    object3d->Setup(screenWidth, screenHeight, 43, 25, 2500, (P3D::fb_pixel*)frameBufferImage.bits());
+    object3d->Setup(screenWidth, screenHeight, 43, 25, 2500, (P3D::pixel*)frameBufferImage.bits());
 
     object3d->SetBackgroundColor(0);
 

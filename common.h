@@ -32,15 +32,14 @@ namespace P3D
     //#define FRONT_TO_BACK
 
 
-    #define PIXEL_DOUBLE
+    //#define PIXEL_DOUBLE
 
-#ifdef __arm__
+//#ifndef __arm__
     #define PIXEL_WRITE_BYTE_MIRRORS
-#endif
+//#endif
 
-    //typedef unsigned short pixel;
+
     typedef unsigned char pixel;
-    typedef unsigned short fb_pixel;
     //const pixel alphaMask = 0x7fff;
 
     #ifdef USE_FLOAT

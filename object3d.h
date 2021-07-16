@@ -17,7 +17,7 @@ namespace P3D
         Object3d();
         Object3d(Render* render);
 
-        bool Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov = 54, fp zNear = 5, fp zFar = 1024, fb_pixel *framebuffer = nullptr);
+        bool Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov = 54, fp zNear = 5, fp zFar = 1024, pixel *framebuffer = nullptr);
 
         V3<fp>& CameraPos();
         V3<fp>& CameraAngle();
@@ -28,7 +28,7 @@ namespace P3D
 
         void SetBackgroundColor(pixel color);
 
-        void SetFramebuffer(fb_pixel *framebuffer);
+        void SetFramebuffer(pixel *framebuffer);
 
         Render* GetRender();
 
