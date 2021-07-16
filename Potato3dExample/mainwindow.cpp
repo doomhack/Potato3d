@@ -29,10 +29,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     //P3D::Model3d* runway = LoadObjFile(":/models/temple.obj", ":/models/temple.mtl");
     //P3D::Model3d* runway = LoadObjFile(":/models/Mk64Beach/Mk64Kb.obj", ":/models/Mk64Beach/Mk64Kb.mtl");
-    //P3D::Model3d* runway = LoadObjFile(":/models/Streets/Streets.obj", ":/models/Streets/Streets.mtl");
+    P3D::Model3d* runway = LoadObjFile(":/models/Streets/Streets.obj", ":/models/Streets/Streets.mtl");
     //P3D::Model3d* runway = LoadObjFile(":/models/Streets/poly_test.obj", ":/models/Streets/poly_test.mtl");
-
-    P3D::Model3d* runway = LoadObjFile(":/models/Streets/big.obj", ":/models/Streets/big.mtl");
 
 
     P3D::Bsp3d* bsp = new P3D::Bsp3d;
@@ -122,7 +120,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 
         float angleYRad = qDegreesToRadians((float)camAngle.y);
 
-        P3D::V3<P3D::fp> d((float)-(qSin(angleYRad) *100), 0, (float)-(qCos(angleYRad) *100));
+        P3D::V3<P3D::fp> d((float)-(qSin(angleYRad) *10), 0, (float)-(qCos(angleYRad) *10));
 
         object3d->CameraPos() += d;
     }
