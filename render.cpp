@@ -420,11 +420,13 @@ namespace P3D
                 {
                     pointsOut[0] = pointsIn[0];
                     pointsOut[1] = pointsIn[2];
+                    pointsOut[2] = pointsIn[1];
                 }
                 else
                 {
                     pointsOut[0] = pointsIn[2];
                     pointsOut[1] = pointsIn[0];
+                    pointsOut[2] = pointsIn[1];
                 }
             }
         }
@@ -441,6 +443,7 @@ namespace P3D
                 }
                 else
                 {
+                    pointsOut[0] = pointsIn[1];
                     pointsOut[1] = pointsIn[2];
                     pointsOut[2] = pointsIn[0];
                 }
@@ -762,7 +765,7 @@ namespace P3D
 
         if(buffOffset & 1)
         {
-            DrawScanlinePixelLinear(fb, t_pxl, uv); fb++; uv += duv; count--;
+            DrawScanlinePixelLinearHighByte(fb, t_pxl, uv); fb++; uv += duv; count--;
         }
 
         unsigned int l = count >> 4;
@@ -787,7 +790,7 @@ namespace P3D
         }
 
         if(count & 1)
-            DrawScanlinePixelLinear(fb, t_pxl, uv);
+            DrawScanlinePixelLinearLowByte(fb, t_pxl, uv);
     }
 
     inline void Render::DrawScanlinePixelLinearPair(pixel* fb, const pixel* texels, const unsigned int uv1, const unsigned int uv2)
@@ -801,23 +804,26 @@ namespace P3D
         *(unsigned short*)fb = ((texels[ty | tx]) | (texels[(ty2 | tx2)] << 8));
     }
 
-    inline void Render::DrawScanlinePixelLinear(pixel *fb, const pixel* texels, const unsigned int uv)
+    inline void Render::DrawScanlinePixelLinearLowByte(pixel *fb, const pixel* texels, const unsigned int uv)
     {
         unsigned int tx = (uv >> 26);
         unsigned int ty = ((uv >> 4) & (TEX_MASK << TEX_SHIFT));
 
         unsigned short texel = texels[(ty | tx)];
 
-        if((unsigned int)fb & 1)
-        {
-            unsigned short* p16 = (unsigned short*)(fb-1);
-            *p16 = (*p16 & 0xff) | (texel << 8);
-        }
-        else
-        {
-            unsigned short* p16 = (unsigned short*)(fb);
-            *p16 = (texel | (*p16 & 0xff00));
-        }
+        unsigned short* p16 = (unsigned short*)(fb);
+        *p16 = (texel | (*p16 & 0xff00));
+    }
+
+    inline void Render::DrawScanlinePixelLinearHighByte(pixel *fb, const pixel* texels, const unsigned int uv)
+    {
+        unsigned int tx = (uv >> 26);
+        unsigned int ty = ((uv >> 4) & (TEX_MASK << TEX_SHIFT));
+
+        unsigned short texel = texels[(ty | tx)];
+
+        unsigned short* p16 = (unsigned short*)(fb-1);
+        *p16 = (*p16 & 0xff) | (texel << 8);
     }
 
     void Render::DrawTriangleScanlineFlat(int y, const TriEdgeTrace& pos, const pixel color)
@@ -830,11 +836,20 @@ namespace P3D
         int buffOffset = ((y * fbSize.x) + x_start);
         pixel* fb = &frameBuffer[buffOffset];
 
+        if(buffOffset & 1)
+        {
+            DrawScanlinePixelLinearHighByte(fb, &color, 0); fb++; count--;
+        }
+
+        FastFill16((unsigned short*)fb, color | color << 8, count >> 1);
+
+        if(count & 1)
+            DrawScanlinePixelLinearLowByte(fb, &color, 0);
+
+
 #ifdef RENDER_STATS
         stats.scanlines_drawn++;
 #endif
-
-        FastFill16((unsigned short*)fb, color | color << 8, count);
     }
 
     void Render::LerpVertexXYZWUV(Vertex2d& out, const Vertex2d& left, const Vertex2d& right, fp frac)

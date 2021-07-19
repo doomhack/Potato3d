@@ -76,7 +76,8 @@ namespace P3D
         t.verts[2].pos = V3<fp>(t3.x, t3.y, t3.z);
 
         render->DrawTriangle(&t, nullptr, 12345, NoFlags);
-*/
+        */
+
     }
 
     void Object3d::RenderScene()

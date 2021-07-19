@@ -1225,5 +1225,7 @@
         <file>models/Streets/big.mtl</file>
         <file>models/Streets/big.obj</file>
         <file>models/Streets/754E85D7_c.bmp</file>
+        <file>models/Streets/building_side2.png</file>
+        <file>models/Streets/shop_front3.png</file>
     </qresource>
 </RCC>
