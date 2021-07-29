@@ -168,7 +168,7 @@ namespace P3D
         stats.triangles_submitted++;
 #endif
 
-        Vertex2d clipSpacePoints[3];
+        Vertex2d clipSpacePoints[8];
 
         for(int i = 0; i < 3; i++)
         {
@@ -273,21 +273,16 @@ namespace P3D
         }
         else
         {
-            Vertex2d outputVxA[8];
             Vertex2d outputVxB[8];
             int countA = 3;
             int countB = 0;
 
             //As we clip against each frustrum plane, we swap the buffers
             //so the output of the last clip is used as input to the next.
-            Vertex2d* inBuffer = outputVxA;
+            Vertex2d* inBuffer = clipSpacePoints;
             Vertex2d* outBuffer = outputVxB;
             int* inCount = &countA;
             int* outCount = &countB;
-
-            inBuffer[0] = clipSpacePoints[0];
-            inBuffer[1] = clipSpacePoints[1];
-            inBuffer[2] = clipSpacePoints[2];
 
             if(clip & W_Near)
             {
