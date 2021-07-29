@@ -219,6 +219,8 @@ namespace P3D
 
     void Render::DrawTriangleClip(Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags)
     {
+        unsigned int clip = 0;
+
         fp w0 = clipSpacePoints[0].pos.w;
         fp w1 = clipSpacePoints[1].pos.w;
         fp w2 = clipSpacePoints[2].pos.w;
@@ -229,21 +231,43 @@ namespace P3D
         if(w0 > zFar && w1 > zFar && w2 > zFar)
             return;
 
-        fp min_0 = pMin(clipSpacePoints[0].pos.x, clipSpacePoints[0].pos.y);
-        fp min_1 = pMin(clipSpacePoints[1].pos.x, clipSpacePoints[1].pos.y);
-        fp min_2 = pMin(clipSpacePoints[2].pos.x, clipSpacePoints[2].pos.y);
+        if(w0 < zNear || w1 < zNear || w2 < zNear)
+            clip |= W_Near;
 
-        if(min_0 > w0 && min_1 > w1 && min_2 > w2)
+        fp x0 = clipSpacePoints[0].pos.x;
+        fp x1 = clipSpacePoints[1].pos.x;
+        fp x2 = clipSpacePoints[2].pos.x;
+
+        if(x0 > w0 && x1 > w1 && x2 > w2)
             return;
 
-        fp max_0 = pMax(clipSpacePoints[0].pos.x, clipSpacePoints[0].pos.y);
-        fp max_1 = pMax(clipSpacePoints[1].pos.x, clipSpacePoints[1].pos.y);
-        fp max_2 = pMax(clipSpacePoints[2].pos.x, clipSpacePoints[2].pos.y);
-
-        if(-max_0 > w0 && -max_1 > w1 && -max_2 > w2)
+        if(-x0 > w0 && -x1 > w1 && -x2 > w2)
             return;
 
-        if (max_0 <= w0 && max_1 <= w1 && max_2 <= w2 && -min_0 <= w0 && -min_1 <= w1 && -min_2 <= w2)
+        if(x0 > w0 || x1 > w1 || x2 > w2)
+            clip |= X_W_Right;
+
+        if(-x0 > w0 || -x1 > w1 || -x2 > w2)
+            clip |= X_W_Left;
+
+        fp y0 = clipSpacePoints[0].pos.y;
+        fp y1 = clipSpacePoints[1].pos.y;
+        fp y2 = clipSpacePoints[2].pos.y;
+
+        if(y0 > w0 && y1 > w1 && y2 > w2)
+            return;
+
+        if(-y0 > w0 && -y1 > w1 && -y2 > w2)
+            return;
+
+        if(y0 > w0 || y1 > w1 || y2 > w2)
+            clip |= Y_W_Top;
+
+        if(-y0 > w0 || -y1 > w1 || -y2 > w2)
+            clip |= Y_W_Bottom;
+
+
+        if (clip == NoClip)
         {
             TriangulatePolygon(clipSpacePoints, 3, texture, color, flags);
         }
@@ -251,19 +275,57 @@ namespace P3D
         {
             Vertex2d outputVxA[8];
             Vertex2d outputVxB[8];
-            int countA = 0;
+            int countA = 3;
             int countB = 0;
 
             //As we clip against each frustrum plane, we swap the buffers
             //so the output of the last clip is used as input to the next.
-            ClipPolygon(clipSpacePoints, 3, outputVxA, countA, W_Near);
-            ClipPolygon(outputVxA, countA, outputVxB, countB, X_W_Left);
-            ClipPolygon(outputVxB, countB, outputVxA, countA, X_W_Right);
-            ClipPolygon(outputVxA, countA, outputVxB, countB, Y_W_Top);
-            ClipPolygon(outputVxB, countB, outputVxA, countA, Y_W_Bottom);
+            Vertex2d* inBuffer = outputVxA;
+            Vertex2d* outBuffer = outputVxB;
+            int* inCount = &countA;
+            int* outCount = &countB;
 
-            //Now outputVxA and CountA contain the final result.
-            TriangulatePolygon(outputVxA, countA, texture, color, flags);
+            inBuffer[0] = clipSpacePoints[0];
+            inBuffer[1] = clipSpacePoints[1];
+            inBuffer[2] = clipSpacePoints[2];
+
+            if(clip & W_Near)
+            {
+                ClipPolygon(inBuffer, *inCount, outBuffer, *outCount, W_Near);
+                std::swap(inCount, outCount);
+                std::swap(inBuffer, outBuffer);
+            }
+
+            if(clip & X_W_Left)
+            {
+                ClipPolygon(inBuffer, *inCount, outBuffer, *outCount, X_W_Left);
+                std::swap(inCount, outCount);
+                std::swap(inBuffer, outBuffer);
+            }
+
+            if(clip & X_W_Right)
+            {
+                ClipPolygon(inBuffer, *inCount, outBuffer, *outCount, X_W_Right);
+                std::swap(inCount, outCount);
+                std::swap(inBuffer, outBuffer);
+            }
+
+            if(clip & Y_W_Top)
+            {
+                ClipPolygon(inBuffer, *inCount, outBuffer, *outCount, Y_W_Top);
+                std::swap(inCount, outCount);
+                std::swap(inBuffer, outBuffer);
+            }
+
+            if(clip & Y_W_Bottom)
+            {
+                ClipPolygon(inBuffer, *inCount, outBuffer, *outCount, Y_W_Bottom);
+                std::swap(inCount, outCount);
+                std::swap(inBuffer, outBuffer);
+            }
+
+            //Now outBuffer and outCount contain the final result.
+            TriangulatePolygon(inBuffer, *inCount, texture, color, flags);
         }
     }
 

@@ -37,11 +37,12 @@ namespace P3D
 
     typedef enum ClipPlane
     {
-        W_Near,
-        X_W_Left,
-        X_W_Right,
-        Y_W_Top,
-        Y_W_Bottom
+        NoClip = 0u,
+        W_Near = 1u,
+        X_W_Left = 2u,
+        X_W_Right = 4u,
+        Y_W_Top = 8u,
+        Y_W_Bottom = 16u
     } ClipPlane;
 
     typedef struct SpanNode
