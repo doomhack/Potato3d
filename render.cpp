@@ -275,52 +275,44 @@ namespace P3D
         {
             Vertex2d outputVxB[8];
             int countA = 3;
-            int countB = 0;
 
             //As we clip against each frustrum plane, we swap the buffers
             //so the output of the last clip is used as input to the next.
             Vertex2d* inBuffer = clipSpacePoints;
             Vertex2d* outBuffer = outputVxB;
-            int* inCount = &countA;
-            int* outCount = &countB;
 
             if(clip & W_Near)
             {
-                ClipPolygon(inBuffer, *inCount, outBuffer, *outCount, W_Near);
-                std::swap(inCount, outCount);
+                ClipPolygon(inBuffer, countA, outBuffer, countA, W_Near);
                 std::swap(inBuffer, outBuffer);
             }
 
             if(clip & X_W_Left)
             {
-                ClipPolygon(inBuffer, *inCount, outBuffer, *outCount, X_W_Left);
-                std::swap(inCount, outCount);
+                ClipPolygon(inBuffer, countA, outBuffer, countA, X_W_Left);
                 std::swap(inBuffer, outBuffer);
             }
 
             if(clip & X_W_Right)
             {
-                ClipPolygon(inBuffer, *inCount, outBuffer, *outCount, X_W_Right);
-                std::swap(inCount, outCount);
+                ClipPolygon(inBuffer, countA, outBuffer, countA, X_W_Right);
                 std::swap(inBuffer, outBuffer);
             }
 
             if(clip & Y_W_Top)
             {
-                ClipPolygon(inBuffer, *inCount, outBuffer, *outCount, Y_W_Top);
-                std::swap(inCount, outCount);
+                ClipPolygon(inBuffer, countA, outBuffer, countA, Y_W_Top);
                 std::swap(inBuffer, outBuffer);
             }
 
             if(clip & Y_W_Bottom)
             {
-                ClipPolygon(inBuffer, *inCount, outBuffer, *outCount, Y_W_Bottom);
-                std::swap(inCount, outCount);
+                ClipPolygon(inBuffer, countA, outBuffer, countA, Y_W_Bottom);
                 std::swap(inBuffer, outBuffer);
             }
 
             //Now outBuffer and outCount contain the final result.
-            TriangulatePolygon(inBuffer, *inCount, texture, color, flags);
+            TriangulatePolygon(inBuffer, countA, texture, color, flags);
         }
     }
 
@@ -370,9 +362,10 @@ namespace P3D
 
             case Y_W_Bottom:
                 return -vertex.pos.y;
-        }
 
-        return 0;
+            default:
+                return 0;
+        }
     }
 
     fp Render::GetLineIntersectionFrac(const fp a1, const fp a2, const fp b1, const fp b2)
@@ -383,7 +376,6 @@ namespace P3D
         fp l1 = (a1 - b1);
 
         return l1 / (l1 - a2 + b2);
-
     }
 
     void Render::TriangulatePolygon(Vertex2d clipSpacePoints[], const int vxCount, const Texture *texture, const pixel color, const RenderFlags flags)
