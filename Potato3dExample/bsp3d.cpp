@@ -778,7 +778,7 @@ namespace P3D
 
     bool BspTree::SaveBspTree(QByteArray* bytes)
     {
-        QList<const BspNode*> nodeList;
+        QList<BspNode*> nodeList;
 
         TraverseNodesRecursive(this->root, nodeList);
 
@@ -800,6 +800,17 @@ namespace P3D
 
         for(int i = 0; i < nodeList.length(); i++)
         {
+            //Sort nodes by texture to stop cache thrashing...
+            std::sort(std::begin(nodeList[i]->front_tris),
+                      std::end(nodeList[i]->front_tris),
+                      [](const P3D::BspTriangle* a, const P3D::BspTriangle* b) -> bool {return a->texture > b->texture; });
+
+            std::sort(std::begin(nodeList[i]->back_tris),
+                      std::end(nodeList[i]->back_tris),
+                      [](const P3D::BspTriangle* a, const P3D::BspTriangle* b) -> bool {return a->texture > b->texture; });
+
+
+
             BspModelNode bn;
             bn.plane = nodeList[i]->plane;
             bn.node_bb = nodeList[i]->node_bb;
@@ -958,7 +969,7 @@ namespace P3D
         return true;
     }
 
-    void BspTree::TraverseNodesRecursive(const BspNode* n, QList<const BspNode*>& nodeList) const
+    void BspTree::TraverseNodesRecursive(BspNode* n, QList<BspNode*>& nodeList) const
     {
         if (!n) return;
 

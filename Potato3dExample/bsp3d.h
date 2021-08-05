@@ -45,7 +45,7 @@ namespace P3D
     private:
         void SortBackToFrontRecursive(const V3<fp>& p, const AABB &frustrum, const BspNode* n, std::vector<BspTriangle*>& out, bool backface_cull) const;
 
-        void TraverseNodesRecursive(const BspNode* n, QList<const BspNode *> &nodeList) const;
+        void TraverseNodesRecursive(BspNode *n, QList<BspNode *> &nodeList) const;
 
         static constexpr unsigned short RGB5_to_BGR5(unsigned short rgb5)
         {

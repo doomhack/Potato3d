@@ -29,7 +29,12 @@ namespace P3D
     {
         this->render = new Render();
 
-        fp halfFrustrumWidth = zFar * std::tan((float)pD2R(fp(30)));
+        fp aspect = fp((int)screenWidth) / fp((int)screenHeight);
+        //fp halfVFov = (aspect * hFov) / 2;
+
+        fp halfVFov = 41;
+
+        fp halfFrustrumWidth = zFar * std::tan((float)pD2R(halfVFov));
         fp halfFrustrumHeight = zFar * std::tan((float)pD2R(pASR(hFov, 1)));
 
         frustrumPoints[0] = V3<fp>(-halfFrustrumWidth, -halfFrustrumHeight, -zFar);
@@ -76,7 +81,7 @@ namespace P3D
         t.verts[2].pos = V3<fp>(t3.x, t3.y, t3.z);
 
         render->DrawTriangle(&t, nullptr, 12345, NoFlags);
-        */
+*/
 
     }
 
@@ -114,11 +119,7 @@ namespace P3D
 
         bool backface_cull = !(renderFlags & NoBackfaceCull);
 
-#ifdef FRONT_TO_BACK
-        model->SortFrontToBack(cameraPos, viewFrustrumBB, tris, backface_cull);
-#else
         model->SortBackToFront(cameraPos, viewFrustrumBB, tris, backface_cull);
-#endif
 
         for(unsigned int i = 0; i < tris.size(); i++)
         {            

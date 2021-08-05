@@ -97,7 +97,7 @@ int main()
 
     obj3d = new P3D::Object3d();
 
-    obj3d->Setup(240, 160, 45, 25, 1500, I_GetBackBuffer());
+    obj3d->Setup(240, 160, 60, 25, 2500, I_GetBackBuffer());
 
 
     const P3D::BspModel* runway = (const P3D::BspModel*)modeldata;

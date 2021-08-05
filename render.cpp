@@ -11,7 +11,6 @@ namespace P3D
         modelMatrix.setToIdentity();
         viewMatrix.setToIdentity();
 
-
         projectionMatrix.setToIdentity();
         viewProjectionMatrix.setToIdentity();
 
@@ -49,31 +48,12 @@ namespace P3D
         transformedVertexCacheIndexes = new unsigned char[VERTEX_CACHE_SIZE];
 #endif
 
-#ifdef FRONT_TO_BACK
-        spanBuffer = new SpanBuffer[screenHeight];
-
-        span_pool = new SpanNode[fbSize.y * SPAN_NODES_LINE];
-        span_free_index = 0;  
-#endif
-
         return true;
     }
 
     void Render::BeginFrame()
     {
         UpdateViewProjectionMatrix();
-
-#ifdef FRONT_TO_BACK
-        for(int i = 0; i < fbSize.y; i++)
-        {
-            spanBuffer[i].pixels_left = fbSize.x;
-            spanBuffer[i].span_tree = nullptr;
-        }
-
-        span_free_index = 0;
-
-        pixels_left = fbSize.x * fbSize.y;
-#endif
 
 #ifdef USE_VERTEX_CACHE
         FastFill32((unsigned int*)transformedVertexCacheIndexes, 0, VERTEX_CACHE_SIZE / 4);
@@ -158,11 +138,6 @@ namespace P3D
 
     void Render::DrawTriangle(const Triangle3d* tri, const Texture* texture, const pixel color, const RenderFlags flags)
     {
-
-#ifdef FRONT_TO_BACK
-        if(pixels_left <= 0)
-            return;
-#endif
 
 #ifdef RENDER_STATS
         stats.triangles_submitted++;
@@ -274,7 +249,7 @@ namespace P3D
         else
         {
             Vertex2d outputVxB[8];
-            int countA = 3;
+            unsigned int countA = 3;
 
             //As we clip against each frustrum plane, we swap the buffers
             //so the output of the last clip is used as input to the next.
@@ -283,31 +258,31 @@ namespace P3D
 
             if(clip & W_Near)
             {
-                ClipPolygon(inBuffer, countA, outBuffer, countA, W_Near);
+                countA = ClipPolygon(inBuffer, countA, outBuffer, W_Near);
                 std::swap(inBuffer, outBuffer);
             }
 
             if(clip & X_W_Left)
             {
-                ClipPolygon(inBuffer, countA, outBuffer, countA, X_W_Left);
+                countA = ClipPolygon(inBuffer, countA, outBuffer, X_W_Left);
                 std::swap(inBuffer, outBuffer);
             }
 
             if(clip & X_W_Right)
             {
-                ClipPolygon(inBuffer, countA, outBuffer, countA, X_W_Right);
+                countA = ClipPolygon(inBuffer, countA, outBuffer, X_W_Right);
                 std::swap(inBuffer, outBuffer);
             }
 
             if(clip & Y_W_Top)
             {
-                ClipPolygon(inBuffer, countA, outBuffer, countA, Y_W_Top);
+                countA = ClipPolygon(inBuffer, countA, outBuffer, Y_W_Top);
                 std::swap(inBuffer, outBuffer);
             }
 
             if(clip & Y_W_Bottom)
             {
-                ClipPolygon(inBuffer, countA, outBuffer, countA, Y_W_Bottom);
+                countA = ClipPolygon(inBuffer, countA, outBuffer, Y_W_Bottom);
                 std::swap(inBuffer, outBuffer);
             }
 
@@ -316,9 +291,9 @@ namespace P3D
         }
     }
 
-    void Render::ClipPolygon(const Vertex2d clipSpacePointsIn[], const int vxCount, Vertex2d clipSpacePointsOut[], int& vxCountOut, ClipPlane clipPlane)
+    unsigned int Render::ClipPolygon(const Vertex2d clipSpacePointsIn[], const int vxCount, Vertex2d clipSpacePointsOut[], ClipPlane clipPlane)
     {
-        vxCountOut = 0;
+        unsigned int vxCountOut = 0;
 
         for(int i = 0; i < vxCount; i++)
         {
@@ -335,13 +310,15 @@ namespace P3D
 
             fp frac = GetLineIntersectionFrac(clipSpacePointsIn[i].pos.w, clipSpacePointsIn[i2].pos.w, b1, b2);
 
-            if(frac > 0)
+            if(frac >= 0)
             {
                 LerpVertexXYZWUV(clipSpacePointsOut[vxCountOut], clipSpacePointsIn[i], clipSpacePointsIn[i2], frac);
 
                 vxCountOut++;
             }
         }
+
+        return vxCountOut;
     }
 
     fp Render::GetClipPointForVertex(const Vertex2d& vertex, ClipPlane clipPlane) const
@@ -371,7 +348,7 @@ namespace P3D
     fp Render::GetLineIntersectionFrac(const fp a1, const fp a2, const fp b1, const fp b2)
     {
         if((a1 <= b1 && a2 <= b2) || (a1 >= b1 && a2 >= b2))
-            return 0;
+            return -1;
 
         fp l1 = (a1 - b1);
 
@@ -625,20 +602,15 @@ namespace P3D
 
     void Render::ClipSpan(int y, TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color, const RenderFlags flags)
     {
-
-#ifdef FRONT_TO_BACK
-        SpanBuffer* s_buffer = &spanBuffer[y];
-
-        if(s_buffer->pixels_left <= 0)
-            return;
-#endif
-
         const int fb_width = fbSize.x;
 
         int x_start = pRound(pos.x_left);
         int x_end = pRound(pos.x_right);
 
-        if( (x_end < x_start) || (x_end < 0) || (x_start >= fb_width) )
+        if(x_start >= fb_width)
+            return;
+
+        if((x_end < x_start) || (x_end < 0))
             return;
 
         if(x_start < 0)
@@ -646,101 +618,6 @@ namespace P3D
 
         if(x_end >= fb_width)
             x_end = fb_width-1;
-
-#ifdef FRONT_TO_BACK
-
-        SpanNode* c_node = s_buffer->span_tree;
-        SpanNode** p_node = &s_buffer->span_tree;
-
-        while(true)
-        {
-            if(c_node == nullptr)
-                break;
-
-#ifdef RENDER_STATS
-            stats.span_checks++;
-#endif
-
-            int x_start2 = c_node->x_start;
-            int x_end2 = c_node->x_end;
-
-            //Right of.
-            if(x_end > x_end2)
-            {
-                if(x_start <= (x_end2 + 1)) //Overlap right
-                {
-                    if(x_start < x_start2) //Overlap both sides.
-                    {
-                        //Create new span for left edge.
-                        TriEdgeTrace left_edge = pos;
-                        left_edge.x_left = x_start;
-                        left_edge.x_right = x_start2 - 1;
-
-                        ClipSpan(y, left_edge, delta, texture, color, flags);
-                    }
-
-                    x_start = x_end2 + 1;
-
-                    if(c_node->right == nullptr)
-                    {
-                        c_node->x_end = x_end;
-
-                        p_node = nullptr;
-                        break;
-                    }
-                }
-
-                p_node = &c_node->right;
-                c_node = c_node->right;
-            }
-            else //left of.
-            {
-                //Fully occluded.
-                if(x_start >= x_start2)
-                    return;
-
-                if(x_end >= x_start2 - 1) //Overlap left
-                {
-                    x_end = x_start2 - 1;
-
-                    if(c_node->left == nullptr)
-                    {
-                        c_node->x_start = x_start;
-
-                        p_node = nullptr;
-                        break;
-                    }
-                }
-
-                p_node = &c_node->left;
-                c_node = c_node->left;
-            }
-        }
-
-        if(p_node)
-        {
-#ifdef RENDER_STATS
-            stats.span_count++;
-#endif
-            SpanNode* new_node = GetFreeSpanNode();
-
-            if(new_node == nullptr)
-                return;
-
-            new_node->x_start = x_start;
-            new_node->x_end = x_end;
-            new_node->left = nullptr;
-            new_node->right = nullptr;
-
-            *p_node = new_node;
-        }
-
-        unsigned int p_count = (x_end - x_start) + 1;
-
-        s_buffer->pixels_left -= p_count;
-        pixels_left -= p_count;
-
-#endif
 
         if(texture)
         {
@@ -753,19 +630,11 @@ namespace P3D
         pos.x_left = x_start;
         pos.x_right = x_end;
 
-        DrawSpan(y, pos, delta, texture, color);
+        DrawSpan(y, pos, delta, texture, color, flags);
     }
 
-    SpanNode* Render::GetFreeSpanNode()
+    void Render::DrawSpan(int y, TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color, const RenderFlags flags)
     {
-        if(span_free_index >= (SPAN_NODES_LINE * fbSize.y))
-            return nullptr;
-
-        return &span_pool[span_free_index++];
-    }
-
-    void Render::DrawSpan(int y, TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color)
-    {        
         if(!texture)
         {
             DrawTriangleScanlineFlat(y, pos, color);
@@ -778,9 +647,6 @@ namespace P3D
 
     void Render:: DrawTriangleScanlineAffine(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture)
     {        
-        int x_start = (int)pos.x_left;
-        int x_end = (int)pos.x_right;
-
 #ifndef USE_FLOAT
         unsigned int u = pos.u_left.toFPInt();
         unsigned int v = pos.v_left.toFPInt();
@@ -801,9 +667,13 @@ namespace P3D
 
         unsigned int duv = ((du << 10) & 0xffff0000) | ((dv >> 6) & 0x0000ffff);
 
+        int x_start = (int)pos.x_left;
+        int x_end = (int)pos.x_right;
+
         unsigned int count = (x_end - x_start) + 1;
 
-        int buffOffset = ((y * fbSize.x) + x_start);
+        int buffOffset = ((y << 8) - (y << 4)) + x_start;
+        //int buffOffset = ((y * fbSize.x) + x_start);
         pixel* fb = &frameBuffer[buffOffset];
 
         const pixel* t_pxl = texture->pixels;
@@ -812,7 +682,7 @@ namespace P3D
         stats.scanlines_drawn++;
 #endif
 
-        if(buffOffset & 1)
+        if((unsigned int)fb & 1)
         {
             DrawScanlinePixelLinearHighByte(fb, t_pxl, uv); fb++; uv += duv; count--;
         }
@@ -831,11 +701,17 @@ namespace P3D
             DrawScanlinePixelLinearPair(fb, t_pxl, uv, uv+duv); fb+=2; uv += (duv << 1);
         }
 
-        unsigned int r = (count & 15) >> 1;
+        unsigned int r = ((count & 15) >> 1);
 
-        while(r--)
+        switch(r)
         {
-            DrawScanlinePixelLinearPair(fb, t_pxl, uv, uv+duv); fb+=2; uv += (duv << 1);
+            case 7: DrawScanlinePixelLinearPair(fb, t_pxl, uv, uv+duv); fb+=2; uv += (duv << 1);
+            case 6: DrawScanlinePixelLinearPair(fb, t_pxl, uv, uv+duv); fb+=2; uv += (duv << 1);
+            case 5: DrawScanlinePixelLinearPair(fb, t_pxl, uv, uv+duv); fb+=2; uv += (duv << 1);
+            case 4: DrawScanlinePixelLinearPair(fb, t_pxl, uv, uv+duv); fb+=2; uv += (duv << 1);
+            case 3: DrawScanlinePixelLinearPair(fb, t_pxl, uv, uv+duv); fb+=2; uv += (duv << 1);
+            case 2: DrawScanlinePixelLinearPair(fb, t_pxl, uv, uv+duv); fb+=2; uv += (duv << 1);
+            case 1: DrawScanlinePixelLinearPair(fb, t_pxl, uv, uv+duv); fb+=2; uv += (duv << 1);
         }
 
         if(count & 1)
@@ -860,7 +736,7 @@ namespace P3D
 
         unsigned short texel = texels[(ty | tx)];
 
-        unsigned short* p16 = (unsigned short*)(fb);
+        volatile unsigned short* p16 = (volatile unsigned short*)(fb);
         *p16 = (texel | (*p16 & 0xff00));
     }
 
@@ -871,7 +747,7 @@ namespace P3D
 
         unsigned short texel = texels[(ty | tx)];
 
-        unsigned short* p16 = (unsigned short*)(fb-1);
+        volatile unsigned short* p16 = (volatile unsigned short*)(fb-1);
         *p16 = (*p16 & 0xff) | (texel << 8);
     }
 

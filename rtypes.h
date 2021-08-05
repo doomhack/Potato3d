@@ -191,6 +191,7 @@ namespace P3D
     {
         NoFlags = 0u,
         NoBackfaceCull = 4u,
+        AlphaTest = 8u
     } RenderFlags;
 
     typedef struct BspPlane
