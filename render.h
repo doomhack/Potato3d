@@ -136,8 +136,6 @@ namespace P3D
 
         M4<fp> transformMatrix; //P*V*M
 
-        const unsigned int triFracShift = 4;
-
         RenderStats stats;
 
         V4<fp>* transformedVertexCache = nullptr;

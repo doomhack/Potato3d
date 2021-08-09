@@ -15,12 +15,6 @@ namespace P3D
     #define TEX_SIZE_PIXELS (TEX_SIZE * TEX_SIZE)
     #define TEX_SIZE_BYTES (TEX_SIZE_PIXELS * sizeof(pixel))
 
-    //#define USE_TEXTURE_CACHE
-
-    #define TEX_CACHE_SIZE 16*1024
-    #define TEX_CACHE_ENTRIES (TEX_CACHE_SIZE/TEX_SIZE_BYTES)
-
-
     #define USE_VERTEX_CACHE
     #define VERTEX_CACHE_SIZE 4096u
 

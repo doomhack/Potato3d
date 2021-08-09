@@ -5,16 +5,6 @@
 
 namespace P3D
 {
-
-#ifdef USE_TEXTURE_CACHE
-    static unsigned short texCacheEntries[TEX_CACHE_ENTRIES] = {65535};
-    #ifndef __arm__
-        static pixel texCache[TEX_CACHE_SIZE/sizeof(pixel)];
-    #else
-        static pixel* texCache = ((pixel*)0x6014000);
-    #endif
-#endif
-
     Object3d::Object3d()
     {
         renderFlags = (RenderFlags)(0);
@@ -143,26 +133,9 @@ namespace P3D
                     tex->u_mask = ntex->u_mask;
                     tex->v_mask = ntex->v_mask;
                     tex->v_shift = ntex ->v_shift;
-#ifndef USE_TEXTURE_CACHE
                     tex->pixels = model->GetTexturePixels(ntex->texture_pixels_offset);
-#endif
                     textureMap[ntex] = tex;
                 }
-
-
-#ifdef USE_TEXTURE_CACHE
-                const unsigned int cacheKey = tri->texture & (TEX_CACHE_ENTRIES - 1);
-
-                pixel* texCacheSlot = &texCache[TEX_SIZE_PIXELS * cacheKey];
-
-                if(texCacheEntries[cacheKey] != tri->texture)
-                {
-                    FastCopy32((unsigned int*)texCacheSlot, (unsigned int*)model->GetTexturePixels(ntex->texture_pixels_offset), TEX_SIZE_BYTES);
-                    texCacheEntries[cacheKey] = tri->texture;
-                }
-
-                tex->pixels = texCacheSlot;
-#endif
             }
 
             render->DrawTriangle(&tri->tri, tex, tri->color, renderFlags);

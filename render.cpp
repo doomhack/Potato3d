@@ -293,6 +293,9 @@ namespace P3D
 
     unsigned int Render::ClipPolygon(const Vertex2d clipSpacePointsIn[], const int vxCount, Vertex2d clipSpacePointsOut[], ClipPlane clipPlane)
     {
+        if(vxCount < 3)
+            return 0;
+
         unsigned int vxCountOut = 0;
 
         for(int i = 0; i < vxCount; i++)
@@ -517,16 +520,16 @@ namespace P3D
 
         for(int y = yStart; y < yEnd; y++)
         {
-            pos.x_left = top.pos.x + pASR(y_delta_sum.x_left, triFracShift);
-            pos.x_right = top.pos.x + pASR(y_delta_sum.x_right, triFracShift);
+            pos.x_left = top.pos.x + y_delta_sum.x_left;
+            pos.x_right = top.pos.x + y_delta_sum.x_right;
 
             y_delta_sum.x_left += y_delta.x_left;
             y_delta_sum.x_right += y_delta.x_right;
 
             if(texture)
             {
-                pos.u_left = top.uv.x + pASR(y_delta_sum.u, triFracShift);
-                pos.v_left = top.uv.y + pASR(y_delta_sum.v, triFracShift);
+                pos.u_left = top.uv.x + y_delta_sum.u;
+                pos.v_left = top.uv.y + y_delta_sum.v;
 
                 y_delta_sum.u += y_delta.u;
                 y_delta_sum.v += y_delta.v;
@@ -576,16 +579,16 @@ namespace P3D
 
         for (int y = yStart; y < yEnd; y++)
         {
-            pos.x_left = left.pos.x + pASR(y_delta_sum.x_left, triFracShift);
-            pos.x_right = right.pos.x + pASR(y_delta_sum.x_right, triFracShift);
+            pos.x_left = left.pos.x + y_delta_sum.x_left;
+            pos.x_right = right.pos.x + y_delta_sum.x_right;
 
             y_delta_sum.x_left += y_delta.x_left;
             y_delta_sum.x_right += y_delta.x_right;
 
             if(texture)
             {
-                pos.u_left = left.uv.x + pASR(y_delta_sum.u, triFracShift);
-                pos.v_left = left.uv.y + pASR(y_delta_sum.v, triFracShift);
+                pos.u_left = left.uv.x + y_delta_sum.u;
+                pos.v_left = left.uv.y + y_delta_sum.v;
 
                 y_delta_sum.u += y_delta.u;
                 y_delta_sum.v += y_delta.v;
@@ -623,8 +626,8 @@ namespace P3D
         {
             fp preStepX = (fp(x_start) - pos.x_left);
 
-            pos.u_left += pASR((delta.u * preStepX), triFracShift);
-            pos.v_left += pASR((delta.v * preStepX), triFracShift);
+            pos.u_left += (delta.u * preStepX);
+            pos.v_left += (delta.v * preStepX);
         }
 
         pos.x_left = x_start;
@@ -658,11 +661,11 @@ namespace P3D
         unsigned int uv = ((u << 10) & 0xffff0000) | ((v >> 6) & 0x0000ffff);
 
 #ifndef USE_FLOAT
-        unsigned int du = delta.u.toFPInt() >> triFracShift;
-        unsigned int dv = delta.v.toFPInt() >> triFracShift;
+        unsigned int du = delta.u.toFPInt();
+        unsigned int dv = delta.v.toFPInt();
 #else
-        unsigned int du = (unsigned int)pASL(delta.u, 16 - triFracShift);
-        unsigned int dv = (unsigned int)pASL(delta.v, 16 - triFracShift);
+        unsigned int du = (unsigned int)pASL(delta.u, 16);
+        unsigned int dv = (unsigned int)pASL(delta.v, 16);
 #endif
 
         unsigned int duv = ((du << 10) & 0xffff0000) | ((dv >> 6) & 0x0000ffff);
@@ -726,7 +729,7 @@ namespace P3D
         unsigned int tx2 = (uv2 >> 26);
         unsigned int ty2 = ((uv2 >> 4) & (TEX_MASK << TEX_SHIFT));
 
-        *(unsigned short*)fb = ((texels[ty | tx]) | (texels[(ty2 | tx2)] << 8));
+        *(unsigned short*)fb = ((texels[ty + tx]) | (texels[(ty2 + tx2)] << 8));
     }
 
     inline void Render::DrawScanlinePixelLinearLowByte(pixel *fb, const pixel* texels, const unsigned int uv)
@@ -734,7 +737,7 @@ namespace P3D
         unsigned int tx = (uv >> 26);
         unsigned int ty = ((uv >> 4) & (TEX_MASK << TEX_SHIFT));
 
-        unsigned short texel = texels[(ty | tx)];
+        unsigned short texel = texels[(ty + tx)];
 
         volatile unsigned short* p16 = (volatile unsigned short*)(fb);
         *p16 = (texel | (*p16 & 0xff00));
@@ -745,7 +748,7 @@ namespace P3D
         unsigned int tx = (uv >> 26);
         unsigned int ty = ((uv >> 4) & (TEX_MASK << TEX_SHIFT));
 
-        unsigned short texel = texels[(ty | tx)];
+        unsigned short texel = texels[(ty + tx)];
 
         volatile unsigned short* p16 = (volatile unsigned short*)(fb-1);
         *p16 = (*p16 & 0xff) | (texel << 8);
@@ -795,10 +798,10 @@ namespace P3D
         fp inv_x = 0;
 
         if(left.pos.y != other.pos.y)
-            inv_y = pScaledReciprocal(triFracShift, (left.pos.y - other.pos.y));
+            inv_y = pReciprocal(left.pos.y - other.pos.y);
 
         if(right.pos.x != left.pos.x)
-            inv_x = pScaledReciprocal(triFracShift, (right.pos.x - left.pos.x));
+            inv_x = pReciprocal((right.pos.x - left.pos.x) + 1);
 
         x_delta.u = (right.uv.x - left.uv.x) * inv_x;
         x_delta.v = (right.uv.y - left.uv.y) * inv_x;
@@ -816,7 +819,7 @@ namespace P3D
         fp inv_y = 0;
 
         if(left.pos.y != other.pos.y)
-            inv_y = pScaledReciprocal(triFracShift, (left.pos.y - other.pos.y));
+            inv_y = pReciprocal(left.pos.y - other.pos.y);
 
         y_delta.x_left = (left.pos.x - other.pos.x) * inv_y;
         y_delta.x_right = (right.pos.x - other.pos.x) * inv_y;
