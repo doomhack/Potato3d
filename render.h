@@ -6,25 +6,24 @@
 
 namespace P3D
 {
-
     typedef struct TriEdgeTrace
     {
         fp x_left, x_right;
-        fp u_left;
-        fp v_left;
+        unsigned int uv_left;
+        pixel* fb_ypos;
     } TriEdgeTrace;
 
     typedef struct TriDrawXDeltaZWUV
     {
         fp u;
         fp v;
+        unsigned int uv;
     } TriDrawXDeltaZWUV;
 
     typedef struct TriDrawYDeltaZWUV
     {
         fp x_left, x_right;
-        fp u;
-        fp v;
+        unsigned int uv;
     } TriDrawYDeltaZWUV;
 
     typedef enum MatrixType
@@ -87,11 +86,9 @@ namespace P3D
         void DrawTriangleTop(const Vertex2d points[], const Texture *texture, const pixel color, const RenderFlags flags);
         void DrawTriangleBottom(const Vertex2d points[], const Texture *texture, const pixel color, const RenderFlags flags);
 
-        void ClipSpan(int y, TriEdgeTrace &pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color, const RenderFlags flags);
+        void DrawSpan(TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color, const RenderFlags flags);
 
-        void DrawSpan(int y, TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color, const RenderFlags flags);
-
-        void DrawTriangleScanlineAffine(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture);
+        void DrawTriangleScanlineAffine(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture);
 
 
         inline void DrawScanlinePixelLinearPair(pixel *fb, const pixel* texels, const unsigned int uv1, const unsigned int uv2);
@@ -102,7 +99,7 @@ namespace P3D
         void DrawTriangleSplitFlat(const Vertex2d points[], const pixel color);
         void DrawTriangleTopFlat(const Vertex2d points[], const pixel color);
         void DrawTriangleBottomFlat(const Vertex2d points[3], const pixel color);
-        void DrawTriangleScanlineFlat(int y, const TriEdgeTrace& pos, const pixel color);
+        void DrawTriangleScanlineFlat(const TriEdgeTrace& pos, const pixel color);
 
 
 
@@ -115,6 +112,7 @@ namespace P3D
         void GetTriangleLerpDeltasZWUV(const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, TriDrawXDeltaZWUV& x_delta, TriDrawYDeltaZWUV &y_delta);
         void GetTriangleLerpDeltasZ(const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, TriDrawYDeltaZWUV &y_delta);
 
+        unsigned int PackUV(fp u, fp v);
 
         fp fracToY(fp frac);
         fp fracToX(fp frac);

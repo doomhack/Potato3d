@@ -492,13 +492,15 @@ namespace P3D
 
         TriEdgeTrace pos;
         TriDrawXDeltaZWUV x_delta;
-        TriDrawYDeltaZWUV y_delta, y_delta_sum = {0,0,0,0};
+        TriDrawYDeltaZWUV y_delta, y_delta_sum = {0,0,0};
 
         const Vertex2d& top     = points[0];
         const Vertex2d& left    = (points[1].pos.x < points[2].pos.x) ? points[1] : points[2];
         const Vertex2d& right   = (points[1].pos.x < points[2].pos.x) ? points[2] : points[1];
 
-        if((top.pos.x >= fbSize.x && left.pos.x >= fbSize.x) || (right.pos.x < 0 && top.pos.x < 0))
+        const int fb_x = fbSize.x;
+
+        if((top.pos.x >= fb_x && left.pos.x >= fb_x) || (right.pos.x < 0 && top.pos.x < 0))
             return;
 
         int yStart = (int)(top.pos.y);
@@ -518,6 +520,10 @@ namespace P3D
         else
             GetTriangleLerpDeltasZ(left, right, top, y_delta);
 
+        pos.fb_ypos = &frameBuffer[yStart * fb_x];
+        unsigned int top_uv = PackUV(top.uv.x, top.uv.y);
+
+
         for(int y = yStart; y < yEnd; y++)
         {
             pos.x_left = top.pos.x + y_delta_sum.x_left;
@@ -528,14 +534,13 @@ namespace P3D
 
             if(texture)
             {
-                pos.u_left = top.uv.x + y_delta_sum.u;
-                pos.v_left = top.uv.y + y_delta_sum.v;
-
-                y_delta_sum.u += y_delta.u;
-                y_delta_sum.v += y_delta.v;
+                pos.uv_left = top_uv + y_delta_sum.uv;
+                y_delta_sum.uv += y_delta.uv;
             }
 
-            ClipSpan(y, pos, x_delta, texture, color, flags);
+            DrawSpan(pos, x_delta, texture, color, flags);
+
+            pos.fb_ypos += fb_x;
         }
 
 #ifdef RENDER_STATS
@@ -550,13 +555,15 @@ namespace P3D
 
         TriEdgeTrace pos;
         TriDrawXDeltaZWUV x_delta;
-        TriDrawYDeltaZWUV y_delta, y_delta_sum = {0,0,0,0};
+        TriDrawYDeltaZWUV y_delta, y_delta_sum = {0,0,0};
 
         const Vertex2d& bottom  = points[2];
         const Vertex2d& left    = (points[0].pos.x < points[1].pos.x) ? points[0] : points[1];
         const Vertex2d& right   = (points[0].pos.x < points[1].pos.x) ? points[1] : points[0];
 
-        if((bottom.pos.x >= fbSize.x && left.pos.x >= fbSize.x) || (right.pos.x < 0 && bottom.pos.x < 0))
+        const int fb_x = fbSize.x;
+
+        if((bottom.pos.x >= fb_x && left.pos.x >= fb_x) || (right.pos.x < 0 && bottom.pos.x < 0))
             return;
 
         int yStart = (int)(left.pos.y);
@@ -576,6 +583,8 @@ namespace P3D
         else
             GetTriangleLerpDeltasZ(left, right, bottom, y_delta);
 
+        pos.fb_ypos = &frameBuffer[yStart * fb_x];
+        unsigned int left_uv = PackUV(left.uv.x, left.uv.y);
 
         for (int y = yStart; y < yEnd; y++)
         {
@@ -587,14 +596,13 @@ namespace P3D
 
             if(texture)
             {
-                pos.u_left = left.uv.x + y_delta_sum.u;
-                pos.v_left = left.uv.y + y_delta_sum.v;
-
-                y_delta_sum.u += y_delta.u;
-                y_delta_sum.v += y_delta.v;
+                pos.uv_left = left_uv + y_delta_sum.uv;
+                y_delta_sum.uv += y_delta.uv;
             }
 
-            ClipSpan(y, pos, x_delta, texture, color, flags);
+            DrawSpan(pos, x_delta, texture, color, flags);
+
+            pos.fb_ypos += fb_x;
         }
 
 #ifdef RENDER_STATS
@@ -603,7 +611,7 @@ namespace P3D
 
     }
 
-    void Render::ClipSpan(int y, TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color, const RenderFlags flags)
+    void Render::DrawSpan(TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color, const RenderFlags flags)
     {
         const int fb_width = fbSize.x;
 
@@ -613,11 +621,11 @@ namespace P3D
         if(x_start >= fb_width)
             return;
 
-        if((x_end < x_start) || (x_end < 0))
-            return;
-
         if(x_start < 0)
             x_start = 0;
+
+        if(x_end < x_start)
+            return;
 
         if(x_end >= fb_width)
             x_end = fb_width-1;
@@ -626,58 +634,33 @@ namespace P3D
         {
             fp preStepX = (fp(x_start) - pos.x_left);
 
-            pos.u_left += (delta.u * preStepX);
-            pos.v_left += (delta.v * preStepX);
+            pos.uv_left += PackUV(delta.u * preStepX, delta.v * preStepX);
         }
 
         pos.x_left = x_start;
         pos.x_right = x_end;
 
-        DrawSpan(y, pos, delta, texture, color, flags);
-    }
-
-    void Render::DrawSpan(int y, TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color, const RenderFlags flags)
-    {
         if(!texture)
         {
-            DrawTriangleScanlineFlat(y, pos, color);
+            DrawTriangleScanlineFlat(pos, color);
         }
         else
         {
-            DrawTriangleScanlineAffine(y, pos, delta, texture);
+            DrawTriangleScanlineAffine(pos, delta, texture);
         }
     }
 
-    void Render:: DrawTriangleScanlineAffine(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture)
+    void Render:: DrawTriangleScanlineAffine(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture)
     {        
-#ifndef USE_FLOAT
-        unsigned int u = pos.u_left.toFPInt();
-        unsigned int v = pos.v_left.toFPInt();
-#else
-        unsigned int u = (unsigned int)pASL(pos.u_left, 16);
-        unsigned int v = (unsigned int)pASL(pos.v_left, 16);
-#endif
-
-        unsigned int uv = ((u << 10) & 0xffff0000) | ((v >> 6) & 0x0000ffff);
-
-#ifndef USE_FLOAT
-        unsigned int du = delta.u.toFPInt();
-        unsigned int dv = delta.v.toFPInt();
-#else
-        unsigned int du = (unsigned int)pASL(delta.u, 16);
-        unsigned int dv = (unsigned int)pASL(delta.v, 16);
-#endif
-
-        unsigned int duv = ((du << 10) & 0xffff0000) | ((dv >> 6) & 0x0000ffff);
-
         int x_start = (int)pos.x_left;
         int x_end = (int)pos.x_right;
 
         unsigned int count = (x_end - x_start) + 1;
 
-        int buffOffset = ((y << 8) - (y << 4)) + x_start;
-        //int buffOffset = ((y * fbSize.x) + x_start);
-        pixel* fb = &frameBuffer[buffOffset];
+        pixel* fb = pos.fb_ypos + x_start;
+
+        unsigned int uv = pos.uv_left;
+        unsigned int duv = delta.uv;
 
         const pixel* t_pxl = texture->pixels;
 
@@ -754,17 +737,16 @@ namespace P3D
         *p16 = (*p16 & 0xff) | (texel << 8);
     }
 
-    void Render::DrawTriangleScanlineFlat(int y, const TriEdgeTrace& pos, const pixel color)
+    void Render::DrawTriangleScanlineFlat(const TriEdgeTrace& pos, const pixel color)
     {
         int x_start = (int)pos.x_left;
         int x_end = (int)pos.x_right;
 
         unsigned int count = (x_end - x_start) + 1;
 
-        int buffOffset = ((y * fbSize.x) + x_start);
-        pixel* fb = &frameBuffer[buffOffset];
+        pixel* fb = pos.fb_ypos + x_start;
 
-        if(buffOffset & 1)
+        if((unsigned int)fb & 1)
         {
             DrawScanlinePixelLinearHighByte(fb, &color, 0); fb++; count--;
         }
@@ -779,6 +761,21 @@ namespace P3D
         stats.scanlines_drawn++;
 #endif
     }
+
+
+    unsigned int Render::PackUV(fp u, fp v)
+    {
+#ifndef USE_FLOAT
+        unsigned int du = u.toFPInt();
+        unsigned int dv = v.toFPInt();
+#else
+        unsigned int du = (unsigned int)pASL(u, 16);
+        unsigned int dv = (unsigned int)pASL(v, 16);
+#endif
+
+        return ((du << 10) & 0xffff0000) | ((dv >> 6) & 0x0000ffff);
+    }
+
 
     void Render::LerpVertexXYZWUV(Vertex2d& out, const Vertex2d& left, const Vertex2d& right, fp frac)
     {
@@ -806,11 +803,14 @@ namespace P3D
         x_delta.u = (right.uv.x - left.uv.x) * inv_x;
         x_delta.v = (right.uv.y - left.uv.y) * inv_x;
 
+        x_delta.uv = PackUV(x_delta.u, x_delta.v);
+
+
         y_delta.x_left = (left.pos.x - other.pos.x) * inv_y;
         y_delta.x_right = (right.pos.x - other.pos.x) * inv_y;
 
-        y_delta.u = (left.uv.x - other.uv.x) * inv_y;
-        y_delta.v = (left.uv.y - other.uv.y) * inv_y;
+        y_delta.uv = PackUV((left.uv.x - other.uv.x) * inv_y, (left.uv.y - other.uv.y) * inv_y);
+
     }
 
     void Render::GetTriangleLerpDeltasZ(const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, TriDrawYDeltaZWUV &y_delta)
