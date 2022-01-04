@@ -18,6 +18,8 @@ namespace P3D
 
         unsigned int texture_pixels_offset; //Bytes from BspModel*
 
+        unsigned int texture_palette_offset; //Bytes from BspModel*
+
     } BspModelHeader;
 
     typedef struct BspModelTriangle
@@ -79,6 +81,11 @@ namespace P3D
         const pixel* GetTexturePixels(unsigned int n) const
         {
             return &((const pixel*)(GetBasePtr() + header.texture_pixels_offset))[n];
+        }
+
+        const unsigned int GetColorMapColor(unsigned int n) const
+        {
+            return ((const unsigned int*)(GetBasePtr() + header.texture_palette_offset))[n];
         }
 
     private:

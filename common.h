@@ -15,23 +15,14 @@ namespace P3D
     #define TEX_SIZE_PIXELS (TEX_SIZE * TEX_SIZE)
     #define TEX_SIZE_BYTES (TEX_SIZE_PIXELS * sizeof(pixel))
 
-    #define USE_TEXTURE_CACHE
-
-    #define TEX_CACHE_SIZE 16*1024
-    #define TEX_CACHE_ENTRIES (TEX_CACHE_SIZE/TEX_SIZE_BYTES)
-
-
-    #define SPAN_NODES_LINE 16u
-
     #define USE_VERTEX_CACHE
-    #define VERTEX_CACHE_SIZE 2048u
+    #define VERTEX_CACHE_SIZE 4096u
 
+    #define PERSPECTIVE_CORRECT_Z_DELTA_THREASHOLD (fp(0.03f))
 
     //#define USE_FLOAT
 
-    #define FRONT_TO_BACK
-
-    typedef unsigned short pixel;
+    typedef unsigned char pixel;
     //const pixel alphaMask = 0x7fff;
 
     #ifdef USE_FLOAT

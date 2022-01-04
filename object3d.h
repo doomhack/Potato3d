@@ -17,7 +17,7 @@ namespace P3D
         Object3d();
         Object3d(Render* render);
 
-        bool Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov = 54, fp zNear = 5, fp zFar = 1024, pixel* framebuffer = nullptr);
+        bool Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov = 54, fp zNear = 5, fp zFar = 1024, pixel *framebuffer = nullptr);
 
         V3<fp>& CameraPos();
         V3<fp>& CameraAngle();
@@ -28,7 +28,7 @@ namespace P3D
 
         void SetBackgroundColor(pixel color);
 
-        void SetFramebuffer(pixel* framebuffer);
+        void SetFramebuffer(pixel *framebuffer);
 
         Render* GetRender();
 
@@ -50,7 +50,7 @@ namespace P3D
         V3<fp> cameraAngle = V3<fp>(0,0,0);
         pixel backgroundColor = 0;
 
-        RenderFlags renderFlags = RenderFlags::NoFlags;
+        RenderFlags renderFlags = RenderFlags::AutoPerspectiveCorrect;
 
         V3<fp> frustrumPoints[4]; //Top left and bottom-right frustrum points.
 

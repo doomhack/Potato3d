@@ -5,19 +5,9 @@
 
 namespace P3D
 {
-
-#ifdef USE_TEXTURE_CACHE
-    static unsigned short texCacheEntries[TEX_CACHE_ENTRIES] = {65535};
-    #ifndef __arm__
-        static pixel texCache[TEX_CACHE_SIZE/sizeof(pixel)];
-    #else
-        static pixel* texCache = ((unsigned short*)0x6014000);
-    #endif
-#endif
-
     Object3d::Object3d()
     {
-        renderFlags = (RenderFlags)(0);
+        renderFlags = AutoPerspectiveCorrect;
     }
 
     Object3d::Object3d(Render* render)
@@ -25,11 +15,16 @@ namespace P3D
         this->render = render;
     }
 
-    bool Object3d::Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov, fp zNear, fp zFar, pixel* framebuffer)
+    bool Object3d::Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov, fp zNear, fp zFar, pixel *framebuffer)
     {
         this->render = new Render();
 
-        fp halfFrustrumWidth = zFar * std::tan((float)pD2R(fp(28)));
+        fp aspect = fp((int)screenWidth) / fp((int)screenHeight);
+        //fp halfVFov = (aspect * hFov) / 2;
+
+        fp halfVFov = 41;
+
+        fp halfFrustrumWidth = zFar * std::tan((float)pD2R(halfVFov));
         fp halfFrustrumHeight = zFar * std::tan((float)pD2R(pASR(hFov, 1)));
 
         frustrumPoints[0] = V3<fp>(-halfFrustrumWidth, -halfFrustrumHeight, -zFar);
@@ -77,6 +72,7 @@ namespace P3D
 
         render->DrawTriangle(&t, nullptr, 12345, NoFlags);
 */
+
     }
 
     void Object3d::RenderScene()
@@ -113,11 +109,7 @@ namespace P3D
 
         bool backface_cull = !(renderFlags & NoBackfaceCull);
 
-#ifdef FRONT_TO_BACK
-        model->SortFrontToBack(cameraPos, viewFrustrumBB, tris, backface_cull);
-#else
         model->SortBackToFront(cameraPos, viewFrustrumBB, tris, backface_cull);
-#endif
 
         for(unsigned int i = 0; i < tris.size(); i++)
         {            
@@ -141,29 +133,13 @@ namespace P3D
                     tex->u_mask = ntex->u_mask;
                     tex->v_mask = ntex->v_mask;
                     tex->v_shift = ntex ->v_shift;
-#ifndef USE_TEXTURE_CACHE
                     tex->pixels = model->GetTexturePixels(ntex->texture_pixels_offset);
-#endif
                     textureMap[ntex] = tex;
                 }
-
-
-#ifdef USE_TEXTURE_CACHE
-                const unsigned int cacheKey = tri->texture & (TEX_CACHE_ENTRIES - 1);
-
-                pixel* texCacheSlot = &texCache[TEX_SIZE_PIXELS * cacheKey];
-
-                if(texCacheEntries[cacheKey] != tri->texture)
-                {
-                    FastCopy32((unsigned int*)texCacheSlot, (unsigned int*)model->GetTexturePixels(ntex->texture_pixels_offset), TEX_SIZE_BYTES);
-                    texCacheEntries[cacheKey] = tri->texture;
-                }
-
-                tex->pixels = texCacheSlot;
-#endif
             }
 
             render->DrawTriangle(&tri->tri, tex, tri->color, renderFlags);
+            //render->DrawTriangle(&tri->tri, nullptr, tri->color, renderFlags);
         }
 
         tris.clear();
@@ -181,7 +157,7 @@ namespace P3D
         backgroundColor = color;
     }
 
-    void Object3d::SetFramebuffer(pixel* framebuffer)
+    void Object3d::SetFramebuffer(pixel *framebuffer)
     {
         render->SetFramebuffer(framebuffer);
     }

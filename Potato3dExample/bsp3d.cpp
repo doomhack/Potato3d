@@ -8,8 +8,10 @@
 
 namespace P3D
 {
-    BspTree* Bsp3d::BuildBspTree(const Model3d* model)
+    BspTree* Bsp3d::BuildBspTree(const Model3d* mdl)
     {
+        this->model = mdl;
+
         std::vector<BspTriangle*> triangles;
 
         for (auto it = model->mesh.begin() ; it != model->mesh.end(); ++it)
@@ -38,7 +40,7 @@ namespace P3D
             }
         }
 
-        BspTree* tree = new BspTree();
+        BspTree* tree = new BspTree(model);
 
         tree->root = BuildTreeRecursive(triangles);
 
@@ -776,7 +778,7 @@ namespace P3D
 
     bool BspTree::SaveBspTree(QByteArray* bytes)
     {
-        QList<const BspNode*> nodeList;
+        QList<BspNode*> nodeList;
 
         TraverseNodesRecursive(this->root, nodeList);
 
@@ -798,6 +800,17 @@ namespace P3D
 
         for(int i = 0; i < nodeList.length(); i++)
         {
+            //Sort nodes by texture to stop cache thrashing...
+            std::sort(std::begin(nodeList[i]->front_tris),
+                      std::end(nodeList[i]->front_tris),
+                      [](const P3D::BspTriangle* a, const P3D::BspTriangle* b) -> bool {return a->texture > b->texture; });
+
+            std::sort(std::begin(nodeList[i]->back_tris),
+                      std::end(nodeList[i]->back_tris),
+                      [](const P3D::BspTriangle* a, const P3D::BspTriangle* b) -> bool {return a->texture > b->texture; });
+
+
+
             BspModelNode bn;
             bn.plane = nodeList[i]->plane;
             bn.node_bb = nodeList[i]->node_bb;
@@ -810,7 +823,7 @@ namespace P3D
             {
                 BspModelTriangle bmt;
                 bmt.tri = *nodeList[i]->front_tris[j]->tri;
-                bmt.color = RGB5_to_BGR5(nodeList[i]->front_tris[j]->color);
+                bmt.color = nodeList[i]->front_tris[j]->color;
                 bmt.texture = -1;
                 bmt.tri_bb.AddTriangle(*nodeList[i]->front_tris[j]->tri);
 
@@ -836,13 +849,6 @@ namespace P3D
                         QByteArray pxl((const char*)nodeList[i]->front_tris[j]->texture->pixels,
                                        nodeList[i]->front_tris[j]->texture->width * nodeList[i]->front_tris[j]->texture->height * sizeof(pixel));
 
-                        unsigned short* p = (unsigned short*)pxl.data();
-
-                        for(int i = 0; i < pxl.length() / 2; i++)
-                        {
-                            p[i] = RGB5_to_BGR5(p[i]);
-                        }
-
                         texturePixels.append(pxl);
 
                         bmt.texture = modelTextureList.length();
@@ -864,7 +870,7 @@ namespace P3D
             {
                 BspModelTriangle bmt;
                 bmt.tri = *nodeList[i]->back_tris[j]->tri;
-                bmt.color = RGB5_to_BGR5(nodeList[i]->back_tris[j]->color);
+                bmt.color = nodeList[i]->back_tris[j]->color;
                 bmt.texture = -1;
                 bmt.tri_bb.AddTriangle(*nodeList[i]->back_tris[j]->tri);
 
@@ -889,13 +895,6 @@ namespace P3D
 
                         QByteArray pxl((const char*)nodeList[i]->back_tris[j]->texture->pixels,
                                        nodeList[i]->back_tris[j]->texture->width * nodeList[i]->back_tris[j]->texture->height * sizeof(pixel));
-
-                        unsigned short* p = (unsigned short*)pxl.data();
-
-                        for(int i = 0; i < pxl.length() / 2; i++)
-                        {
-                            p[i] = RGB5_to_BGR5(p[i]);
-                        }
 
                         texturePixels.append(pxl);
 
@@ -959,6 +958,9 @@ namespace P3D
         bspModel->header.texture_pixels_offset = buffer.pos();
         buffer.write(texturePixels.data(), texturePixels.length());
 
+        bspModel->header.texture_palette_offset = buffer.pos();
+        buffer.write((const char*)model->colormap, 256 * 4);
+
         //Now overwrite the header with offsets.
         BspModelHeader* hdr = (BspModelHeader*)bytes->data();
 
@@ -967,7 +969,7 @@ namespace P3D
         return true;
     }
 
-    void BspTree::TraverseNodesRecursive(const BspNode* n, QList<const BspNode*>& nodeList) const
+    void BspTree::TraverseNodesRecursive(BspNode* n, QList<BspNode*>& nodeList) const
     {
         if (!n) return;
 

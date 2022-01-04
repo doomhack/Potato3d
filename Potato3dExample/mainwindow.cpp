@@ -18,19 +18,19 @@ MainWindow::MainWindow(QWidget *parent)
 
     fpsTimer.start();
 
-    frameBufferImage = QImage(screenWidth, screenHeight, QImage::Format::Format_RGB555);
+    frameBufferImage = QImage(screenWidth, screenHeight, QImage::Format::Format_Indexed8);
 
     object3d = new P3D::Object3d();
 
     //object3d->Setup(screenWidth, screenHeight, 54, 25, 1500, (P3D::pixel*)frameBufferImage.bits());
-    object3d->Setup(screenWidth, screenHeight, 45, 25, 2500, (P3D::pixel*)frameBufferImage.bits());
+    object3d->Setup(screenWidth, screenHeight, 60, 25, 2500, (P3D::pixel*)frameBufferImage.bits());
 
-    object3d->SetBackgroundColor(16000);
+    object3d->SetBackgroundColor(0);
 
-
+    //P3D::Model3d* runway = LoadObjFile(":/models/temple.obj", ":/models/temple.mtl");
     //P3D::Model3d* runway = LoadObjFile(":/models/Mk64Beach/Mk64Kb.obj", ":/models/Mk64Beach/Mk64Kb.mtl");
     P3D::Model3d* runway = LoadObjFile(":/models/Streets/Streets.obj", ":/models/Streets/Streets.mtl");
-    //P3D::Model3d* runway = LoadObjFile(":/models/Streets/poly_test.obj", ":/models/Streets/poly_test.mtl");
+
 
     P3D::Bsp3d* bsp = new P3D::Bsp3d;
 
@@ -235,7 +235,7 @@ P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
 
                 textureColors[currMtlName] = image->scaled(1,1, Qt::IgnoreAspectRatio, Qt::SmoothTransformation).pixel(0,0);
 
-                *image = image->convertToFormat(QImage::Format_RGB555);
+                *image = image->convertToFormat(QImage::Format_RGB32);
 
                 if(!image->isNull())
                 {
@@ -256,14 +256,51 @@ P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
 
                     t->v_mask = (t->height-1) << t->v_shift;
 
-                    t->pixels = (const P3D::pixel*)image->constBits();
+                    t->pixels = image->constScanLine(0);
                 }
-
 
                 currMtlName.clear();
             }
         }
     }
+
+    //
+    unsigned int numTextures = textureMap.keys().count();
+    QImage allTexImage = QImage(TEX_SIZE, TEX_SIZE * numTextures, QImage::Format_RGB32);
+
+    for(int i =0; i < numTextures; i++)
+    {
+        unsigned int* scanline = (unsigned int*)allTexImage.scanLine(i * TEX_SIZE);
+
+        memcpy(scanline, textureMap.value(textureMap.keys().at(i))->pixels, TEX_SIZE * TEX_SIZE * 4);
+    }
+
+    //Quantise to 256 colors.
+    allTexImage.save("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\allTex.png");
+
+    QProcess p;
+    p.setWorkingDirectory("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\");
+    p.start("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\nQuantCpp.exe allTex.png /m 256");
+    p.waitForFinished();
+
+    qDebug() << p.readAll();
+
+    QImage* allTex256 = new QImage("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\allTex-WUquant256.png");
+    //QImage* allTex256 = new QImage("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\allTex-WUquant128.png");
+
+    for(int i =0; i < numTextures; i++)
+    {
+        unsigned char* scanline = (unsigned char*)allTex256->scanLine(i * TEX_SIZE);
+
+        textureMap.value(textureMap.keys().at(i))->pixels = scanline;
+    }
+
+    for(int i = 0; i < allTex256->colorTable().length(); i++)
+        model->colormap[i] = allTex256->colorTable().at(i);
+
+    frameBufferImage.setColorTable(allTex256->colorTable());
+
+    //
 
     QStringList lines = objFileText.split("\n");
 

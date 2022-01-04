@@ -6,25 +6,24 @@
 
 namespace P3D
 {
-
     typedef struct TriEdgeTrace
     {
-        fp x_left, x_right;
-        fp u_left;
-        fp v_left;
+        fp x_left, x_right, w_left;
+        fp u_left, v_left;
+        pixel* fb_ypos;
     } TriEdgeTrace;
 
     typedef struct TriDrawXDeltaZWUV
     {
         fp u;
         fp v;
+        fp w;
     } TriDrawXDeltaZWUV;
 
     typedef struct TriDrawYDeltaZWUV
     {
         fp x_left, x_right;
-        fp u;
-        fp v;
+        fp u, v, w;
     } TriDrawYDeltaZWUV;
 
     typedef enum MatrixType
@@ -37,33 +36,20 @@ namespace P3D
 
     typedef enum ClipPlane
     {
-        W_Near,
-        X_W_Left,
-        X_W_Right,
-        Y_W_Top,
-        Y_W_Bottom
+        NoClip = 0u,
+        W_Near = 1u,
+        X_W_Left = 2u,
+        X_W_Right = 4u,
+        Y_W_Top = 8u,
+        Y_W_Bottom = 16u
     } ClipPlane;
-
-    typedef struct SpanNode
-    {
-        short x_start;
-        short x_end;
-        SpanNode* left = nullptr;
-        SpanNode* right = nullptr;
-    } SpanNode;
-
-    typedef struct SpanBuffer
-    {
-        SpanNode* span_tree = nullptr;
-        int pixels_left = 0;
-    } SpanBuffer;
 
     class Render
     {
     public:
         explicit Render();
 
-        bool Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov = 54, fp zNear = 5, fp zFar = 1024, pixel* framebuffer = nullptr);
+        bool Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov = 54, fp zNear = 5, fp zFar = 1024, pixel *framebuffer = nullptr);
 
         void BeginFrame();
         void EndFrame();
@@ -87,38 +73,38 @@ namespace P3D
 
 
     private:
-        void DrawTriangleClip(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags);
+        void DrawTriangleClip(Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags);
 
-        void ClipPolygon(const Vertex2d clipSpacePointsIn[], const int vxCount, Vertex2d clipSpacePointsOut[], int& vxCountOut, ClipPlane clipPlane);
+        unsigned int ClipPolygon(const Vertex2d clipSpacePointsIn[], const int vxCount, Vertex2d clipSpacePointsOut[], ClipPlane clipPlane);
         void TriangulatePolygon(Vertex2d clipSpacePoints[], const int vxCount, const Texture *texture, const pixel color, const RenderFlags flags);
 
         fp GetClipPointForVertex(const Vertex2d& vertex, ClipPlane clipPlane) const;
 
-        void DrawTriangleCull(const Vertex2d clipSpacePoints[], const Texture *texture, const pixel color, const RenderFlags flags);
-
         fp GetLineIntersectionFrac(const fp a1, const fp a2, const fp b1, const fp b2);
 
-        void DrawTriangleSplit(Vertex2d *points, const Texture *texture, const pixel color, RenderFlags flags);
-        void DrawTriangleTop(const Vertex2d *points, const Texture *texture, const pixel color, const RenderFlags flags);
-        void DrawTriangleBottom(const Vertex2d *points, const Texture *texture, const pixel color, const RenderFlags flags);
+        void DrawTriangleSplit(Vertex2d screenSpacePoints[], const Texture *texture, const pixel color, RenderFlags flags);
+        void DrawTriangleTop(const Vertex2d points[], const Texture *texture, const pixel color, const RenderFlags flags);
+        void DrawTriangleBottom(const Vertex2d points[], const Texture *texture, const pixel color, const RenderFlags flags);
 
-        void ClipSpan(int y, TriEdgeTrace &pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color, const RenderFlags flags);
-        SpanNode* GetFreeSpanNode();
+        void DrawSpan(TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color, const RenderFlags flags);
 
-        void DrawSpan(int y, TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color);
+        void DrawTriangleScanlineAffine(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture);
+        void DrawTriangleScanlinePerspectiveCorrect(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture);
 
-        void DrawTriangleScanlineAffine(int y, const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture);
 
-        inline void DrawScanlinePixelLinear(pixel* fb, const pixel* texels, const fp u, const fp v);
+        inline void DrawScanlinePixelLinearPair(pixel *fb, const pixel* texels, const unsigned int uv1, const unsigned int uv2);
+        inline void DrawScanlinePixelLinearLowByte(pixel* fb, const pixel* texels, const unsigned int uv);
+        inline void DrawScanlinePixelLinearHighByte(pixel* fb, const pixel* texels, const unsigned int uv);
+
 
         void DrawTriangleSplitFlat(const Vertex2d points[], const pixel color);
         void DrawTriangleTopFlat(const Vertex2d points[], const pixel color);
         void DrawTriangleBottomFlat(const Vertex2d points[3], const pixel color);
-        void DrawTriangleScanlineFlat(int y, const TriEdgeTrace& pos, const pixel color);
+        void DrawTriangleScanlineFlat(const TriEdgeTrace& pos, const pixel color);
 
 
 
-        void SortPointsByY(Vertex2d points[]);
+        void SortPointsByY(Vertex2d pointsIn[], Vertex2d pointsOut[]);
 
         Vertex2d TransformVertex(const Vertex3d* vertex);
 
@@ -127,6 +113,7 @@ namespace P3D
         void GetTriangleLerpDeltasZWUV(const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, TriDrawXDeltaZWUV& x_delta, TriDrawYDeltaZWUV &y_delta);
         void GetTriangleLerpDeltasZ(const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, TriDrawYDeltaZWUV &y_delta);
 
+        unsigned int PackUV(fp u, fp v);
 
         fp fracToY(fp frac);
         fp fracToX(fp frac);
@@ -148,16 +135,7 @@ namespace P3D
 
         M4<fp> transformMatrix; //P*V*M
 
-        const unsigned int triFracShift = 4;
-
         RenderStats stats;
-
-        SpanBuffer* spanBuffer = nullptr;
-
-        int pixels_left;
-
-        SpanNode* span_pool;
-        unsigned int span_free_index;
 
         V4<fp>* transformedVertexCache = nullptr;
         unsigned char* transformedVertexCacheIndexes = nullptr;

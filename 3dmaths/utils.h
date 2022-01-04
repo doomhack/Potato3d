@@ -62,6 +62,18 @@ namespace P3D
     }
 
     template <class T>
+    constexpr inline int pCeil(T val)
+    {
+        return std::ceil(val);
+    }
+
+    template <>
+    constexpr inline int pCeil(FP val)
+    {
+        return (val.toFPInt() + 0xffff) >> 16;
+    }
+
+    template <class T>
     constexpr inline T pAbs(T v)
     {
         if(v >= T(0))

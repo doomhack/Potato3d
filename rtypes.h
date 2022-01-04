@@ -23,6 +23,16 @@ namespace P3D
     public:
         V4<fp> pos;
         V2<fp> uv;
+
+        static const int uv_scale = 1;
+
+        void toPerspectiveCorrect()
+        {
+            pos.w = pScaledReciprocal(8, pos.w);
+
+            uv.x = uv.x * pos.w;
+            uv.y = uv.y * pos.w;
+        }
     };
 
     class Triangle3d
@@ -64,6 +74,7 @@ namespace P3D
         V3<fp> pos = V3<fp>(0,0,0);
         std::vector<Mesh3d*> mesh;
         unsigned int vertex_id_count = 0;
+        unsigned int colormap[256];
     };
 
     class AABB
@@ -186,11 +197,19 @@ namespace P3D
         unsigned int span_count;
     } RenderStats;
 
-    typedef enum RenderFlags
+    typedef enum RenderFlags : unsigned int
     {
         NoFlags = 0u,
         NoBackfaceCull = 4u,
+        AlphaTest = 8u,
+        PerspectiveCorrect = 16u,
+        AutoPerspectiveCorrect = 32u,
     } RenderFlags;
+
+    constexpr enum RenderFlags operator | ( const enum RenderFlags oldVal, const enum RenderFlags orVal )
+    {
+        return (enum RenderFlags)( (unsigned int)oldVal | (unsigned int)orVal);
+    }
 
     typedef struct BspPlane
     {
