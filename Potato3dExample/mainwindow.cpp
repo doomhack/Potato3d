@@ -30,7 +30,6 @@ MainWindow::MainWindow(QWidget *parent)
     //P3D::Model3d* runway = LoadObjFile(":/models/temple.obj", ":/models/temple.mtl");
     //P3D::Model3d* runway = LoadObjFile(":/models/Mk64Beach/Mk64Kb.obj", ":/models/Mk64Beach/Mk64Kb.mtl");
     P3D::Model3d* runway = LoadObjFile(":/models/Streets/Streets.obj", ":/models/Streets/Streets.mtl");
-    //P3D::Model3d* runway = LoadObjFile(":/models/DOOM_E1M1/doom_E1M1.obj", ":/models/DOOM_E1M1/doom_E1M1.mtl");
 
 
     P3D::Bsp3d* bsp = new P3D::Bsp3d;
@@ -287,6 +286,7 @@ P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
     qDebug() << p.readAll();
 
     QImage* allTex256 = new QImage("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\allTex-WUquant256.png");
+    //QImage* allTex256 = new QImage("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\allTex-WUquant128.png");
 
     for(int i =0; i < numTextures; i++)
     {

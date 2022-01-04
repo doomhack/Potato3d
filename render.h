@@ -8,8 +8,8 @@ namespace P3D
 {
     typedef struct TriEdgeTrace
     {
-        fp x_left, x_right;
-        unsigned int uv_left;
+        fp x_left, x_right, w_left;
+        fp u_left, v_left;
         pixel* fb_ypos;
     } TriEdgeTrace;
 
@@ -17,13 +17,13 @@ namespace P3D
     {
         fp u;
         fp v;
-        unsigned int uv;
+        fp w;
     } TriDrawXDeltaZWUV;
 
     typedef struct TriDrawYDeltaZWUV
     {
         fp x_left, x_right;
-        unsigned int uv;
+        fp u, v, w;
     } TriDrawYDeltaZWUV;
 
     typedef enum MatrixType
@@ -89,6 +89,7 @@ namespace P3D
         void DrawSpan(TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color, const RenderFlags flags);
 
         void DrawTriangleScanlineAffine(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture);
+        void DrawTriangleScanlinePerspectiveCorrect(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture);
 
 
         inline void DrawScanlinePixelLinearPair(pixel *fb, const pixel* texels, const unsigned int uv1, const unsigned int uv2);

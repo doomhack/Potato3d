@@ -7,7 +7,7 @@ namespace P3D
 {
     Object3d::Object3d()
     {
-        renderFlags = (RenderFlags)(0);
+        renderFlags = AutoPerspectiveCorrect;
     }
 
     Object3d::Object3d(Render* render)
@@ -139,6 +139,7 @@ namespace P3D
             }
 
             render->DrawTriangle(&tri->tri, tex, tri->color, renderFlags);
+            //render->DrawTriangle(&tri->tri, nullptr, tri->color, renderFlags);
         }
 
         tris.clear();
