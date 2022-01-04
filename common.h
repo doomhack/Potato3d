@@ -18,6 +18,7 @@ namespace P3D
     #define USE_VERTEX_CACHE
     #define VERTEX_CACHE_SIZE 4096u
 
+    #define PERSPECTIVE_CORRECT_Z_DELTA_THREASHOLD (fp(0.03f))
 
     //#define USE_FLOAT
 

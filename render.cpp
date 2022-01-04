@@ -365,6 +365,9 @@ namespace P3D
         if(vxCount < 3)
             return;
 
+        fp min_z = fp::max();
+        fp max_z = fp::min();
+
         for(int i = 0; i < vxCount; i++)
         {
             clipSpacePoints[i].pos.ToScreenSpace();
@@ -372,7 +375,13 @@ namespace P3D
             clipSpacePoints[i].pos.x = fracToX(clipSpacePoints[i].pos.x);
             clipSpacePoints[i].pos.y = fracToY(clipSpacePoints[i].pos.y);
 
-            if( (flags & AutoPerspectiveCorrect) && (clipSpacePoints[i].pos.w < 512) )
+            min_z = pMin(clipSpacePoints[i].pos.z, min_z);
+            max_z = pMax(clipSpacePoints[i].pos.z, max_z);
+        }
+
+        if(f & AutoPerspectiveCorrect)
+        {
+            if((max_z - min_z) > PERSPECTIVE_CORRECT_Z_DELTA_THREASHOLD)
             {
                 f = (f | PerspectiveCorrect);
             }
@@ -395,11 +404,14 @@ namespace P3D
 
         SortPointsByY(screenSpacePoints, points);
 
-        if(flags & PerspectiveCorrect)
+        if(texture)
         {
-            points[0].toPerspectiveCorrect();
-            points[1].toPerspectiveCorrect();
-            points[2].toPerspectiveCorrect();
+            if(flags & PerspectiveCorrect)
+            {
+                points[0].toPerspectiveCorrect();
+                points[1].toPerspectiveCorrect();
+                points[2].toPerspectiveCorrect();
+            }
         }
 
         if(points[1].pos.y == points[2].pos.y)
@@ -425,7 +437,7 @@ namespace P3D
             triangle[1] = points[1];
 
             //x pos
-            triangle[2].pos.x = pRound(pLerp(points[0].pos.x, points[2].pos.x, splitFrac));
+            triangle[2].pos.x = pLerp(points[0].pos.x, points[2].pos.x, splitFrac);
             triangle[2].pos.y = points[1].pos.y;
 
             if(texture)
@@ -435,7 +447,6 @@ namespace P3D
                 triangle[2].uv.y = pLerp(points[0].uv.y, points[2].uv.y, splitFrac);
 
                 triangle[2].pos.w = pLerp(points[0].pos.w, points[2].pos.w, splitFrac);
-
             }
 
             triangle[3] = points[2];
@@ -514,8 +525,8 @@ namespace P3D
         if((top.pos.x >= fb_x && left.pos.x >= fb_x) || (right.pos.x < 0 && top.pos.x < 0))
             return;
 
-        int yStart = (int)(top.pos.y);
-        int yEnd =   (int)(left.pos.y);
+        int yStart = top.pos.y;
+        int yEnd =   left.pos.y;
 
         if(yEnd < 0 || yStart > fbSize.y)
             return;
@@ -580,8 +591,8 @@ namespace P3D
         if((bottom.pos.x >= fb_x && left.pos.x >= fb_x) || (right.pos.x < 0 && bottom.pos.x < 0))
             return;
 
-        int yStart = (int)(left.pos.y);
-        int yEnd = (int)(bottom.pos.y);
+        int yStart = left.pos.y;
+        int yEnd = bottom.pos.y;
 
         if(yEnd > fbSize.y)
             yEnd = fbSize.y;
@@ -596,6 +607,7 @@ namespace P3D
             GetTriangleLerpDeltasZWUV(left, right, bottom, x_delta, y_delta);
         else
             GetTriangleLerpDeltasZ(left, right, bottom, y_delta);
+
 
         pos.fb_ypos = &frameBuffer[yStart * fb_x];
 
@@ -679,24 +691,20 @@ namespace P3D
         unsigned int count = (x_end - x_start) + 1;
 
         fp u = pos.u_left, v = pos.v_left, w = pos.w_left;
-        fp du = delta.u, dv = delta.v, dw = delta.w;
 
         pixel* fb = pos.fb_ypos + x_start;
 
         fp invw_0 = pReciprocal(w);
-        fp invw_15 = pReciprocal(w += (pASL(dw, 4)));
+        fp invw_15 = pReciprocal(w += (pASL(delta.w, 4)));
 
         fp u0 = u * invw_0;
-        fp u15 = (u += (pASL(du, 4))) * invw_15;
+        fp u15 = (u += (pASL(delta.u, 4))) * invw_15;
 
         fp v0 = v * invw_0;
-        fp v15 = (v += (pASL(dv, 4))) * invw_15;
-
-        fp du16 = pASR(u15-u0, 4);
-        fp dv16 = pASR(v15-v0, 4);
+        fp v15 = (v += (pASL(delta.v, 4))) * invw_15;
 
         unsigned int uv = PackUV(u0, v0);
-        unsigned int duv = PackUV(du16, dv16);
+        unsigned int duv = PackUV(pASR(u15-u0, 4), pASR(v15-v0, 4));
 
         const pixel* t_pxl = texture->pixels;
 
@@ -723,19 +731,16 @@ namespace P3D
             DrawScanlinePixelLinearPair(fb, t_pxl, uv, uv+duv); fb+=2;
 
             invw_0 = pReciprocal(w);
-            invw_15 = pReciprocal(w += (pASL(dw, 4)));
+            invw_15 = pReciprocal(w += (pASL(delta.w, 4)));
 
             u0 = u * invw_0;
-            u15 = (u += (pASL(du, 4))) * invw_15;
+            u15 = (u += (pASL(delta.u, 4))) * invw_15;
 
             v0 = v * invw_0;
-            v15 = (v += (pASL(dv, 4))) * invw_15;
-
-            du16 = pASR(u15-u0, 4);
-            dv16 = pASR(v15-v0, 4);
+            v15 = (v += (pASL(delta.v, 4))) * invw_15;
 
             uv = PackUV(u0, v0);
-            duv = PackUV(du16, dv16);
+            duv = PackUV(pASR(u15-u0, 4), pASR(v15-v0, 4));
         }
 
         unsigned int r = ((count & 15) >> 1);
@@ -913,7 +918,6 @@ namespace P3D
 
         x_delta.w = (right.pos.w - left.pos.w) * inv_x;
 
-
         y_delta.x_left = (left.pos.x - other.pos.x) * inv_y;
         y_delta.x_right = (right.pos.x - other.pos.x) * inv_y;
 
@@ -943,7 +947,7 @@ namespace P3D
     {
         fp halfFbX = fbSize.x >> 1;
 
-        return pRound((halfFbX * frac) + halfFbX);
+        return ((halfFbX * frac) + halfFbX);
     }
 
     RenderStats Render::GetRenderStats()
