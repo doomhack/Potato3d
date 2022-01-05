@@ -216,6 +216,26 @@ namespace P3D
         V3<fp> normal;
         fp plane;
     } BspPlane;
+
+    typedef struct TriEdgeTrace
+    {
+        fp x_left, x_right, w_left;
+        fp u_left, v_left;
+        pixel* fb_ypos;
+    } TriEdgeTrace;
+
+    typedef struct TriDrawXDeltaZWUV
+    {
+        fp u;
+        fp v;
+        fp w;
+    } TriDrawXDeltaZWUV;
+
+    typedef struct TriDrawYDeltaZWUV
+    {
+        fp x_left, x_right;
+        fp u, v, w;
+    } TriDrawYDeltaZWUV;
 }
 
 #endif // RTYPES_H

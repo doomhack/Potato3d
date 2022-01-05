@@ -6,26 +6,6 @@
 
 namespace P3D
 {
-    typedef struct TriEdgeTrace
-    {
-        fp x_left, x_right, w_left;
-        fp u_left, v_left;
-        pixel* fb_ypos;
-    } TriEdgeTrace;
-
-    typedef struct TriDrawXDeltaZWUV
-    {
-        fp u;
-        fp v;
-        fp w;
-    } TriDrawXDeltaZWUV;
-
-    typedef struct TriDrawYDeltaZWUV
-    {
-        fp x_left, x_right;
-        fp u, v, w;
-    } TriDrawYDeltaZWUV;
-
     typedef enum MatrixType
     {
         Model,
@@ -87,22 +67,6 @@ namespace P3D
         void DrawTriangleBottom(const Vertex2d points[], const Texture *texture, const pixel color, const RenderFlags flags);
 
         void DrawSpan(TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color, const RenderFlags flags);
-
-        void DrawTriangleScanlineAffine(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture);
-        void DrawTriangleScanlinePerspectiveCorrect(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture);
-
-
-        inline void DrawScanlinePixelLinearPair(pixel *fb, const pixel* texels, const unsigned int uv1, const unsigned int uv2);
-        inline void DrawScanlinePixelLinearLowByte(pixel* fb, const pixel* texels, const unsigned int uv);
-        inline void DrawScanlinePixelLinearHighByte(pixel* fb, const pixel* texels, const unsigned int uv);
-
-
-        void DrawTriangleSplitFlat(const Vertex2d points[], const pixel color);
-        void DrawTriangleTopFlat(const Vertex2d points[], const pixel color);
-        void DrawTriangleBottomFlat(const Vertex2d points[3], const pixel color);
-        void DrawTriangleScanlineFlat(const TriEdgeTrace& pos, const pixel color);
-
-
 
         void SortPointsByY(Vertex2d pointsIn[], Vertex2d pointsOut[]);
 

@@ -22,6 +22,9 @@ SOURCES += \
     ../bspmodel.cpp \
     ../object3d.cpp \
     ../render.cpp \
+    ../render_cores/affine.cpp \
+    ../render_cores/flat.cpp \
+    ../render_cores/perspective.cpp \
     bsp3d.cpp \
     main.cpp \
     mainwindow.cpp
@@ -41,6 +44,8 @@ HEADERS += \
     ../object3d.h \
     ../potato3d.h \
     ../render.h \
+    ../render_cores/cores.h \
+    ../render_cores/pixels.h \
     ../rtypes.h \
     bsp3d.h \
     mainwindow.h \
