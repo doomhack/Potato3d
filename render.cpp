@@ -5,6 +5,14 @@
 
 namespace P3D
 {
+#ifdef __arm__
+    unsigned int core_loop_buff[512];
+    typedef void (*RenderFnPtr) (const TriEdgeTrace&, const TriDrawXDeltaZWUV&, const Texture*);
+
+    RenderFnPtr current_fn = nullptr;
+    RenderFnPtr loop_fn_ptr = (RenderFnPtr)core_loop_buff;
+#endif
+
     Render::Render()
     {
         frameBuffer = nullptr;
@@ -677,10 +685,28 @@ namespace P3D
         }
         else
         {
+#ifdef __arm__
+            RenderFnPtr f = nullptr;
+
+            if(flags & PerspectiveCorrect)
+                f = &DrawTriangleScanlinePerspectiveCorrect;
+            else
+                f = DrawTriangleScanlineAffine;
+
+            if(f != current_fn)
+            {
+                FastCopy32(core_loop_buff, (unsigned int*)f, 2048);
+                current_fn = f;
+            }
+
+            loop_fn_ptr(pos, delta, texture);
+#else
             if(flags & PerspectiveCorrect)
                 DrawTriangleScanlinePerspectiveCorrect(pos, delta, texture);
             else
                 DrawTriangleScanlineAffine(pos, delta, texture);
+
+#endif
         }
 
 #ifdef RENDER_STATS
