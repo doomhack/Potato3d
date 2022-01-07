@@ -128,8 +128,6 @@ namespace P3D
 
         M4<fp> modelMatrix;
         M4<fp> viewMatrix;
-
-
         M4<fp> projectionMatrix;
         M4<fp> viewProjectionMatrix; //P*V
 

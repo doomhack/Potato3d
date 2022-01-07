@@ -467,13 +467,11 @@ namespace P3D
 
         constexpr void perspective(T verticalAngle, T aspectRatio, T nearPlane, T farPlane)
         {
-            // Bail out if the projection volume is zero-sized.
             if (nearPlane == farPlane || aspectRatio == 0)
                 return;
 
             SetFlag(Updated);
 
-            // Construct the projection.
             M4 m;
             float radians = pD2R(verticalAngle / 2);
             float sine = std::sin(radians);
@@ -505,7 +503,36 @@ namespace P3D
             m.m[2][3] = -1;
             m.m[3][3] = 0;
 
-            // Apply the projection.
+            *this *= m;
+        }
+
+        constexpr void orthographic(T left, T right, T bottom, T top, T nearPlane, T farPlane)
+        {
+            if (left == right || bottom == top || nearPlane == farPlane)
+                return;
+
+            T width = right - left;
+            T invheight = top - bottom;
+            T clip = farPlane - nearPlane;
+
+            M4 m;
+            m.m[0][0] = 2.0f / (float)width;
+            m.m[1][0] = 0;
+            m.m[2][0] = 0;
+            m.m[3][0] = -(float)(left + right) / (float)width;
+            m.m[0][1] = 0;
+            m.m[1][1] = 2.0f / (float)invheight;
+            m.m[2][1] = 0;
+            m.m[3][1] = -(float)(top + bottom) / (float)invheight;
+            m.m[0][2] = 0;
+            m.m[1][2] = 0;
+            m.m[2][2] = -2.0f / (float)clip;
+            m.m[3][2] = -(float)(nearPlane + farPlane) / (float)clip;
+            m.m[0][3] = 0;
+            m.m[1][3] = 0;
+            m.m[2][3] = 0;
+            m.m[3][3] = 1;
+
             *this *= m;
         }
 
