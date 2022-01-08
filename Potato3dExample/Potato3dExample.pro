@@ -19,6 +19,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     ../3dmaths/recip.cpp \
+    ../RenderDevice.cpp \
     ../RenderTarget.cpp \
     ../bspmodel.cpp \
     ../object3d.cpp \
