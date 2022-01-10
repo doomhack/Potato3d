@@ -27,8 +27,10 @@ namespace P3D
 
     #ifdef USE_FLOAT
         typedef double fp;
+        typedef fp z_val;
     #else
         typedef FP fp;
+        typedef unsigned short z_val;
     #endif
 
 }

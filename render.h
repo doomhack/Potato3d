@@ -86,7 +86,7 @@ namespace P3D
         void DrawTriangleTop(const Vertex2d points[], const Texture *texture, const pixel color, const RenderFlags flags);
         void DrawTriangleBottom(const Vertex2d points[], const Texture *texture, const pixel color, const RenderFlags flags);
 
-        void DrawSpan(TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color, const RenderFlags flags);
+        void DrawSpan(const TriEdgeTrace &pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color, const RenderFlags flags);
 
         void DrawTriangleScanlineAffine(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture);
         void DrawTriangleScanlinePerspectiveCorrect(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture);
@@ -128,8 +128,6 @@ namespace P3D
 
         M4<fp> modelMatrix;
         M4<fp> viewMatrix;
-
-
         M4<fp> projectionMatrix;
         M4<fp> viewProjectionMatrix; //P*V
 

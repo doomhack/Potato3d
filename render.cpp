@@ -514,7 +514,7 @@ namespace P3D
 
         TriEdgeTrace pos;
         TriDrawXDeltaZWUV x_delta;
-        TriDrawYDeltaZWUV y_delta, y_delta_sum = {0,0,0,0,0};
+        TriDrawYDeltaZWUV y_delta;
 
         const Vertex2d& top     = points[0];
         const Vertex2d& left    = (points[1].pos.x < points[2].pos.x) ? points[1] : points[2];
@@ -525,8 +525,8 @@ namespace P3D
         if((top.pos.x >= fb_x && left.pos.x >= fb_x) || (right.pos.x < 0 && top.pos.x < 0))
             return;
 
-        int yStart = top.pos.y;
-        int yEnd =   left.pos.y;
+        int yStart = (top.pos.y);
+        int yEnd =   (left.pos.y);
 
         if(yEnd < 0 || yStart >= fbSize.y)
             return;
@@ -543,27 +543,25 @@ namespace P3D
             GetTriangleLerpDeltasZ(left, right, top, y_delta);
 
         pos.fb_ypos = &frameBuffer[yStart * fb_x];
+        pos.x_left = top.pos.x;
+        pos.x_right = top.pos.x;
+        pos.w_left = top.pos.w;
+        pos.u_left = top.uv.x;
+        pos.v_left = top.uv.y;
 
         for(int y = yStart; y < yEnd; y++)
         {
-            pos.x_left = top.pos.x + y_delta_sum.x_left;
-            pos.x_right = top.pos.x + y_delta_sum.x_right;
+            DrawSpan(pos, x_delta, texture, color, flags);
 
-            y_delta_sum.x_left += pASR(y_delta.x_left, 4);
-            y_delta_sum.x_right += pASR(y_delta.x_right, 4);
+            pos.x_left += y_delta.x_left;
+            pos.x_right += y_delta.x_right;
 
             if(texture)
             {
-                pos.u_left = top.uv.x + pASR(y_delta_sum.u, 4);
-                pos.v_left = top.uv.y + pASR(y_delta_sum.v, 4);
-                pos.w_left = top.pos.w + pASR(y_delta_sum.w, 4);
-
-                y_delta_sum.u += y_delta.u;
-                y_delta_sum.v += y_delta.v;
-                y_delta_sum.w += y_delta.w;
+                pos.u_left += y_delta.u;
+                pos.v_left += y_delta.v;
+                pos.w_left += y_delta.w;
             }
-
-            DrawSpan(pos, x_delta, texture, color, flags);
 
             pos.fb_ypos += fb_x;
         }
@@ -591,8 +589,8 @@ namespace P3D
         if((bottom.pos.x >= fb_x && left.pos.x >= fb_x) || (right.pos.x < 0 && bottom.pos.x < 0))
             return;
 
-        int yStart = left.pos.y;
-        int yEnd = bottom.pos.y;
+        int yStart = (left.pos.y);
+        int yEnd = (bottom.pos.y);
 
         if(yEnd > fbSize.y)
             yEnd = fbSize.y;
@@ -610,27 +608,25 @@ namespace P3D
 
 
         pos.fb_ypos = &frameBuffer[yStart * fb_x];
+        pos.x_left = left.pos.x;
+        pos.x_right = right.pos.x;
+        pos.w_left = left.pos.w;
+        pos.u_left = left.uv.x;
+        pos.v_left = left.uv.y;
 
         for (int y = yStart; y < yEnd; y++)
         {
-            pos.x_left = left.pos.x + pASR(y_delta_sum.x_left, 4);
-            pos.x_right = right.pos.x + pASR(y_delta_sum.x_right, 4);
+            DrawSpan(pos, x_delta, texture, color, flags);
 
-            y_delta_sum.x_left += y_delta.x_left;
-            y_delta_sum.x_right += y_delta.x_right;
+            pos.x_left += y_delta.x_left;
+            pos.x_right += y_delta.x_right;
 
             if(texture)
             {
-                pos.u_left = left.uv.x + pASR(y_delta_sum.u, 4);
-                pos.v_left = left.uv.y + pASR(y_delta_sum.v, 4);
-                pos.w_left = left.pos.w + pASR(y_delta_sum.w, 4);
-
-                y_delta_sum.u += y_delta.u;
-                y_delta_sum.v += y_delta.v;
-                y_delta_sum.w += y_delta.w;
+                pos.u_left += y_delta.u;
+                pos.v_left += y_delta.v;
+                pos.w_left += y_delta.w;
             }
-
-            DrawSpan(pos, x_delta, texture, color, flags);
 
             pos.fb_ypos += fb_x;
         }
@@ -641,8 +637,10 @@ namespace P3D
 
     }
 
-    void Render::DrawSpan(TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color, const RenderFlags flags)
+    void Render::DrawSpan(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const Texture* texture, const pixel color, const RenderFlags flags)
     {
+        TriEdgeTrace span_pos;
+
         const int fb_width = fbSize.x;
 
         int x_start = pRound(pos.x_left);
@@ -661,24 +659,25 @@ namespace P3D
         {
             fp preStepX = (fp(x_start) - pos.x_left);
 
-            pos.u_left += pASR(delta.u * preStepX, 4);
-            pos.v_left += pASR(delta.v * preStepX, 4);
-            pos.w_left += pASR(delta.w * preStepX, 4);
+            span_pos.u_left = pos.u_left + (delta.u * preStepX);
+            span_pos.v_left = pos.v_left + (delta.v * preStepX);
+            span_pos.w_left = pos.w_left + (delta.w * preStepX);
         }
 
-        pos.x_left = x_start;
-        pos.x_right = x_end;
+        span_pos.x_left = x_start;
+        span_pos.x_right = x_end;
+        span_pos.fb_ypos = pos.fb_ypos;
 
         if(!texture)
         {
-            DrawTriangleScanlineFlat(pos, color);
+            DrawTriangleScanlineFlat(span_pos, color);
         }
         else
         {
             if(flags & PerspectiveCorrect)
-                DrawTriangleScanlinePerspectiveCorrect(pos, delta, texture);
+                DrawTriangleScanlinePerspectiveCorrect(span_pos, delta, texture);
             else
-                DrawTriangleScanlineAffine(pos, delta, texture);
+                DrawTriangleScanlineAffine(span_pos, delta, texture);
         }
     }
 
@@ -695,13 +694,13 @@ namespace P3D
         pixel* fb = pos.fb_ypos + x_start;
 
         fp invw_0 = pReciprocal(w);
-        fp invw_15 = pReciprocal(w += delta.w);
+        fp invw_15 = pReciprocal(w += pASL(delta.w, 4));
 
         fp u0 = u * invw_0;
-        fp u15 = (u += delta.u) * invw_15;
+        fp u15 = (u += pASL(delta.u, 4)) * invw_15;
 
         fp v0 = v * invw_0;
-        fp v15 = (v += delta.v) * invw_15;
+        fp v15 = (v += pASL(delta.v,4)) * invw_15;
 
         unsigned int uv = PackUV(u0, v0);
         unsigned int duv = PackUV(pASR(u15-u0, 4), pASR(v15-v0, 4));
@@ -731,13 +730,13 @@ namespace P3D
             DrawScanlinePixelLinearPair(fb, t_pxl, uv, uv+duv); fb+=2;
 
             invw_0 = pReciprocal(w);
-            invw_15 = pReciprocal(w += delta.w);
+            invw_15 = pReciprocal(w += pASL(delta.w, 4));
 
             u0 = u * invw_0;
-            u15 = (u += delta.u) * invw_15;
+            u15 = (u += pASL(delta.u, 4)) * invw_15;
 
             v0 = v * invw_0;
-            v15 = (v += delta.v) * invw_15;
+            v15 = (v += pASL(delta.v,4)) * invw_15;
 
             uv = PackUV(u0, v0);
             duv = PackUV(pASR(u15-u0, 4), pASR(v15-v0, 4));
@@ -770,7 +769,7 @@ namespace P3D
         pixel* fb = pos.fb_ypos + x_start;
 
         unsigned int uv = PackUV(pos.u_left, pos.v_left);
-        unsigned int duv = PackUV(pASR(delta.u, 4), pASR(delta.v, 4));
+        unsigned int duv = PackUV(delta.u, delta.v);
 
         const pixel* t_pxl = texture->pixels;
 
@@ -909,8 +908,8 @@ namespace P3D
 
     void Render::GetTriangleLerpDeltasZWUV(const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, TriDrawXDeltaZWUV& x_delta, TriDrawYDeltaZWUV &y_delta)
     {
-        fp inv_y = pScaledReciprocal(4, left.pos.y - other.pos.y);
-        fp inv_x = pScaledReciprocal(4, (right.pos.x - left.pos.x) + 1);
+        fp inv_y = pReciprocal(left.pos.y - other.pos.y);
+        fp inv_x = pReciprocal((right.pos.x - left.pos.x) + 1);
 
         x_delta.u = (right.uv.x - left.uv.x) * inv_x;
         x_delta.v = (right.uv.y - left.uv.y) * inv_x;
@@ -928,7 +927,7 @@ namespace P3D
 
     void Render::GetTriangleLerpDeltasZ(const Vertex2d& left, const Vertex2d& right, const Vertex2d& other, TriDrawYDeltaZWUV &y_delta)
     {
-        fp inv_y = pScaledReciprocal(4, left.pos.y - other.pos.y);
+        fp inv_y = pReciprocal(left.pos.y - other.pos.y);
 
         y_delta.x_left = (left.pos.x - other.pos.x) * inv_y;
         y_delta.x_right = (right.pos.x - other.pos.x) * inv_y;
