@@ -218,9 +218,9 @@ namespace P3D
     {
         TransformedTriangle tri;
 
-        tri.verts->pos = transformed_vertexes[indexes[0]];
-        tri.verts->pos = transformed_vertexes[indexes[1]];
-        tri.verts->pos = transformed_vertexes[indexes[2]];
+        tri.verts[0].pos = transformed_vertexes[indexes[0]];
+        tri.verts[1].pos = transformed_vertexes[indexes[1]];
+        tri.verts[2].pos = transformed_vertexes[indexes[2]];
 
         if(current_material->type == Material::Texture)
         {

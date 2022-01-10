@@ -68,7 +68,7 @@ namespace P3D
     class TransformedTriangle
     {
     public:
-        Vertex4d verts[3];
+        Vertex4d verts[8];
     };
 
 

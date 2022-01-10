@@ -1,3 +1,4 @@
+
 #include "mainwindow2.h"
 
 #include <QtCore>
@@ -65,9 +66,9 @@ void MainWindow2::paintEvent(QPaintEvent *event)
     render_device->BeginFrame();
 
     P3D::V3<P3D::fp> v[3];
-    v[0] = P3D::V3<P3D::fp>(-100,100,-100);
-    v[1] = P3D::V3<P3D::fp>(100,100,-100);
-    v[2] = P3D::V3<P3D::fp>(100,-100,-100);
+    v[0] = P3D::V3<P3D::fp>(-100,100,-500);
+    v[1] = P3D::V3<P3D::fp>(100,100,-500);
+    v[2] = P3D::V3<P3D::fp>(100,-100,-500);
 
     render_device->DrawTriangle(v);
 

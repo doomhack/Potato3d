@@ -512,8 +512,10 @@ namespace P3D
             }
         }
 
-        void DrawSpan(TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta)
+        void DrawSpan(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta)
         {
+            TriEdgeTrace span_pos;
+
             const int fb_width = current_viewport->width;
 
             int x_start = pRound(pos.x_left);
@@ -532,17 +534,18 @@ namespace P3D
             {
                 fp preStepX = (fp(x_start) - pos.x_left);
 
-                pos.u_left += delta.u * preStepX;
-                pos.v_left += delta.v * preStepX;
+                span_pos.u_left = pos.u_left + (delta.u * preStepX);
+                span_pos.u_left = pos.v_left + (delta.v * preStepX);
 
                 if constexpr (render_flags & PerspectiveMapping)
                 {
-                    pos.w_left += delta.w * preStepX;
+                    span_pos.u_left = pos.w_left + (delta.w * preStepX);
                 }
             }
 
-            pos.x_left = x_start;
-            pos.x_right = x_end;
+            span_pos.x_left = x_start;
+            span_pos.x_right = x_end;
+            span_pos.fb_ypos = pos.fb_ypos;
 
             if(current_material->type == Material::Color)
             {
