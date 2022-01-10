@@ -549,7 +549,7 @@ namespace P3D
 
             if(current_material->type == Material::Color)
             {
-                DrawTriangleScanlineFlat(pos, current_material->color);
+                DrawTriangleScanlineFlat(span_pos, current_material->color);
             }
             else
             {
@@ -557,11 +557,11 @@ namespace P3D
 
                 if constexpr (render_flags & PerspectiveMapping)
                 {
-                    DrawTriangleScanlinePerspectiveCorrect(pos, delta, texture);
+                    DrawTriangleScanlinePerspectiveCorrect(span_pos, delta, texture);
                 }
                 else
                 {
-                    DrawTriangleScanlineAffine(pos, delta, texture);
+                    DrawTriangleScanlineAffine(span_pos, delta, texture);
                 }
             }
         }
