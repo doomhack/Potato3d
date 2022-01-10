@@ -69,7 +69,7 @@ namespace P3D
         return true;
     }
 
-    bool RenderTarget::RemoveColorBuffer()
+    void RenderTarget::RemoveColorBuffer()
     {
         if(owned_color_buffer)
             delete[] color_buffer;
@@ -78,7 +78,7 @@ namespace P3D
         owned_color_buffer = 0;
     }
 
-    bool RenderTarget::RemoveZBuffer()
+    void RenderTarget::RemoveZBuffer()
     {
         if(owned_z_buffer)
             delete[] z_buffer;

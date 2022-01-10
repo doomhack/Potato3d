@@ -2,6 +2,7 @@
 #define UTILS_H
 
 #include <cmath>
+#include <cstring>
 #include "fp.h"
 #include "recip.h"
 

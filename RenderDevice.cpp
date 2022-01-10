@@ -4,6 +4,10 @@ namespace P3D
 {
     RenderDevice::RenderDevice()
     {
+        texture_cache = new TextureCacheBase();
+
+        current_material = new Material();
+
         PushMatrix();
     }
 
@@ -48,11 +52,23 @@ namespace P3D
         }
     }
 
+    void RenderDevice::SetRenderFlags(RenderFlagsBase* flags_ptr)
+    {
+        if(render_flags_base != nullptr)
+            delete render_flags_base;
+
+        triangle_render = flags_ptr->GetRender();
+        render_flags_base = flags_ptr;
+    }
+
     //Matrix
     void RenderDevice::SetPerspective(fp vertical_fov, fp aspect_ratio, fp z_near, fp z_far)
     {
         projection_matrix.setToIdentity();
         projection_matrix.perspective(vertical_fov, aspect_ratio, z_near, z_far);
+
+        z_planes.z_near = z_near;
+        z_planes.z_far = z_far;
     }
 
     void RenderDevice::SetOrthographic(fp left, fp right, fp bottom, fp top, fp z_near, fp z_far)
@@ -121,7 +137,7 @@ namespace P3D
     {
         for(unsigned int y = 0; y < render_target->GetHeight(); y++)
         {
-            pixel* p = (y * render_target->GetColorBufferYPitch());
+            pixel* p = &render_target->GetColorBuffer()[y * render_target->GetColorBufferYPitch()];
 
             for(unsigned int x = 0; x < render_target->GetWidth(); x++)
             {
@@ -134,18 +150,13 @@ namespace P3D
     {
         for(unsigned int y = 0; y < render_target->GetHeight(); y++)
         {
-            z_val* z = (y * render_target->GetZBufferYPitch());
+            z_val* z = &render_target->GetZBuffer()[y * render_target->GetZBufferYPitch()];
 
             for(unsigned int x = 0; x < render_target->GetWidth(); x++)
             {
                 z[x] = depth;
             }
         }
-    }
-
-    void RenderDevice::SetRenderType(RenderType type)
-    {
-        render_type = type;
     }
 
     //Begin/End Frame.
@@ -159,31 +170,33 @@ namespace P3D
 
     }
 
-    //Draw Objects.
-    void RenderDevice::DrawTriangle(const V3<fp> vertexes[3], const V2<fp> uvs[3], const pixel* texture, pixel color)
+    //Texture cache
+    void RenderDevice::SetTextureCache(TextureCacheBase* cache)
     {
-        DrawPolygon(vertexes, uvs, 3, texture, color);
+        if(texture_cache)
+            delete texture_cache;
+
+        texture_cache = cache;
     }
 
-    void RenderDevice::DrawPolygon(const V3<fp>* vertexes, const V2<fp>* uvs, const unsigned int count, const pixel* texture, pixel color)
+    void RenderDevice::SetMaterial(const Material& material, signed char importance)
     {
-        TransformVertexes(vertexes, count);
+        current_material = &material;
 
-        unsigned int indexes[count];
-
-        for(unsigned int i = 0; i < count; i++)
+        if(material.type == Material::Texture)
         {
-            indexes[i] = i;
+            texture_cache->AddTexture(material.pixels, importance);
         }
+    }
 
-        RenderVertexBuffer rvb;
-        rvb.vertex_indexes = indexes;
-        rvb.uvs = uvs;
-        rvb.count = count;
-        rvb.texture = texture;
-        rvb.color = color;
+    //Draw Objects.
+    void RenderDevice::DrawTriangle(const V3<fp> vertexes[3], const V2<fp> uvs[3])
+    {
+        TransformVertexes(vertexes, 3);
 
-        DrawPolygon(rvb);
+        int indexes[3] = {0,1,2};
+
+        DrawTriangle(indexes, uvs);
     }
 
     void RenderDevice::TransformVertexes(const V3<fp>* vertexes, const unsigned int count)
@@ -191,7 +204,7 @@ namespace P3D
         if(transformed_vertexes_buffer_count < count)
         {
             delete[] transformed_vertexes;
-            transformed_vertexes = new V4<fp>[count];
+            transformed_vertexes = new V4<fp>[count]; //+5 is extra vertexs created by clipping.
             transformed_vertexes_buffer_count = count;
         }
 
@@ -201,158 +214,21 @@ namespace P3D
         }
     }
 
-    void RenderDevice::DrawPolygon(const RenderVertexBuffer& render_buffer)
+    void RenderDevice::DrawTriangle(const int indexes[3], const V2<fp> uvs[3])
     {
-        unsigned int clip_planes = GetClipPlanesForPolygon(render_buffer.vertex_indexes);
+        TransformedTriangle tri;
 
-        if(clip_planes == Reject)
-            return;
+        tri.verts->pos = transformed_vertexes[indexes[0]];
+        tri.verts->pos = transformed_vertexes[indexes[1]];
+        tri.verts->pos = transformed_vertexes[indexes[2]];
 
-        if(clip_planes == NoClip)
+        if(current_material->type == Material::Texture)
         {
-
-        }
-        else
-        {
-
-        }
-    }
-
-    unsigned int RenderDevice::GetClipPlanesForPolygon(unsigned int* vertex_indexes, unsigned int count)
-    {
-        unsigned int clip = NoClip;
-
-        bool reject = true;
-        for(unsigned int i = 0; i < count; i++)
-        {
-            if(transformed_vertexes[vertex_indexes[i]].w > z_planes.z_near)
-            {
-                reject = false;
-                break;
-            }
+            tri.verts[0].uv =  uvs[0];
+            tri.verts[1].uv =  uvs[1];
+            tri.verts[2].uv =  uvs[2];
         }
 
-        if(reject)
-            return Reject;
-
-        reject = true;
-        for(unsigned int i = 0; i < count; i++)
-        {
-            if(transformed_vertexes[vertex_indexes[i]].w < z_planes.z_far)
-            {
-                reject = false;
-                break;
-            }
-        }
-
-        if(reject)
-            return Reject;
-
-        for(unsigned int i = 0; i < count; i++)
-        {
-            if(transformed_vertexes[vertex_indexes[i]].w < z_planes.z_near)
-            {
-                clip |= W_Near;
-                break;
-            }
-        }
-
-
-        reject = true;
-        for(unsigned int i = 0; i < count; i++)
-        {
-            if(transformed_vertexes[vertex_indexes[i]].x < transformed_vertexes[vertex_indexes[i]].w)
-            {
-                reject = false;
-                break;
-            }
-        }
-
-        if(reject)
-            return Reject;
-
-        reject = true;
-        for(unsigned int i = 0; i < count; i++)
-        {
-            if(-transformed_vertexes[vertex_indexes[i]].x < transformed_vertexes[vertex_indexes[i]].w)
-            {
-                reject = false;
-                break;
-            }
-        }
-
-        if(reject)
-            return Reject;
-
-
-        for(unsigned int i = 0; i < count; i++)
-        {
-            if(transformed_vertexes[vertex_indexes[i]].x > transformed_vertexes[vertex_indexes[i]].w)
-            {
-                clip |= X_W_Right;
-                break;
-            }
-        }
-
-        for(unsigned int i = 0; i < count; i++)
-        {
-            if(-transformed_vertexes[vertex_indexes[i]].x > transformed_vertexes[vertex_indexes[i]].w)
-            {
-                clip |= X_W_Left;
-                break;
-            }
-        }
-
-        reject = true;
-        for(unsigned int i = 0; i < count; i++)
-        {
-            if(transformed_vertexes[vertex_indexes[i]].y < transformed_vertexes[vertex_indexes[i]].w)
-            {
-                reject = false;
-                break;
-            }
-        }
-
-        if(reject)
-            return Reject;
-
-        reject = true;
-        for(unsigned int i = 0; i < count; i++)
-        {
-            if(-transformed_vertexes[vertex_indexes[i]].y < transformed_vertexes[vertex_indexes[i]].w)
-            {
-                reject = false;
-                break;
-            }
-        }
-
-        if(reject)
-            return Reject;
-
-
-        for(unsigned int i = 0; i < count; i++)
-        {
-            if(transformed_vertexes[vertex_indexes[i]].y > transformed_vertexes[vertex_indexes[i]].w)
-            {
-                clip |= Y_W_Top;
-                break;
-            }
-        }
-
-        for(unsigned int i = 0; i < count; i++)
-        {
-            if(-transformed_vertexes[vertex_indexes[i]].y > transformed_vertexes[vertex_indexes[i]].w)
-            {
-                clip |= Y_W_Bottom;
-                break;
-            }
-        }
-
-        return clip;
-    }
-
-    void RenderDevice::ClipPolygon(unsigned int clip_planes, unsigned int* in, unsigned int* out)
-    {
-
+        triangle_render->DrawTriangle(tri, *current_material, *texture_cache, viewport, z_planes);
     }
 };

@@ -109,13 +109,9 @@ namespace P3D
         {
             if (w != T(1))
             {
-                const unsigned int s = 4;
-
-                T iw = pScaledReciprocal(s, w);
-
-                x = pASR(x * iw, s);
-                y = pASR(y * iw, s);
-                z = pASR(z * iw, s);
+                x = x / w;
+                y = y / w;
+                z = z / w;
             }
         }
     };

@@ -3,70 +3,14 @@
 
 #include <vector>
 #include "common.h"
+
+#include "RenderCommon.h"
 #include "RenderTarget.h"
+#include "RenderTriangle.h"
+#include "TextureCache.h"
 
 namespace P3D
 {
-    enum RenderType
-    {
-        Points,
-        Lines,
-        Flat,
-        Texture,
-    };
-
-    enum RenderFlags
-    {
-        NoFlags = 0ul,
-        BackFaceCulling = 1ul,
-        FrontFaceCulling = 2ul,
-        ZTest = 4ul,
-        ZWrite = 8ul,
-        AlphaTest = 16ul,
-        CBuffer = 32ul,
-        PerspectiveMapping = 64ul
-    };
-
-    class RenderTargetViewport
-    {
-    public:
-        pixel* start = nullptr;
-        unsigned int width = 0;
-        unsigned int height = 0;
-        unsigned int y_pitch = 0;
-
-        z_val* z_start = nullptr;
-        unsigned int z_y_pitch;
-    };
-
-    class RenderDeviceNearFarPlanes
-    {
-    public:
-        fp z_near = 0;
-        fp z_far = 0;
-    };
-
-    typedef enum ClipPlane
-    {
-        NoClip = 0u,
-        W_Near = 1u,
-        X_W_Left = 2u,
-        X_W_Right = 4u,
-        Y_W_Top = 8u,
-        Y_W_Bottom = 16u,
-        Reject = 32u
-    } ClipPlane;
-
-    class RenderVertexBuffer
-    {
-    public:
-        const unsigned int* vertex_indexes;
-        const V2<fp>* uvs;
-        unsigned int count;
-        const pixel* texture;
-        pixel color;
-    };
-
     class RenderDevice
     {
     public:
@@ -77,6 +21,10 @@ namespace P3D
         //Render Target
         void SetRenderTarget(RenderTarget* target);
         void SetViewport(unsigned int x, unsigned int y, unsigned int width, unsigned int height);
+
+        //Flags
+        #define RENDER_FLAGS(x) (new P3D::TriangleRenderFlags<x>())
+        void SetRenderFlags(RenderFlagsBase* flags_ptr);
 
         //Matrix
         void SetPerspective(fp vertical_fov, fp aspect_ratio, fp z_near, fp z_far);
@@ -99,23 +47,20 @@ namespace P3D
         void ClearColor(pixel color);
         void ClearDepth(z_val depth);
 
-        void SetRenderType(RenderType type);
-
         //Begin/End Frame.
         void BeginFrame();
         void EndFrame();
 
+        //
+        void SetTextureCache(TextureCacheBase* cache);
+        void SetMaterial(const Material& material, signed char importance = 0);
+
         //Draw Objects.
-        void DrawTriangle(const V3<fp> vertexes[3], const V2<fp> uvs[3], const pixel* texture, pixel color);
+        void DrawTriangle(const V3<fp> vertexes[3], const V2<fp> uvs[3] = nullptr);
 
-        void DrawPolygon(const V3<fp>* vertexes, const V2<fp>* uvs, const unsigned int count, const pixel* texture, pixel color);
         void TransformVertexes(const V3<fp>* vertexes, const unsigned int count);
-        void DrawPolygon(const RenderVertexBuffer& render_buffer);
 
-    private:
-
-        unsigned int GetClipPlanesForPolygon(const unsigned int *vertex_indexes, unsigned int count);
-        void ClipPolygon(unsigned int clip_planes, unsigned int* in, unsigned int* out);
+        void DrawTriangle(const int vx_indexes[3], const V2<fp> uvs[3] = nullptr);
 
     private:
 
@@ -131,7 +76,11 @@ namespace P3D
         V4<fp>* transformed_vertexes = nullptr;
         unsigned int transformed_vertexes_buffer_count = 0;
 
-        RenderType render_type;
+        TextureCacheBase* texture_cache = nullptr;
+        const Material* current_material = nullptr;
+
+        RenderTriangleBase* triangle_render = nullptr;
+        RenderFlagsBase* render_flags_base = nullptr;
     };
 };
 #endif // RENDERDEVICE_H

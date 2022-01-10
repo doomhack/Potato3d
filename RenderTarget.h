@@ -14,7 +14,7 @@ namespace P3D
         bool AttachColorBuffer(unsigned int width, unsigned int height, pixel* buffer = nullptr, unsigned int y_pitch = 0);
         bool AttachZBuffer(z_val* buffer = nullptr, unsigned int y_pitch = 0);
 
-        bool RemoveZBuffer();
+        void RemoveZBuffer();
 
         unsigned int GetWidth()     {return width;}
         unsigned int GetHeight()    {return height;}
@@ -25,7 +25,7 @@ namespace P3D
         unsigned int GetZBufferYPitch() {return z_buffer_y_pitch;}
     private:
 
-        bool RemoveColorBuffer();
+        void RemoveColorBuffer();
 
         pixel* color_buffer = nullptr;
         unsigned int width = 0;

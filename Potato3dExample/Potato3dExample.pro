@@ -26,7 +26,8 @@ SOURCES += \
     ../render.cpp \
     bsp3d.cpp \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    mainwindow2.cpp
 
 HEADERS += \
     ../3dmaths/divide.h \
@@ -38,8 +39,11 @@ HEADERS += \
     ../3dmaths/v2.h \
     ../3dmaths/v3.h \
     ../3dmaths/v4.h \
+    ../RenderCommon.h \
     ../RenderDevice.h \
     ../RenderTarget.h \
+    ../RenderTriangle.h \
+    ../TextureCache.h \
     ../bspmodel.h \
     ../common.h \
     ../object3d.h \
@@ -48,6 +52,7 @@ HEADERS += \
     ../rtypes.h \
     bsp3d.h \
     mainwindow.h \
+    mainwindow2.h \
     models/model.h
 
 # Default rules for deployment.

@@ -20,7 +20,9 @@ namespace P3D
 
         constexpr FP(const FP& r)   : n(r.n)                {}
         constexpr FP(int v)         : n(v << fracbits)      {}
+        constexpr FP(unsigned int v): n(v << fracbits)      {}
         constexpr FP(float v)       : n((int)(v * one))     {}
+
 
         constexpr operator int() const                      {return i();}
         constexpr operator float() const                    {return f();}
