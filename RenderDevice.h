@@ -23,8 +23,8 @@ namespace P3D
         void SetViewport(unsigned int x, unsigned int y, unsigned int width, unsigned int height);
 
         //Flags
-        #define RENDER_FLAGS(x) (new P3D::TriangleRenderFlags<x>())
-        void SetRenderFlags(RenderFlagsBase* flags_ptr);
+        #define RENDER_FLAGS(x) (new P3D::Internal::TriangleRenderFlags<x>())
+        void SetRenderFlags(P3D::Internal::RenderFlagsBase* flags_ptr);
 
         //Matrix
         void SetPerspective(fp vertical_fov, fp aspect_ratio, fp z_near, fp z_far);
@@ -79,8 +79,8 @@ namespace P3D
         TextureCacheBase* texture_cache = nullptr;
         const Material* current_material = nullptr;
 
-        RenderTriangleBase* triangle_render = nullptr;
-        RenderFlagsBase* render_flags_base = nullptr;
+        P3D::Internal::RenderTriangleBase* triangle_render = nullptr;
+        P3D::Internal::RenderFlagsBase* render_flags_base = nullptr;
     };
 };
 #endif // RENDERDEVICE_H

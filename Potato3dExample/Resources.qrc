@@ -317,5 +317,6 @@
         <file>models/Streets/wall7.png</file>
         <file>models/Streets/wall6.png</file>
         <file>models/Streets/wall8.png</file>
+        <file>models/test_text.png</file>
     </qresource>
 </RCC>

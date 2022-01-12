@@ -12,8 +12,16 @@ namespace P3D
         TextureCacheBase() = default;
         virtual ~TextureCacheBase() = default;
 
-        virtual void AddTexture(const pixel* texture, signed char importance = 0) {}
-        virtual void RemoveTexture(const pixel* texture) {}
+        virtual void AddTexture(const pixel* texture, signed char importance = 0)
+        {
+            (void)texture;
+            (void)importance;
+        }
+
+        virtual void RemoveTexture(const pixel* texture)
+        {
+            (void)texture;
+        }
 
         virtual const pixel* GetTexture(const pixel* texture)
         {

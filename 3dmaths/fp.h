@@ -22,6 +22,8 @@ namespace P3D
         constexpr FP(int v)         : n(v << fracbits)      {}
         constexpr FP(unsigned int v): n(v << fracbits)      {}
         constexpr FP(float v)       : n((int)(v * one))     {}
+        constexpr FP(double v)      : n((int)(v * one))     {}
+
 
 
         constexpr operator int() const                      {return i();}

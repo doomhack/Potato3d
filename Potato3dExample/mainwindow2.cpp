@@ -36,17 +36,19 @@ MainWindow2::MainWindow2(QWidget *parent)
 
     render_device->SetPerspective(60, aspectRatio, 10, 1000);
 
-    render_device->SetRenderFlags(RENDER_FLAGS(P3D::NoFlags));
+    render_device->SetRenderFlags(RENDER_FLAGS(P3D::PerspectiveMapping));
 }
 
 MainWindow2::~MainWindow2()
 {
 
 }
+static P3D::fp rotateY = 0;
 
 void MainWindow2::paintEvent(QPaintEvent *event)
 {
     Q_UNUSED(event)
+
 
     static unsigned int frameCount = 0;
     static unsigned int currentFps = 0;
@@ -57,35 +59,61 @@ void MainWindow2::paintEvent(QPaintEvent *event)
     renderTimer.restart();
 
 
-    P3D::Material mat1;
-    mat1.type = P3D::Material::Color;
-    mat1.color = 1;
+    QImage texture = QImage(":/models/test_text.png");
+    texture.convertTo(QImage::Format_Indexed8);
+    frameBufferImage.setColorTable(texture.colorTable());
 
-    P3D::Material mat2;
-    mat2.type = P3D::Material::Color;
-    mat2.color = 2;
+    P3D::Material mat1;
+    mat1.type = P3D::Material::Texture;
+    mat1.pixels = texture.constBits();
+
 
     render_device->SetMaterial(mat1);
 
     render_device->ClearColor(0);
 
+
+    render_device->PushMatrix();
+    render_device->RotateY(rotateY);
+
+    render_device->PushMatrix();
+    render_device->LoadIdentity();
+    render_device->Translate(P3D::V3<P3D::fp>(0,0,-100));
+
+
+
+
+
+
     render_device->BeginFrame();
 
     P3D::V3<P3D::fp> v[3];
-    v[0] = P3D::V3<P3D::fp>(-100,100,-500);
-    v[1] = P3D::V3<P3D::fp>(100,100,-500);
-    v[2] = P3D::V3<P3D::fp>(100,-100,-500);
+    v[0] = P3D::V3<P3D::fp>(-100,100,0);
+    v[1] = P3D::V3<P3D::fp>(100,100,0);
+    v[2] = P3D::V3<P3D::fp>(100,-100,0);
 
-    render_device->DrawTriangle(v);
+    P3D::V2<P3D::fp> uv[3];
+    uv[0] = P3D::V2<P3D::fp>(0,0);
+    uv[1] = P3D::V2<P3D::fp>(64,0);
+    uv[2] = P3D::V2<P3D::fp>(64,64);
 
-    v[0] = P3D::V3<P3D::fp>(-100,100,-500);
-    v[1] = P3D::V3<P3D::fp>(100,-100,-500);
-    v[2] = P3D::V3<P3D::fp>(-100,-100,-500);
 
-    render_device->SetMaterial(mat2);
-    render_device->DrawTriangle(v);
+    render_device->DrawTriangle(v, uv);
+
+    v[0] = P3D::V3<P3D::fp>(-100,100,0);
+    v[1] = P3D::V3<P3D::fp>(100,-100,0);
+    v[2] = P3D::V3<P3D::fp>(-100,-100,0);
+
+    uv[0] = P3D::V2<P3D::fp>(0,0);
+    uv[1] = P3D::V2<P3D::fp>(64,64);
+    uv[2] = P3D::V2<P3D::fp>(0,64);
+
+    render_device->DrawTriangle(v, uv);
 
     render_device->EndFrame();
+
+    render_device->PopMatrix();
+    render_device->PopMatrix();
 
 
     rTime += renderTimer.elapsed();
@@ -128,5 +156,12 @@ void MainWindow2::paintEvent(QPaintEvent *event)
 
 void MainWindow2::keyPressEvent(QKeyEvent *event)
 {
-
+    if(event->key() == Qt::Key_Left)
+    {
+        rotateY -= P3D::fp(1);
+    }
+    else if(event->key() == Qt::Key_Right)
+    {
+        rotateY += P3D::fp(1);
+    }
 }

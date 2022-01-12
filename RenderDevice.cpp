@@ -8,7 +8,9 @@ namespace P3D
 
         current_material = new Material();
 
-        PushMatrix();
+        //Populate matrix stack with 1 identity matrix.
+        model_view_matrix_stack.push_back(M4<fp>());
+        LoadIdentity();
     }
 
     RenderDevice::~RenderDevice()
@@ -52,7 +54,7 @@ namespace P3D
         }
     }
 
-    void RenderDevice::SetRenderFlags(RenderFlagsBase* flags_ptr)
+    void RenderDevice::SetRenderFlags(P3D::Internal::RenderFlagsBase* flags_ptr)
     {
         if(render_flags_base != nullptr)
             delete render_flags_base;
@@ -79,8 +81,7 @@ namespace P3D
 
     unsigned int RenderDevice::PushMatrix()
     {
-        M4<fp> m;
-        m.setToIdentity();
+        M4<fp> m = model_view_matrix_stack.back();
 
         model_view_matrix_stack.push_back(m);
 

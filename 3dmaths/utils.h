@@ -63,15 +63,15 @@ namespace P3D
     }
 
     template <class T>
-    constexpr inline int pCeil(T val)
+    constexpr inline T pCeil(T val)
     {
         return std::ceil(val);
     }
 
     template <>
-    constexpr inline int pCeil(FP val)
+    constexpr inline FP pCeil(FP val)
     {
-        return (val.toFPInt() + 0xfffe) >> 16;
+        return (val.toFPInt() + 0xffff) >> 16;
     }
 
     template <class T>
