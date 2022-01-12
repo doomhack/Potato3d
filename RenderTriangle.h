@@ -9,7 +9,7 @@ namespace P3D
 {
     typedef struct TriEdgeTrace
     {
-        fp x_left, x_right, w_left;
+        fp x_left, x_right, w_left, z_left;
         fp u_left, v_left;
         pixel* fb_ypos;
     } TriEdgeTrace;
@@ -19,12 +19,13 @@ namespace P3D
         fp u;
         fp v;
         fp w;
+        fp z;
     } TriDrawXDeltaZWUV;
 
     typedef struct TriDrawYDeltaZWUV
     {
         fp x_left, x_right;
-        fp u, v, w;
+        fp u, v, w, z;
     } TriDrawYDeltaZWUV;
 
 
@@ -395,8 +396,11 @@ namespace P3D
             if((top.pos.x >= fb_x && left.pos.x >= fb_x) || (right.pos.x < 0 && top.pos.x < 0))
                 return;
 
-            int yStart = top.pos.y;
-            int yEnd =   left.pos.y;
+            fp pixelCentreTopY = PixelCentre(top.pos.y);
+            fp stepY = pixelCentreTopY - top.pos.y;
+
+            int yStart = pixelCentreTopY;
+            int yEnd = PixelCentre(left.pos.y);
 
             if(yEnd < 0 || yStart >= fb_y)
                 return;
@@ -408,18 +412,28 @@ namespace P3D
                 yStart = 0;
 
             if(current_material->type == Material::Texture)
+            {
                 GetTriangleLerpDeltasZWUV(left, right, top, x_delta, y_delta);
+
+                pos.u_left = top.uv.x + (stepY * y_delta.u);
+                pos.v_left = top.uv.y + (stepY * y_delta.v);
+
+                if constexpr(render_flags & PerspectiveMapping)
+                {
+                    pos.w_left = top.pos.w + (stepY * y_delta.w);
+                }
+            }
             else
-                GetTriangleLerpDeltasZ(left, right, top, y_delta);
+                GetTriangleLerpDeltasZ(left, right, top, x_delta, y_delta);
+
 
             pos.fb_ypos = &current_viewport->start[yStart * current_viewport->y_pitch];
-            pos.x_left = pos.x_right = top.pos.x;
-            pos.u_left = top.uv.x;
-            pos.v_left = top.uv.y;
+            pos.x_left =  top.pos.x + (stepY * y_delta.x_left);
+            pos.x_right = top.pos.x + (stepY * y_delta.x_right);
 
-            if constexpr(render_flags & PerspectiveMapping)
+            if constexpr (render_flags & (ZTest | ZWrite))
             {
-                pos.w_left = top.pos.w;
+                pos.z_left = top.pos.z + (stepY * y_delta.z);
             }
 
             for(int y = yStart; y < yEnd; y++)
@@ -429,6 +443,11 @@ namespace P3D
                 pos.x_left += y_delta.x_left;
                 pos.x_right += y_delta.x_right;
                 pos.fb_ypos += current_viewport->y_pitch;
+
+                if constexpr (render_flags & (ZTest | ZWrite))
+                {
+                    pos.z_left = y_delta.z;
+                }
 
                 if(current_material->type == Material::Texture)
                 {
@@ -461,8 +480,11 @@ namespace P3D
             if((bottom.pos.x >= fb_x && left.pos.x >= fb_x) || (right.pos.x < 0 && bottom.pos.x < 0))
                 return;
 
-            int yStart = left.pos.y;
-            int yEnd = bottom.pos.y;
+            fp pixelCentreTopY = PixelCentre(left.pos.y);
+            fp stepY = pixelCentreTopY - left.pos.y;
+
+            int yStart = pixelCentreTopY;
+            int yEnd = PixelCentre(bottom.pos.y);
 
             if(yEnd > fb_y)
                 yEnd = fb_y;
@@ -474,21 +496,27 @@ namespace P3D
                 return;
 
             if(current_material->type == Material::Texture)
+            {
                 GetTriangleLerpDeltasZWUV(left, right, bottom, x_delta, y_delta);
+
+                pos.u_left = left.uv.x + (stepY * y_delta.u);
+                pos.v_left = left.uv.y + (stepY * y_delta.v);
+
+                if constexpr(render_flags & PerspectiveMapping)
+                {
+                    pos.w_left = left.pos.w + (stepY * y_delta.w);
+                }
+            }
             else
-                GetTriangleLerpDeltasZ(left, right, bottom, y_delta);
+                GetTriangleLerpDeltasZ(left, right, bottom, x_delta, y_delta);
 
             pos.fb_ypos = &current_viewport->start[yStart * current_viewport->y_pitch];
+            pos.x_left =  left.pos.x + (stepY * y_delta.x_left);
+            pos.x_right = right.pos.x + (stepY * y_delta.x_right);
 
-            pos.x_left = left.pos.x;
-            pos.x_right = right.pos.x;
-
-            pos.u_left = left.uv.x;
-            pos.v_left = left.uv.y;
-
-            if constexpr(render_flags & PerspectiveMapping)
+            if constexpr (render_flags & (ZTest | ZWrite))
             {
-                pos.w_left = left.pos.w;
+                pos.z_left = left.pos.z + (stepY * y_delta.z);
             }
 
             for (int y = yStart; y < yEnd; y++)
@@ -498,6 +526,11 @@ namespace P3D
                 pos.x_left += y_delta.x_left;
                 pos.x_right += y_delta.x_right;
                 pos.fb_ypos += current_viewport->y_pitch;
+
+                if constexpr (render_flags & (ZTest | ZWrite))
+                {
+                    pos.z_left = y_delta.z;
+                }
 
                 if(current_material->type == Material::Texture)
                 {
@@ -518,8 +551,14 @@ namespace P3D
 
             const int fb_width = current_viewport->width;
 
-            int x_start = pRound(pos.x_left);
-            int x_end = pRound(pos.x_right);
+            fp pixelCentreLeftX = PixelCentre(pos.x_left);
+            fp stepX = pixelCentreLeftX - pos.x_left;
+
+            int x_start = pixelCentreLeftX;
+            int x_end = PixelCentre(pos.x_right);
+
+            if(x_start > x_end-1)
+                return;
 
             if(x_start >= fb_width)
                 return;
@@ -530,29 +569,25 @@ namespace P3D
             if(x_end >= fb_width)
                 x_end = fb_width-1;
 
-            if(current_material->type == Material::Texture)
-            {
-                fp preStepX = (fp(x_start) - pos.x_left);
-
-                span_pos.u_left = pos.u_left + (delta.u * preStepX);
-                span_pos.u_left = pos.v_left + (delta.v * preStepX);
-
-                if constexpr (render_flags & PerspectiveMapping)
-                {
-                    span_pos.u_left = pos.w_left + (delta.w * preStepX);
-                }
-            }
-
             span_pos.x_left = x_start;
             span_pos.x_right = x_end;
             span_pos.fb_ypos = pos.fb_ypos;
 
-            if(current_material->type == Material::Color)
+            if constexpr (render_flags & (ZTest | ZWrite))
             {
-                DrawTriangleScanlineFlat(span_pos, current_material->color);
+                span_pos.z_left = pos.z_left + (delta.z * stepX);
             }
-            else
+
+            if(current_material->type == Material::Texture)
             {
+                span_pos.u_left = pos.u_left + (delta.u * stepX);
+                span_pos.v_left = pos.v_left + (delta.v * stepX);
+
+                if constexpr (render_flags & PerspectiveMapping)
+                {
+                    span_pos.w_left = pos.w_left + (delta.w * stepX);
+                }
+
                 const pixel* texture = tex_cache->GetTexture(current_material->pixels);
 
                 if constexpr (render_flags & PerspectiveMapping)
@@ -564,6 +599,10 @@ namespace P3D
                     DrawTriangleScanlineAffine(span_pos, delta, texture);
                 }
             }
+            else
+            {
+                DrawTriangleScanlineFlat(span_pos, current_material->color);
+            }
         }
 
         void DrawTriangleScanlinePerspectiveCorrect(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const pixel* texture)
@@ -571,7 +610,7 @@ namespace P3D
             int x_start = (int)pos.x_left;
             int x_end = (int)pos.x_right;
 
-            unsigned int count = (x_end - x_start) + 1;
+            unsigned int count = (x_end - x_start);
 
             fp u = pos.u_left, v = pos.v_left, w = pos.w_left;
 
@@ -642,7 +681,7 @@ namespace P3D
             int x_start = (int)pos.x_left;
             int x_end = (int)pos.x_right;
 
-            unsigned int count = (x_end - x_start) + 1;
+            unsigned int count = (x_end - x_start);
 
             pixel* fb = pos.fb_ypos + x_start;
 
@@ -727,7 +766,7 @@ namespace P3D
             int x_start = (int)pos.x_left;
             int x_end = (int)pos.x_right;
 
-            unsigned int count = (x_end - x_start) + 1;
+            unsigned int count = (x_end - x_start);
 
             pixel* fb = pos.fb_ypos + x_start;
 
@@ -786,6 +825,12 @@ namespace P3D
                 y_delta.w = (left.pos.w - other.pos.w) / d_y;
             }
 
+            if constexpr (render_flags & (ZTest | ZWrite))
+            {
+                x_delta.z = (right.pos.z - left.pos.z) / d_x;
+                y_delta.z = (left.pos.z - other.pos.z) / d_y;
+            }
+
             y_delta.x_left = (left.pos.x - other.pos.x) / d_y;
             y_delta.x_right = (right.pos.x - other.pos.x) / d_y;
 
@@ -793,9 +838,17 @@ namespace P3D
             y_delta.v = (left.uv.y - other.uv.y) / d_y;
         }
 
-        void GetTriangleLerpDeltasZ(const Vertex4d& left, const Vertex4d& right, const Vertex4d& other, TriDrawYDeltaZWUV &y_delta)
+        void GetTriangleLerpDeltasZ(const Vertex4d& left, const Vertex4d& right, const Vertex4d& other, TriDrawXDeltaZWUV& x_delta, TriDrawYDeltaZWUV &y_delta)
         {
             fp d_y = (left.pos.y - other.pos.y);
+
+            if constexpr (render_flags & (ZTest | ZWrite))
+            {
+                fp d_x = ((right.pos.x - left.pos.x) + 1);
+
+                x_delta.z = (right.pos.z - left.pos.z) / d_x;
+                y_delta.z = (left.pos.z - other.pos.z) / d_y;
+            }
 
             y_delta.x_left = (left.pos.x - other.pos.x) / d_y;
             y_delta.x_right = (right.pos.x - other.pos.x) / d_y;
@@ -824,6 +877,11 @@ namespace P3D
             fp halfFbX = pASR(current_viewport->width, 1);
 
             return ((halfFbX * frac) + halfFbX);
+        }
+
+        fp PixelCentre(fp x)
+        {
+            return pCeil(x + fp(0.5)) + fp(0.5);
         }
 
     private:

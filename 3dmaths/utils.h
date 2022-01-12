@@ -71,7 +71,7 @@ namespace P3D
     template <>
     constexpr inline int pCeil(FP val)
     {
-        return (val.toFPInt() + 0xffff) >> 16;
+        return (val.toFPInt() + 0xfffe) >> 16;
     }
 
     template <class T>

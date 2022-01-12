@@ -21,6 +21,8 @@ MainWindow2::MainWindow2(QWidget *parent)
 
     color_table.append(qRgb(0,0,0));
     color_table.append(qRgb(0,255,0));
+    color_table.append(qRgb(255,0,0));
+
 
     frameBufferImage.setColorTable(color_table);
 
@@ -55,11 +57,15 @@ void MainWindow2::paintEvent(QPaintEvent *event)
     renderTimer.restart();
 
 
-    P3D::Material mat;
-    mat.type = P3D::Material::Color;
-    mat.color = 1;
+    P3D::Material mat1;
+    mat1.type = P3D::Material::Color;
+    mat1.color = 1;
 
-    render_device->SetMaterial(mat);
+    P3D::Material mat2;
+    mat2.type = P3D::Material::Color;
+    mat2.color = 2;
+
+    render_device->SetMaterial(mat1);
 
     render_device->ClearColor(0);
 
@@ -72,12 +78,14 @@ void MainWindow2::paintEvent(QPaintEvent *event)
 
     render_device->DrawTriangle(v);
 
+    v[0] = P3D::V3<P3D::fp>(-100,100,-500);
+    v[1] = P3D::V3<P3D::fp>(100,-100,-500);
+    v[2] = P3D::V3<P3D::fp>(-100,-100,-500);
+
+    render_device->SetMaterial(mat2);
+    render_device->DrawTriangle(v);
+
     render_device->EndFrame();
-
-
-
-
-
 
 
     rTime += renderTimer.elapsed();
