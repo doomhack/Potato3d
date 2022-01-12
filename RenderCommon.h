@@ -46,7 +46,6 @@ namespace P3D
         X_W_Right = 4u,
         Y_W_Top = 8u,
         Y_W_Bottom = 16u,
-        Reject = 32u
     } ClipPlane;
 
 
@@ -58,10 +57,10 @@ namespace P3D
 
         void toPerspectiveCorrect()
         {
-            pos.w = fp(1) / pos.w;
-
             uv.x = uv.x / pos.w;
             uv.y = uv.y / pos.w;
+
+            pos.w = fp(1) / pos.w;
         }
     };
 

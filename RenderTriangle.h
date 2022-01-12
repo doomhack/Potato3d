@@ -631,7 +631,7 @@ namespace P3D
                 fp u15 = (u += pASL(delta.u, 4)) * invw_15;
 
                 fp v0 = v * invw_0;
-                fp v15 = (v += pASL(delta.v,4)) * invw_15;
+                fp v15 = (v += pASL(delta.v, 4)) * invw_15;
 
                 unsigned int uv = PackUV(u0, v0);
                 unsigned int duv = PackUV(pASR(u15-u0, 4), pASR(v15-v0, 4));
@@ -658,7 +658,7 @@ namespace P3D
                     invw_15 = pReciprocal(w += pASL(delta.w, 4));
 
                     u0 = u * invw_0;
-                    u15 = (u += pASL(delta.u,4)) * invw_15;
+                    u15 = (u += pASL(delta.u, 4)) * invw_15;
 
                     v0 = v * invw_0;
                     v15 = (v += pASL(delta.v,4)) * invw_15;
