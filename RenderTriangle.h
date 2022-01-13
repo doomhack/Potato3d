@@ -11,8 +11,11 @@ namespace P3D
     {
         typedef struct TriEdgeTrace
         {
-            fp x_left, x_right, w_left, z_left;
-            fp u_left, v_left;
+            fp x_left, x_right;
+            fp u_left, u_right;
+            fp v_left, v_right;
+            fp w_left, w_right;
+            fp z_left, z_right;
             pixel* fb_ypos;
         } TriEdgeTrace;
 
@@ -27,7 +30,10 @@ namespace P3D
         typedef struct TriDrawYDeltaZWUV
         {
             fp x_left, x_right;
-            fp u, v, w, z;
+            fp u_left, u_right;
+            fp v_left, v_right;
+            fp w_left, w_right;
+            fp z_left, z_right;
         } TriDrawYDeltaZWUV;
 
 
@@ -247,7 +253,7 @@ namespace P3D
                 }
             }
 
-            void DrawTriangleCull(Vertex4d screenSpacePoints[])
+            void DrawTriangleCull(Vertex4d screenSpacePoints[3])
             {
                 if constexpr (render_flags & (BackFaceCulling | FrontFaceCulling))
                 {
@@ -264,11 +270,25 @@ namespace P3D
                             return;
                     }
                 }
+                else
+                {
+                    if  (
+                            screenSpacePoints[0].pos.x == screenSpacePoints[1].pos.x &&
+                            screenSpacePoints[0].pos.x == screenSpacePoints[2].pos.x
+                        )
+                        return;
+
+                    if  (
+                            screenSpacePoints[0].pos.y == screenSpacePoints[1].pos.y &&
+                            screenSpacePoints[0].pos.y == screenSpacePoints[2].pos.y
+                        )
+                        return;
+                }
 
                 DrawTriangleSplit(screenSpacePoints);
             }
 
-            void DrawTriangleSplit(Vertex4d screenSpacePoints[])
+            void DrawTriangleSplit(Vertex4d screenSpacePoints[3])
             {
                 Vertex4d points[3];
 
@@ -334,7 +354,7 @@ namespace P3D
                 }
             }
 
-            void SortPointsByY(Vertex4d pointsIn[], Vertex4d pointsOut[])
+            void SortPointsByY(Vertex4d pointsIn[3], Vertex4d pointsOut[3])
             {
                 if(pointsIn[0].pos.y < pointsIn[1].pos.y)
                 {
@@ -386,7 +406,7 @@ namespace P3D
                 }
             }
 
-            void DrawTriangleTop(const Vertex4d points[])
+            void DrawTriangleTop(const Vertex4d points[3])
             {
                 //Flat bottom triangle.
 
@@ -421,31 +441,46 @@ namespace P3D
 
                 if(current_material->type == Material::Texture)
                 {
-                    GetTriangleLerpDeltasZWUV(left, right, top, x_delta, y_delta);
+                    GetTriangleLerpYDeltasZWUV(left, right, top, y_delta);
 
-                    pos.u_left = top.uv.x + (stepY * y_delta.u);
-                    pos.v_left = top.uv.y + (stepY * y_delta.v);
+                    pos.u_left = top.uv.x + (stepY * y_delta.u_left);
+                    pos.u_right = top.uv.x + (stepY * y_delta.u_right);
+
+                    pos.v_left = top.uv.y + (stepY * y_delta.v_left);
+                    pos.v_right = top.uv.y + (stepY * y_delta.v_right);
 
                     if constexpr(render_flags & PerspectiveMapping)
                     {
-                        pos.w_left = top.pos.w + (stepY * y_delta.w);
+                        pos.w_left = top.pos.w + (stepY * y_delta.w_left);
+                        pos.w_right = top.pos.w + (stepY * y_delta.w_right);
                     }
                 }
                 else
-                    GetTriangleLerpDeltasZ(left, right, top, x_delta, y_delta);
+                    GetTriangleLerpYDeltasZ(left, right, top, y_delta);
 
 
                 pos.fb_ypos = &current_viewport->start[yStart * current_viewport->y_pitch];
+
                 pos.x_left =  top.pos.x + (stepY * y_delta.x_left);
                 pos.x_right = top.pos.x + (stepY * y_delta.x_right);
 
                 if constexpr (render_flags & (ZTest | ZWrite))
                 {
-                    pos.z_left = top.pos.z + (stepY * y_delta.z);
+                    pos.z_left = top.pos.z + (stepY * y_delta.z_left);
+                    pos.z_right = top.pos.x + (stepY * y_delta.z_right);
                 }
 
                 for(int y = yStart; y < yEnd; y++)
                 {
+                    if(current_material->type == Material::Texture)
+                    {
+                        GetTriangleLerpXDeltasZWUV(x_delta, pos);
+                    }
+                    else
+                    {
+                        GetTriangleLerpXDeltasZ(x_delta, pos);
+                    }
+
                     DrawSpan(pos, x_delta);
 
                     pos.x_left += y_delta.x_left;
@@ -454,23 +489,28 @@ namespace P3D
 
                     if constexpr (render_flags & (ZTest | ZWrite))
                     {
-                        pos.z_left = y_delta.z;
+                        pos.z_left += y_delta.z_left;
+                        pos.z_right += y_delta.z_right;
                     }
 
                     if(current_material->type == Material::Texture)
                     {
-                        pos.u_left += y_delta.u;
-                        pos.v_left += y_delta.v;
+                        pos.u_left += y_delta.u_left;
+                        pos.u_right += y_delta.u_right;
+
+                        pos.v_left += y_delta.v_left;
+                        pos.v_right += y_delta.v_right;
 
                         if constexpr(render_flags & PerspectiveMapping)
                         {
-                            pos.w_left += y_delta.w;
+                            pos.w_left += y_delta.w_left;
+                            pos.w_right += y_delta.w_right;
                         }
                     }
                 }
             }
 
-            void DrawTriangleBottom(const Vertex4d points[])
+            void DrawTriangleBottom(const Vertex4d points[3])
             {
                 //Flat top triangle.
 
@@ -505,18 +545,22 @@ namespace P3D
 
                 if(current_material->type == Material::Texture)
                 {
-                    GetTriangleLerpDeltasZWUV(left, right, bottom, x_delta, y_delta);
+                    GetTriangleLerpYDeltasZWUV(left, right, bottom, y_delta);
 
-                    pos.u_left = left.uv.x + (stepY * y_delta.u);
-                    pos.v_left = left.uv.y + (stepY * y_delta.v);
+                    pos.u_left = left.uv.x + (stepY * y_delta.u_left);
+                    pos.u_right = right.uv.x + (stepY * y_delta.u_right);
+
+                    pos.v_left = left.uv.y + (stepY * y_delta.v_left);
+                    pos.v_right = right.uv.y + (stepY * y_delta.v_right);
 
                     if constexpr(render_flags & PerspectiveMapping)
                     {
-                        pos.w_left = left.pos.w + (stepY * y_delta.w);
+                        pos.w_left = left.pos.w + (stepY * y_delta.w_left);
+                        pos.w_right = right.pos.w + (stepY * y_delta.w_right);
                     }
                 }
                 else
-                    GetTriangleLerpDeltasZ(left, right, bottom, x_delta, y_delta);
+                    GetTriangleLerpYDeltasZ(left, right, bottom, y_delta);
 
                 pos.fb_ypos = &current_viewport->start[yStart * current_viewport->y_pitch];
                 pos.x_left =  left.pos.x + (stepY * y_delta.x_left);
@@ -524,11 +568,21 @@ namespace P3D
 
                 if constexpr (render_flags & (ZTest | ZWrite))
                 {
-                    pos.z_left = left.pos.z + (stepY * y_delta.z);
+                    pos.z_left = left.pos.z + (stepY * y_delta.z_left);
+                    pos.z_right = right.pos.z + (stepY * y_delta.z_right);
                 }
 
                 for (int y = yStart; y < yEnd; y++)
                 {
+                    if(current_material->type == Material::Texture)
+                    {
+                        GetTriangleLerpXDeltasZWUV(x_delta, pos);
+                    }
+                    else
+                    {
+                        GetTriangleLerpXDeltasZ(x_delta, pos);
+                    }
+
                     DrawSpan(pos, x_delta);
 
                     pos.x_left += y_delta.x_left;
@@ -537,17 +591,22 @@ namespace P3D
 
                     if constexpr (render_flags & (ZTest | ZWrite))
                     {
-                        pos.z_left = y_delta.z;
+                        pos.z_left = y_delta.z_left;
+                        pos.z_right = y_delta.z_right;
                     }
 
                     if(current_material->type == Material::Texture)
                     {
-                        pos.u_left += y_delta.u;
-                        pos.v_left += y_delta.v;
+                        pos.u_left += y_delta.u_left;
+                        pos.u_right += y_delta.u_right;
+
+                        pos.v_left += y_delta.v_left;
+                        pos.v_right += y_delta.v_right;
 
                         if constexpr(render_flags & PerspectiveMapping)
                         {
-                            pos.w_left += y_delta.w;
+                            pos.w_left += y_delta.w_left;
+                            pos.w_right += y_delta.w_right;
                         }
                     }
                 }
@@ -633,26 +692,26 @@ namespace P3D
                 fp v0 = v * invw_0;
                 fp v15 = (v += pASL(delta.v, 4)) * invw_15;
 
-                unsigned int uv = PackUV(u0, v0);
-                unsigned int duv = PackUV(pASR(u15-u0, 4), pASR(v15-v0, 4));
+                fp du = pASR(u15-u0, 4);
+                fp dv = pASR(v15-v0, 4);
 
                 if((size_t)fb & 1)
                 {
-                    DrawScanlinePixelLinearHighByte(fb, texture, uv); fb++; uv += duv; count--;
+                    DrawScanlinePixelLinearHighByte(fb, texture, u0, v0); fb++; u0 += du, v += dv, count--;
                 }
 
                 unsigned int l = count >> 4;
 
                 while(l--)
                 {
-                    DrawScanlinePixelLinearPair(fb, texture, uv, uv+duv); fb+=2; uv += (duv << 1);
-                    DrawScanlinePixelLinearPair(fb, texture, uv, uv+duv); fb+=2; uv += (duv << 1);
-                    DrawScanlinePixelLinearPair(fb, texture, uv, uv+duv); fb+=2; uv += (duv << 1);
-                    DrawScanlinePixelLinearPair(fb, texture, uv, uv+duv); fb+=2; uv += (duv << 1);
-                    DrawScanlinePixelLinearPair(fb, texture, uv, uv+duv); fb+=2; uv += (duv << 1);
-                    DrawScanlinePixelLinearPair(fb, texture, uv, uv+duv); fb+=2; uv += (duv << 1);
-                    DrawScanlinePixelLinearPair(fb, texture, uv, uv+duv); fb+=2; uv += (duv << 1);
-                    DrawScanlinePixelLinearPair(fb, texture, uv, uv+duv); fb+=2;
+                    DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2;
 
                     invw_0 = pReciprocal(w);
                     invw_15 = pReciprocal(w += pASL(delta.w, 4));
@@ -663,25 +722,25 @@ namespace P3D
                     v0 = v * invw_0;
                     v15 = (v += pASL(delta.v,4)) * invw_15;
 
-                    uv = PackUV(u0, v0);
-                    duv = PackUV(pASR(u15-u0, 4), pASR(v15-v0, 4));
+                    du = pASR(u15-u0, 4);
+                    dv = pASR(v15-v0, 4);
                 }
 
                 unsigned int r = ((count & 15) >> 1);
 
                 switch(r)
                 {
-                    case 7: DrawScanlinePixelLinearPair(fb, texture, uv, uv+duv); fb+=2; uv += (duv << 1);
-                    case 6: DrawScanlinePixelLinearPair(fb, texture, uv, uv+duv); fb+=2; uv += (duv << 1);
-                    case 5: DrawScanlinePixelLinearPair(fb, texture, uv, uv+duv); fb+=2; uv += (duv << 1);
-                    case 4: DrawScanlinePixelLinearPair(fb, texture, uv, uv+duv); fb+=2; uv += (duv << 1);
-                    case 3: DrawScanlinePixelLinearPair(fb, texture, uv, uv+duv); fb+=2; uv += (duv << 1);
-                    case 2: DrawScanlinePixelLinearPair(fb, texture, uv, uv+duv); fb+=2; uv += (duv << 1);
-                    case 1: DrawScanlinePixelLinearPair(fb, texture, uv, uv+duv); fb+=2; uv += (duv << 1);
+                    case 7: DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
+                    case 6: DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
+                    case 5: DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
+                    case 4: DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
+                    case 3: DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
+                    case 2: DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
+                    case 1: DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
                 }
 
                 if(count & 1)
-                    DrawScanlinePixelLinearLowByte(fb, texture, uv);
+                    DrawScanlinePixelLinearLowByte(fb, texture, u0, v0);
             }
 
             void DrawTriangleScanlineAffine(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const pixel* texture)
@@ -693,60 +752,64 @@ namespace P3D
 
                 pixel* fb = pos.fb_ypos + x_start;
 
-                unsigned int uv = PackUV(pos.u_left, pos.v_left);
-                unsigned int duv = PackUV(delta.u, delta.v);
+                fp u = pos.u_left;
+                fp du = delta.u;
+
+                fp v = pos.v_left;
+                fp dv = delta.v;
+
 
                 if((size_t)fb & 1)
                 {
-                    DrawScanlinePixelLinearHighByte(fb, texture, uv); fb++; uv += duv; count--;
+                    DrawScanlinePixelLinearHighByte(fb, texture, u, v); fb++; u += du; v += dv; count--;
                 }
 
                 unsigned int l = count >> 4;
 
                 while(l--)
                 {
-                    DrawScanlinePixelLinearPair(fb, texture, uv, uv+duv); fb+=2; uv += (duv << 1);
-                    DrawScanlinePixelLinearPair(fb, texture, uv, uv+duv); fb+=2; uv += (duv << 1);
-                    DrawScanlinePixelLinearPair(fb, texture, uv, uv+duv); fb+=2; uv += (duv << 1);
-                    DrawScanlinePixelLinearPair(fb, texture, uv, uv+duv); fb+=2; uv += (duv << 1);
-                    DrawScanlinePixelLinearPair(fb, texture, uv, uv+duv); fb+=2; uv += (duv << 1);
-                    DrawScanlinePixelLinearPair(fb, texture, uv, uv+duv); fb+=2; uv += (duv << 1);
-                    DrawScanlinePixelLinearPair(fb, texture, uv, uv+duv); fb+=2; uv += (duv << 1);
-                    DrawScanlinePixelLinearPair(fb, texture, uv, uv+duv); fb+=2; uv += (duv << 1);
+                    DrawScanlinePixelLinearPair(fb, texture, u, v, u+du, v+dv); fb+=2, u += (du * 2), v += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, texture, u, v, u+du, v+dv); fb+=2, u += (du * 2), v += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, texture, u, v, u+du, v+dv); fb+=2, u += (du * 2), v += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, texture, u, v, u+du, v+dv); fb+=2, u += (du * 2), v += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, texture, u, v, u+du, v+dv); fb+=2, u += (du * 2), v += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, texture, u, v, u+du, v+dv); fb+=2, u += (du * 2), v += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, texture, u, v, u+du, v+dv); fb+=2, u += (du * 2), v += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, texture, u, v, u+du, v+dv); fb+=2, u += (du * 2), v += (dv * 2);
                 }
 
                 unsigned int r = ((count & 15) >> 1);
 
                 switch(r)
                 {
-                    case 7: DrawScanlinePixelLinearPair(fb, texture, uv, uv+duv); fb+=2; uv += (duv << 1);
-                    case 6: DrawScanlinePixelLinearPair(fb, texture, uv, uv+duv); fb+=2; uv += (duv << 1);
-                    case 5: DrawScanlinePixelLinearPair(fb, texture, uv, uv+duv); fb+=2; uv += (duv << 1);
-                    case 4: DrawScanlinePixelLinearPair(fb, texture, uv, uv+duv); fb+=2; uv += (duv << 1);
-                    case 3: DrawScanlinePixelLinearPair(fb, texture, uv, uv+duv); fb+=2; uv += (duv << 1);
-                    case 2: DrawScanlinePixelLinearPair(fb, texture, uv, uv+duv); fb+=2; uv += (duv << 1);
-                    case 1: DrawScanlinePixelLinearPair(fb, texture, uv, uv+duv); fb+=2; uv += (duv << 1);
+                    case 7: DrawScanlinePixelLinearPair(fb, texture, u, v, u+du, v+dv); fb+=2; u += (du * 2), v += (dv * 2);
+                    case 6: DrawScanlinePixelLinearPair(fb, texture, u, v, u+du, v+dv); fb+=2; u += (du * 2), v += (dv * 2);
+                    case 5: DrawScanlinePixelLinearPair(fb, texture, u, v, u+du, v+dv); fb+=2; u += (du * 2), v += (dv * 2);
+                    case 4: DrawScanlinePixelLinearPair(fb, texture, u, v, u+du, v+dv); fb+=2; u += (du * 2), v += (dv * 2);
+                    case 3: DrawScanlinePixelLinearPair(fb, texture, u, v, u+du, v+dv); fb+=2; u += (du * 2), v += (dv * 2);
+                    case 2: DrawScanlinePixelLinearPair(fb, texture, u, v, u+du, v+dv); fb+=2; u += (du * 2), v += (dv * 2);
+                    case 1: DrawScanlinePixelLinearPair(fb, texture, u, v, u+du, v+dv); fb+=2; u += (du * 2), v += (dv * 2);
                 }
 
                 if(count & 1)
-                    DrawScanlinePixelLinearLowByte(fb, texture, uv);
+                    DrawScanlinePixelLinearLowByte(fb, texture, u, v);
             }
 
-            inline void DrawScanlinePixelLinearPair(pixel* fb, const pixel* texels, const unsigned int uv1, const unsigned int uv2)
+            inline void DrawScanlinePixelLinearPair(pixel* fb, const pixel* texels, const fp u1, const fp v1, const fp u2, const fp v2)
             {
-                unsigned int tx = (uv1 >> 26);
-                unsigned int ty = ((uv1 >> 4) & (TEX_MASK << TEX_SHIFT));
+                unsigned int tx = (int)u1 & TEX_MASK;
+                unsigned int ty = ((int)v1 & TEX_MASK) << TEX_SHIFT;
 
-                unsigned int tx2 = (uv2 >> 26);
-                unsigned int ty2 = ((uv2 >> 4) & (TEX_MASK << TEX_SHIFT));
+                unsigned int tx2 = (int)u2 & TEX_MASK;
+                unsigned int ty2 = ((int)v2 & TEX_MASK) << TEX_SHIFT;
 
                 *(unsigned short*)fb = ((texels[ty + tx]) | (texels[(ty2 + tx2)] << 8));
             }
 
-            inline void DrawScanlinePixelLinearLowByte(pixel *fb, const pixel* texels, const unsigned int uv)
+            inline void DrawScanlinePixelLinearLowByte(pixel *fb, const pixel* texels, const fp u, const fp v)
             {
-                unsigned int tx = (uv >> 26);
-                unsigned int ty = ((uv >> 4) & (TEX_MASK << TEX_SHIFT));
+                unsigned int tx = (int)u & TEX_MASK;
+                unsigned int ty = ((int)v & TEX_MASK) << TEX_SHIFT;
 
                 unsigned short* p16 = (unsigned short*)(fb);
                 pixel* p8 = (pixel*)p16;
@@ -756,10 +819,10 @@ namespace P3D
                 *p16 = texel;
             }
 
-            inline void DrawScanlinePixelLinearHighByte(pixel *fb, const pixel* texels, const unsigned int uv)
+            inline void DrawScanlinePixelLinearHighByte(pixel *fb, const pixel* texels, const fp u, const fp v)
             {
-                unsigned int tx = (uv >> 26);
-                unsigned int ty = ((uv >> 4) & (TEX_MASK << TEX_SHIFT));
+                unsigned int tx = (int)u & TEX_MASK;
+                unsigned int ty = ((int)v & TEX_MASK) << TEX_SHIFT;
 
                 unsigned short* p16 = (unsigned short*)(fb-1);
                 pixel* p8 = (pixel*)p16;
@@ -780,7 +843,7 @@ namespace P3D
 
                 if((size_t)fb & 1)
                 {
-                    DrawScanlinePixelLinearHighByte(fb, &color, 0); fb++; count--;
+                    DrawScanlinePixelLinearHighByte(fb, &color, 0, 0); fb++; count--;
                 }
 
                 if(count >> 1)
@@ -790,22 +853,8 @@ namespace P3D
 
                 if(count & 1)
                 {
-                    DrawScanlinePixelLinearLowByte(&fb[count-1], &color, 0);
+                    DrawScanlinePixelLinearLowByte(&fb[count-1], &color, 0, 0);
                 }
-            }
-
-
-            unsigned int PackUV(fp u, fp v)
-            {
-        #ifndef USE_FLOAT
-                unsigned int du = u.toFPInt();
-                unsigned int dv = v.toFPInt();
-        #else
-                unsigned int du = (unsigned int)pASL(u, 16);
-                unsigned int dv = (unsigned int)pASL(v, 16);
-        #endif
-
-                return ((du << 10) & 0xffff0000) | ((dv >> 6) & 0x0000ffff);
             }
 
             bool IsTriangleFrontface(const Vertex4d screenSpacePoints[])
@@ -819,47 +868,72 @@ namespace P3D
                 return ((x1 * y2) - (y1 * x2)) > 0;
             }
 
-            void GetTriangleLerpDeltasZWUV(const Vertex4d& left, const Vertex4d& right, const Vertex4d& other, TriDrawXDeltaZWUV& x_delta, TriDrawYDeltaZWUV &y_delta)
+            void GetTriangleLerpXDeltasZWUV(TriDrawXDeltaZWUV& x_delta, const TriEdgeTrace& pos)
             {
-                fp d_y = (left.pos.y - other.pos.y);
-                fp d_x = (right.pos.x - left.pos.x);
+                fp d_x = (pos.x_right - pos.x_left) != 0 ? (pos.x_right - pos.x_left) : fp(1);
 
-                x_delta.u = (right.uv.x - left.uv.x) / d_x;
-                x_delta.v = (right.uv.y - left.uv.y) / d_x;
+                x_delta.u = (pos.u_right - pos.u_left) / d_x;
+                x_delta.v = (pos.v_right - pos.v_left) / d_x;
 
                 if constexpr (render_flags & PerspectiveMapping)
                 {
-                    x_delta.w = (right.pos.w - left.pos.w) / d_x;
-                    y_delta.w = (left.pos.w - other.pos.w) / d_y;
+                    x_delta.w = (pos.w_right - pos.w_left) / d_x;
                 }
 
                 if constexpr (render_flags & (ZTest | ZWrite))
                 {
-                    x_delta.z = (right.pos.z - left.pos.z) / d_x;
-                    y_delta.z = (left.pos.z - other.pos.z) / d_y;
+                    x_delta.z = (pos.z_right - pos.z_left) / d_x;
                 }
-
-                y_delta.x_left = (left.pos.x - other.pos.x) / d_y;
-                y_delta.x_right = (right.pos.x - other.pos.x) / d_y;
-
-                y_delta.u = (left.uv.x - other.uv.x) / d_y;
-                y_delta.v = (left.uv.y - other.uv.y) / d_y;
             }
 
-            void GetTriangleLerpDeltasZ(const Vertex4d& left, const Vertex4d& right, const Vertex4d& other, TriDrawXDeltaZWUV& x_delta, TriDrawYDeltaZWUV &y_delta)
+            void GetTriangleLerpYDeltasZWUV(const Vertex4d& left, const Vertex4d& right, const Vertex4d& other, TriDrawYDeltaZWUV &y_delta)
             {
-                fp d_y = (left.pos.y - other.pos.y);
-
-                if constexpr (render_flags & (ZTest | ZWrite))
-                {
-                    fp d_x = (right.pos.x - left.pos.x);
-
-                    x_delta.z = (right.pos.z - left.pos.z) / d_x;
-                    y_delta.z = (left.pos.z - other.pos.z) / d_y;
-                }
+                fp d_y = (left.pos.y - other.pos.y) != 0 ? (left.pos.y - other.pos.y) : fp(1);
 
                 y_delta.x_left = (left.pos.x - other.pos.x) / d_y;
                 y_delta.x_right = (right.pos.x - other.pos.x) / d_y;
+
+                y_delta.u_left = (left.uv.x - other.uv.x) / d_y;
+                y_delta.u_right = (right.uv.x - other.uv.x) / d_y;
+
+                y_delta.v_left = (left.uv.y - other.uv.y) / d_y;
+                y_delta.v_right = (right.uv.y - other.uv.y) / d_y;
+
+                if constexpr (render_flags & PerspectiveMapping)
+                {
+                    y_delta.w_left = (left.pos.w - other.pos.w) / d_y;
+                    y_delta.w_right = (right.pos.w - other.pos.w) / d_y;
+                }
+
+                if constexpr (render_flags & (ZTest | ZWrite))
+                {
+                    y_delta.z_left = (left.pos.z - other.pos.z) / d_y;
+                    y_delta.z_right = (right.pos.z - other.pos.z) / d_y;
+                }
+            }
+
+            void GetTriangleLerpXDeltasZ(TriDrawXDeltaZWUV& x_delta, const TriEdgeTrace& pos)
+            {
+                if constexpr (render_flags & (ZTest | ZWrite))
+                {
+                    fp d_x = (pos.x_right - pos.x_left) != 0 ? (pos.x_right - pos.x_left) : fp(1);
+
+                    x_delta.z = (pos.z_right - pos.z_left) / d_x;
+                }
+            }
+
+            void GetTriangleLerpYDeltasZ(const Vertex4d& left, const Vertex4d& right, const Vertex4d& other, TriDrawYDeltaZWUV &y_delta)
+            {
+                fp d_y = (left.pos.y - other.pos.y) != 0 ? (left.pos.y - other.pos.y) : fp(1);
+
+                y_delta.x_left = (left.pos.x - other.pos.x) / d_y;
+                y_delta.x_right = (right.pos.x - other.pos.x) / d_y;
+
+                if constexpr (render_flags & (ZTest | ZWrite))
+                {
+                    y_delta.z_left = (left.pos.z - other.pos.z) / d_y;
+                    y_delta.z_right = (right.pos.z - other.pos.z) / d_y;
+                }
             }
 
             void LerpVertexXYZWUV(Vertex4d& out, const Vertex4d& left, const Vertex4d& right, fp frac)
