@@ -11,8 +11,11 @@ namespace P3D
     {
         typedef struct TriEdgeTrace
         {
-            fp x_left, x_right, w_left, z_left;
-            fp u_left, v_left;
+            fp x_left, x_right;
+            fp u_left, u_right;
+            fp v_left, v_right;
+            fp w_left, w_right;
+            fp z_left, z_right;
             pixel* fb_ypos;
         } TriEdgeTrace;
 
@@ -27,7 +30,10 @@ namespace P3D
         typedef struct TriDrawYDeltaZWUV
         {
             fp x_left, x_right;
-            fp u, v, w, z;
+            fp u_left, u_right;
+            fp v_left, v_right;
+            fp w_left, w_right;
+            fp z_left, z_right;
         } TriDrawYDeltaZWUV;
 
 
@@ -421,31 +427,46 @@ namespace P3D
 
                 if(current_material->type == Material::Texture)
                 {
-                    GetTriangleLerpDeltasZWUV(left, right, top, x_delta, y_delta);
+                    GetTriangleLerpYDeltasZWUV(left, right, top, y_delta);
 
-                    pos.u_left = top.uv.x + (stepY * y_delta.u);
-                    pos.v_left = top.uv.y + (stepY * y_delta.v);
+                    pos.u_left = top.uv.x + (stepY * y_delta.u_left);
+                    pos.u_right = top.uv.x + (stepY * y_delta.u_right);
+
+                    pos.v_left = top.uv.y + (stepY * y_delta.v_left);
+                    pos.v_right = top.uv.y + (stepY * y_delta.v_right);
 
                     if constexpr(render_flags & PerspectiveMapping)
                     {
-                        pos.w_left = top.pos.w + (stepY * y_delta.w);
+                        pos.w_left = top.pos.w + (stepY * y_delta.w_left);
+                        pos.w_right = top.pos.w + (stepY * y_delta.w_right);
                     }
                 }
                 else
-                    GetTriangleLerpDeltasZ(left, right, top, x_delta, y_delta);
+                    GetTriangleLerpYDeltasZ(left, right, top, y_delta);
 
 
                 pos.fb_ypos = &current_viewport->start[yStart * current_viewport->y_pitch];
+
                 pos.x_left =  top.pos.x + (stepY * y_delta.x_left);
                 pos.x_right = top.pos.x + (stepY * y_delta.x_right);
 
                 if constexpr (render_flags & (ZTest | ZWrite))
                 {
-                    pos.z_left = top.pos.z + (stepY * y_delta.z);
+                    pos.z_left = top.pos.z + (stepY * y_delta.z_left);
+                    pos.z_right = top.pos.x + (stepY * y_delta.z_right);
                 }
 
                 for(int y = yStart; y < yEnd; y++)
                 {
+                    if(current_material->type == Material::Texture)
+                    {
+                        GetTriangleLerpXDeltasZWUV(x_delta, pos);
+                    }
+                    else
+                    {
+                        GetTriangleLerpXDeltasZ(x_delta, pos);
+                    }
+
                     DrawSpan(pos, x_delta);
 
                     pos.x_left += y_delta.x_left;
@@ -454,17 +475,22 @@ namespace P3D
 
                     if constexpr (render_flags & (ZTest | ZWrite))
                     {
-                        pos.z_left = y_delta.z;
+                        pos.z_left += y_delta.z_left;
+                        pos.z_right += y_delta.z_right;
                     }
 
                     if(current_material->type == Material::Texture)
                     {
-                        pos.u_left += y_delta.u;
-                        pos.v_left += y_delta.v;
+                        pos.u_left += y_delta.u_left;
+                        pos.u_right += y_delta.u_right;
+
+                        pos.v_left += y_delta.v_left;
+                        pos.v_right += y_delta.v_right;
 
                         if constexpr(render_flags & PerspectiveMapping)
                         {
-                            pos.w_left += y_delta.w;
+                            pos.w_left += y_delta.w_left;
+                            pos.w_right += y_delta.w_right;
                         }
                     }
                 }
@@ -505,18 +531,22 @@ namespace P3D
 
                 if(current_material->type == Material::Texture)
                 {
-                    GetTriangleLerpDeltasZWUV(left, right, bottom, x_delta, y_delta);
+                    GetTriangleLerpYDeltasZWUV(left, right, bottom, y_delta);
 
-                    pos.u_left = left.uv.x + (stepY * y_delta.u);
-                    pos.v_left = left.uv.y + (stepY * y_delta.v);
+                    pos.u_left = left.uv.x + (stepY * y_delta.u_left);
+                    pos.u_right = right.uv.x + (stepY * y_delta.u_right);
+
+                    pos.v_left = left.uv.y + (stepY * y_delta.v_left);
+                    pos.v_right = right.uv.y + (stepY * y_delta.v_right);
 
                     if constexpr(render_flags & PerspectiveMapping)
                     {
-                        pos.w_left = left.pos.w + (stepY * y_delta.w);
+                        pos.w_left = left.pos.w + (stepY * y_delta.w_left);
+                        pos.w_right = right.pos.w + (stepY * y_delta.w_right);
                     }
                 }
                 else
-                    GetTriangleLerpDeltasZ(left, right, bottom, x_delta, y_delta);
+                    GetTriangleLerpYDeltasZ(left, right, bottom, y_delta);
 
                 pos.fb_ypos = &current_viewport->start[yStart * current_viewport->y_pitch];
                 pos.x_left =  left.pos.x + (stepY * y_delta.x_left);
@@ -524,11 +554,21 @@ namespace P3D
 
                 if constexpr (render_flags & (ZTest | ZWrite))
                 {
-                    pos.z_left = left.pos.z + (stepY * y_delta.z);
+                    pos.z_left = left.pos.z + (stepY * y_delta.z_left);
+                    pos.z_right = right.pos.z + (stepY * y_delta.z_right);
                 }
 
                 for (int y = yStart; y < yEnd; y++)
                 {
+                    if(current_material->type == Material::Texture)
+                    {
+                        GetTriangleLerpXDeltasZWUV(x_delta, pos);
+                    }
+                    else
+                    {
+                        GetTriangleLerpXDeltasZ(x_delta, pos);
+                    }
+
                     DrawSpan(pos, x_delta);
 
                     pos.x_left += y_delta.x_left;
@@ -537,17 +577,22 @@ namespace P3D
 
                     if constexpr (render_flags & (ZTest | ZWrite))
                     {
-                        pos.z_left = y_delta.z;
+                        pos.z_left = y_delta.z_left;
+                        pos.z_right = y_delta.z_right;
                     }
 
                     if(current_material->type == Material::Texture)
                     {
-                        pos.u_left += y_delta.u;
-                        pos.v_left += y_delta.v;
+                        pos.u_left += y_delta.u_left;
+                        pos.u_right += y_delta.u_right;
+
+                        pos.v_left += y_delta.v_left;
+                        pos.v_right += y_delta.v_right;
 
                         if constexpr(render_flags & PerspectiveMapping)
                         {
-                            pos.w_left += y_delta.w;
+                            pos.w_left += y_delta.w_left;
+                            pos.w_right += y_delta.w_right;
                         }
                     }
                 }
@@ -819,47 +864,72 @@ namespace P3D
                 return ((x1 * y2) - (y1 * x2)) > 0;
             }
 
-            void GetTriangleLerpDeltasZWUV(const Vertex4d& left, const Vertex4d& right, const Vertex4d& other, TriDrawXDeltaZWUV& x_delta, TriDrawYDeltaZWUV &y_delta)
+            void GetTriangleLerpXDeltasZWUV(TriDrawXDeltaZWUV& x_delta, TriEdgeTrace& pos)
             {
-                fp d_y = (left.pos.y - other.pos.y);
-                fp d_x = (right.pos.x - left.pos.x);
+                fp d_x = (pos.x_right - pos.x_left);
 
-                x_delta.u = (right.uv.x - left.uv.x) / d_x;
-                x_delta.v = (right.uv.y - left.uv.y) / d_x;
+                x_delta.u = (pos.u_right - pos.u_left) / d_x;
+                x_delta.v = (pos.v_right - pos.v_left) / d_x;
 
                 if constexpr (render_flags & PerspectiveMapping)
                 {
-                    x_delta.w = (right.pos.w - left.pos.w) / d_x;
-                    y_delta.w = (left.pos.w - other.pos.w) / d_y;
+                    x_delta.w = (pos.w_right - pos.w_left) / d_x;
                 }
 
                 if constexpr (render_flags & (ZTest | ZWrite))
                 {
-                    x_delta.z = (right.pos.z - left.pos.z) / d_x;
-                    y_delta.z = (left.pos.z - other.pos.z) / d_y;
+                    x_delta.z = (pos.z_right - pos.z_left) / d_x;
                 }
-
-                y_delta.x_left = (left.pos.x - other.pos.x) / d_y;
-                y_delta.x_right = (right.pos.x - other.pos.x) / d_y;
-
-                y_delta.u = (left.uv.x - other.uv.x) / d_y;
-                y_delta.v = (left.uv.y - other.uv.y) / d_y;
             }
 
-            void GetTriangleLerpDeltasZ(const Vertex4d& left, const Vertex4d& right, const Vertex4d& other, TriDrawXDeltaZWUV& x_delta, TriDrawYDeltaZWUV &y_delta)
+            void GetTriangleLerpYDeltasZWUV(const Vertex4d& left, const Vertex4d& right, const Vertex4d& other, TriDrawYDeltaZWUV &y_delta)
             {
                 fp d_y = (left.pos.y - other.pos.y);
 
+                y_delta.x_left = (left.pos.x - other.pos.x) / d_y;
+                y_delta.x_right = (right.pos.x - other.pos.x) / d_y;
+
+                y_delta.u_left = (left.uv.x - other.uv.x) / d_y;
+                y_delta.u_right = (right.uv.x - other.uv.x) / d_y;
+
+                y_delta.v_left = (left.uv.y - other.uv.y) / d_y;
+                y_delta.v_right = (right.uv.y - other.uv.y) / d_y;
+
+                if constexpr (render_flags & PerspectiveMapping)
+                {
+                    y_delta.w_left = (left.pos.w - other.pos.w) / d_y;
+                    y_delta.w_right = (right.pos.w - other.pos.w) / d_y;
+                }
+
                 if constexpr (render_flags & (ZTest | ZWrite))
                 {
-                    fp d_x = (right.pos.x - left.pos.x);
-
-                    x_delta.z = (right.pos.z - left.pos.z) / d_x;
-                    y_delta.z = (left.pos.z - other.pos.z) / d_y;
+                    y_delta.z_left = (left.pos.z - other.pos.z) / d_y;
+                    y_delta.z_right = (right.pos.z - other.pos.z) / d_y;
                 }
+            }
+
+            void GetTriangleLerpXDeltasZ(TriDrawXDeltaZWUV& x_delta, TriEdgeTrace& pos)
+            {
+                if constexpr (render_flags & (ZTest | ZWrite))
+                {
+                    fp d_x = (pos.x_right - pos.x_left);
+
+                    x_delta.z = (pos.z_right - pos.z_left) / d_x;
+                }
+            }
+
+            void GetTriangleLerpYDeltasZ(const Vertex4d& left, const Vertex4d& right, const Vertex4d& other, TriDrawYDeltaZWUV &y_delta)
+            {
+                fp d_y = (left.pos.y - other.pos.y);
 
                 y_delta.x_left = (left.pos.x - other.pos.x) / d_y;
                 y_delta.x_right = (right.pos.x - other.pos.x) / d_y;
+
+                if constexpr (render_flags & (ZTest | ZWrite))
+                {
+                    y_delta.z_left = (left.pos.z - other.pos.z) / d_y;
+                    y_delta.z_right = (right.pos.z - other.pos.z) / d_y;
+                }
             }
 
             void LerpVertexXYZWUV(Vertex4d& out, const Vertex4d& left, const Vertex4d& right, fp frac)
