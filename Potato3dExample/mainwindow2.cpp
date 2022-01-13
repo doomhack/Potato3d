@@ -108,7 +108,7 @@ void MainWindow2::paintEvent(QPaintEvent *event)
     uv[1] = P3D::V2<P3D::fp>(64,64);
     uv[2] = P3D::V2<P3D::fp>(0,64);
 
-    //render_device->DrawTriangle(v, uv);
+    render_device->DrawTriangle(v, uv);
 
     render_device->EndFrame();
 
