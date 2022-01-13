@@ -424,11 +424,11 @@ namespace P3D
                 if((top.pos.x >= fb_x && left.pos.x >= fb_x) || (right.pos.x < 0 && top.pos.x < 0))
                     return;
 
-                fp pixelCentreTopY = PixelCentre(top.pos.y);
+                fp pixelCentreTopY = PixelCentreL(top.pos.y);
                 fp stepY = pixelCentreTopY - top.pos.y;
 
                 int yStart = pixelCentreTopY;
-                int yEnd = PixelCentre(left.pos.y);
+                int yEnd = PixelCentreR(left.pos.y);
 
                 if(yEnd < 0 || yStart >= fb_y)
                     return;
@@ -528,11 +528,11 @@ namespace P3D
                 if((bottom.pos.x >= fb_x && left.pos.x >= fb_x) || (right.pos.x < 0 && bottom.pos.x < 0))
                     return;
 
-                fp pixelCentreTopY = PixelCentre(left.pos.y);
+                fp pixelCentreTopY = PixelCentreL(left.pos.y);
                 fp stepY = pixelCentreTopY - left.pos.y;
 
                 int yStart = pixelCentreTopY;
-                int yEnd = PixelCentre(bottom.pos.y);
+                int yEnd = PixelCentreR(bottom.pos.y);
 
                 if(yEnd > fb_y)
                     yEnd = fb_y;
@@ -618,11 +618,11 @@ namespace P3D
 
                 const int fb_width = current_viewport->width;
 
-                fp pixelCentreLeftX = PixelCentre(pos.x_left);
+                fp pixelCentreLeftX = PixelCentreL(pos.x_left);
                 fp stepX = pixelCentreLeftX - pos.x_left;
 
                 int x_start = pixelCentreLeftX;
-                int x_end = PixelCentre(pos.x_right);
+                int x_end = PixelCentreR(pos.x_right);
 
                 if(x_start > (x_end-1))
                     return;
@@ -961,7 +961,12 @@ namespace P3D
                 return ((halfFbX * frac) + halfFbX);
             }
 
-            fp PixelCentre(fp x)
+            fp PixelCentreL(fp x)
+            {
+                return pCeil(x - fp(0.5001)) + fp(0.5);
+            }
+
+            fp PixelCentreR(fp x)
             {
                 return pCeil(x - fp(0.5)) + fp(0.5);
             }

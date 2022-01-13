@@ -44,6 +44,7 @@ MainWindow2::~MainWindow2()
 
 }
 static P3D::fp rotateY = 0;
+static P3D::fp translate = -100;
 
 void MainWindow2::paintEvent(QPaintEvent *event)
 {
@@ -78,7 +79,7 @@ void MainWindow2::paintEvent(QPaintEvent *event)
 
     render_device->PushMatrix();
     render_device->LoadIdentity();
-    render_device->Translate(P3D::V3<P3D::fp>(0,0,-100));
+    render_device->Translate(P3D::V3<P3D::fp>(0,0,translate));
 
 
 
@@ -163,5 +164,14 @@ void MainWindow2::keyPressEvent(QKeyEvent *event)
     else if(event->key() == Qt::Key_Right)
     {
         rotateY += P3D::fp(1);
+    }
+
+    if(event->key() == Qt::Key_Up)
+    {
+        translate += P3D::fp(1);
+    }
+    else if(event->key() == Qt::Key_Down)
+    {
+        translate -= P3D::fp(1);
     }
 }
