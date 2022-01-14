@@ -35,29 +35,29 @@ namespace P3D
     template <>
     constexpr inline int pRound(FP val)
     {
-        return val + (FP(1) >> 1u);
+        return val + (FP(1) >> 1);
     }
 
     template <class T>
-    constexpr inline T pASL(T val, unsigned int shift)
+    constexpr inline T pASL(T val, int shift)
     {
         return val * (1 << shift);
     }
 
     template <>
-    constexpr inline FP pASL(FP val, unsigned int shift)
+    constexpr inline FP pASL(FP val, int shift)
     {
         return val << shift;
     }
 
     template <class T>
-    constexpr inline T pASR(T val, unsigned int shift)
+    constexpr inline T pASR(T val, int shift)
     {
         return val / (1 << shift);
     }
 
     template <>
-    constexpr inline FP pASR(FP val, unsigned int shift)
+    constexpr inline FP pASR(FP val, int shift)
     {
         return val >> shift;
     }
@@ -156,7 +156,7 @@ namespace P3D
 
         while(val > 1)
         {
-            val = (val >> 1u);
+            val = (val >> 1);
             shift++;
         }
 

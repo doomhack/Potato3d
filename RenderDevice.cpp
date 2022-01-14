@@ -195,7 +195,7 @@ namespace P3D
     {
         TransformVertexes(vertexes, 3);
 
-        int indexes[3] = {0,1,2};
+        const unsigned int indexes[3] = {0,1,2};
 
         DrawTriangle(indexes, uvs);
     }
@@ -215,7 +215,7 @@ namespace P3D
         }
     }
 
-    void RenderDevice::DrawTriangle(const int indexes[3], const V2<fp> uvs[3])
+    void RenderDevice::DrawTriangle(const unsigned int indexes[3], const V2<fp> uvs[3])
     {
         TransformedTriangle tri;
 

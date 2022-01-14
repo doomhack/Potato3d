@@ -60,7 +60,7 @@ namespace P3D
 
         void TransformVertexes(const V3<fp>* vertexes, const unsigned int count);
 
-        void DrawTriangle(const int vx_indexes[3], const V2<fp> uvs[3] = nullptr);
+        void DrawTriangle(const unsigned int vx_indexes[], const V2<fp> uvs[3] = nullptr);
 
     private:
 

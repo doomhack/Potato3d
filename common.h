@@ -21,12 +21,12 @@ namespace P3D
 
     #define PERSPECTIVE_CORRECT_Z_DELTA_THREASHOLD (fp(0.03f))
 
-    #define USE_FLOAT
+    //#define USE_FLOAT
 
     typedef unsigned char pixel;
 
     #ifdef USE_FLOAT
-        typedef double fp;
+        typedef float fp;
         typedef fp z_val;
     #else
         typedef FP fp;

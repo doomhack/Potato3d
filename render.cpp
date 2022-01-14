@@ -935,7 +935,7 @@ namespace P3D
     }
 
     fp Render::fracToY(fp frac)
-    {
+    {        
         fp halfFbY = fbSize.y >> 1;
 
         return pRound((halfFbY * -frac) + halfFbY);

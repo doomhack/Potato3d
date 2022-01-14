@@ -221,12 +221,12 @@ namespace P3D
         constexpr FP& operator^=(const int& r)              {return *this^=FP(r);}
 
         //<<
-        constexpr FP operator<<(const unsigned int r) const {FP v(*this);   return v<<=r;}
-        constexpr FP& operator<<=(const unsigned int r)     {n <<= r;  return *this;}
+        constexpr FP operator<<(const int r) const {FP v(*this);   return v<<=r;}
+        constexpr FP& operator<<=(const int r)     {n <<= r;  return *this;}
 
         //>>
-        constexpr FP operator>>(const unsigned int r) const {FP v(*this);   return v>>=r;}
-        constexpr FP& operator>>=(const unsigned int r)     {n >>= r;  return *this;}
+        constexpr FP operator>>(const int r) const {FP v(*this);   return v>>=r;}
+        constexpr FP& operator>>=(const int r)     {n >>= r;  return *this;}
 
         static const unsigned int fracbits = 16;
 

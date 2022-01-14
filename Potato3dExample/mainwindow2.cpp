@@ -81,10 +81,7 @@ void MainWindow2::paintEvent(QPaintEvent *event)
     render_device->LoadIdentity();
     render_device->Translate(P3D::V3<P3D::fp>(0,0,translate));
 
-
-
-
-
+/*
 
     render_device->BeginFrame();
 
@@ -110,6 +107,36 @@ void MainWindow2::paintEvent(QPaintEvent *event)
     uv[2] = P3D::V2<P3D::fp>(0,64);
 
     render_device->DrawTriangle(v, uv);
+
+    render_device->EndFrame();
+*/
+
+    render_device->BeginFrame();
+
+    P3D::V3<P3D::fp> v[4];
+    v[0] = P3D::V3<P3D::fp>(-100,100,0);
+    v[1] = P3D::V3<P3D::fp>(100,100,0);
+    v[2] = P3D::V3<P3D::fp>(100,-100,0);
+    v[3] = P3D::V3<P3D::fp>(-100,-100,0);
+
+    render_device->TransformVertexes(v, 4);
+
+    P3D::V2<P3D::fp> uv[3];
+    uv[0] = P3D::V2<P3D::fp>(0,0);
+    uv[1] = P3D::V2<P3D::fp>(64,0);
+    uv[2] = P3D::V2<P3D::fp>(64,64);
+
+    unsigned int vi[3] = {0,1,2};
+
+    render_device->DrawTriangle(vi, uv);
+
+    uv[0] = P3D::V2<P3D::fp>(0,0);
+    uv[1] = P3D::V2<P3D::fp>(64,64);
+    uv[2] = P3D::V2<P3D::fp>(0,64);
+
+    unsigned int vi2[3] = {0,2,3};
+
+    render_device->DrawTriangle(vi2, uv);
 
     render_device->EndFrame();
 
