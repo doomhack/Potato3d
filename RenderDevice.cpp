@@ -83,7 +83,7 @@ namespace P3D
 
         model_view_matrix_stack.push_back(m);
 
-        return model_view_matrix_stack.size();
+        return (int)model_view_matrix_stack.size();
     }
 
     unsigned int RenderDevice::PopMatrix()
@@ -93,14 +93,14 @@ namespace P3D
             model_view_matrix_stack.pop_back();
         }
 
-        return model_view_matrix_stack.size();
+        return (int)model_view_matrix_stack.size();
     }
 
     void RenderDevice::UpdateTransformMatrix()
     {
         transform_matrix = projection_matrix * model_view_matrix_stack.back();
 
-        for(int i = model_view_matrix_stack.size() -1; i >= 1; i--)
+        for(size_t i = model_view_matrix_stack.size() -1; i >= 1; i--)
         {
             transform_matrix *= model_view_matrix_stack[i];
         }

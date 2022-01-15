@@ -2,7 +2,6 @@
 #define FP_H
 
 #include <limits>
-
 #include "divide.h"
 
 //#define OVERFLOW_CHECK

@@ -226,7 +226,9 @@ namespace P3D
 
                 fp l1 = (a1 - b1);
 
-                return l1 / (l1 - a2 + b2);
+                fp cp = (l1 - a2 + b2);
+
+                return (l1 / cp);
             }
 
             void TriangulatePolygon(Vertex4d clipSpacePoints[], const int vxCount)
@@ -865,7 +867,7 @@ namespace P3D
                 fp x2 = (screenSpacePoints[1].pos.x - screenSpacePoints[2].pos.x);
                 fp y2 = (screenSpacePoints[2].pos.y - screenSpacePoints[1].pos.y);
 
-                return ((x1 * y2) - (y1 * x2)) > 0;
+                return ((x1 * y2) < (y1 * x2));
             }
 
             void GetTriangleLerpXDeltasZWUV(TriDrawXDeltaZWUV& x_delta, const TriEdgeTrace& pos)

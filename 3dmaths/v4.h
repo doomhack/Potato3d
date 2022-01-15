@@ -2,9 +2,7 @@
 #define V4_H
 
 #include "fp.h"
-
 #include "v3.h"
-
 #include "utils.h"
 
 namespace P3D
@@ -98,11 +96,6 @@ namespace P3D
             v.z = ((x * r.y) - (y * r.x));
 
             return v;
-        }
-
-        constexpr T CrossProductZ(const V4& r) const
-        {
-            return ((x * r.y) - (y * r.x));
         }
 
         constexpr void ToScreenSpace()

@@ -126,7 +126,7 @@ void MainWindow2::paintEvent(QPaintEvent *event)
     uv[1] = P3D::V2<P3D::fp>(64,0);
     uv[2] = P3D::V2<P3D::fp>(64,64);
 
-    unsigned int vi[3] = {0,1,2};
+    unsigned int vi[3] = {2,1,0};
 
     render_device->DrawTriangle(vi, uv);
 
@@ -201,4 +201,10 @@ void MainWindow2::keyPressEvent(QKeyEvent *event)
     {
         translate -= P3D::fp(1);
     }
+
+    if(rotateY >= 360)
+        rotateY -= 360;
+
+    if(rotateY < 0)
+        rotateY += 360;
 }
