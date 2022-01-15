@@ -96,6 +96,11 @@ namespace P3D
         return (int)model_view_matrix_stack.size();
     }
 
+    M4<fp>& RenderDevice::GetMatrix()
+    {
+        return model_view_matrix_stack.back();
+    }
+
     void RenderDevice::UpdateTransformMatrix()
     {
         transform_matrix = projection_matrix * model_view_matrix_stack.back();
@@ -215,7 +220,7 @@ namespace P3D
 
     void RenderDevice::DrawTriangle(const unsigned int indexes[3], const V2<fp> uvs[3])
     {
-        TransformedTriangle tri;
+        P3D::Internal::TransformedTriangle tri;
 
         tri.verts[0].pos = transformed_vertexes[indexes[0]];
         tri.verts[1].pos = transformed_vertexes[indexes[1]];

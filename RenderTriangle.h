@@ -515,7 +515,6 @@ namespace P3D
 
             void DrawTriangleSpans(int yStart, int yEnd, TriEdgeTrace& pos, TriDrawYDeltaZWUV y_delta)
             {
-
                 pos.fb_ypos = &current_viewport->start[yStart * current_viewport->y_pitch];
 
                 for (int y = yStart; y < yEnd; y++)

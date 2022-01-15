@@ -7,12 +7,6 @@ namespace P3D
 {
     Object3d::Object3d()
     {
-        renderFlags = AutoPerspectiveCorrect;
-    }
-
-    Object3d::Object3d(Render* render)
-    {
-        this->render = render;
     }
 
     bool Object3d::Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov, fp zNear, fp zFar, pixel *framebuffer)

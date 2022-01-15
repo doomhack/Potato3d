@@ -32,6 +32,8 @@ namespace P3D
 
         unsigned int PushMatrix();
         unsigned int PopMatrix();
+        M4<fp>& GetMatrix();
+
 
         void UpdateTransformMatrix();
 
@@ -42,6 +44,7 @@ namespace P3D
         void RotateX(fp angle);
         void RotateY(fp angle);
         void RotateZ(fp angle);
+
 
         //Clear
         void ClearColor(pixel color);
@@ -65,8 +68,8 @@ namespace P3D
     private:
 
         RenderTarget* render_target = nullptr;
-        RenderTargetViewport viewport;
-        RenderDeviceNearFarPlanes z_planes;
+        P3D::Internal::RenderTargetViewport viewport;
+        P3D::Internal::RenderDeviceNearFarPlanes z_planes;
 
         //Matrixes.
         M4<fp> projection_matrix;
