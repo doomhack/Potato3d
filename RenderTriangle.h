@@ -413,7 +413,6 @@ namespace P3D
                 //Flat bottom triangle.
 
                 TriEdgeTrace pos;
-                TriDrawXDeltaZWUV x_delta;
                 TriDrawYDeltaZWUV y_delta;
 
                 const Vertex4d& top     = points[0];
@@ -441,75 +440,11 @@ namespace P3D
                 if(yStart < 0)
                     yStart = 0;
 
-                if(current_material->type == Material::Texture)
-                {
-                    GetTriangleLerpYDeltasZWUV(left, right, top, y_delta);
+                GetTriangleLerpYDeltas(left, right, top, y_delta);
 
-                    pos.u_left = top.uv.x + (stepY * y_delta.u_left);
-                    pos.u_right = top.uv.x + (stepY * y_delta.u_right);
+                PreStepYTriangle(stepY, top, top, pos, y_delta);
 
-                    pos.v_left = top.uv.y + (stepY * y_delta.v_left);
-                    pos.v_right = top.uv.y + (stepY * y_delta.v_right);
-
-                    if constexpr(render_flags & PerspectiveMapping)
-                    {
-                        pos.w_left = top.pos.w + (stepY * y_delta.w_left);
-                        pos.w_right = top.pos.w + (stepY * y_delta.w_right);
-                    }
-                }
-                else
-                    GetTriangleLerpYDeltasZ(left, right, top, y_delta);
-
-
-                pos.fb_ypos = &current_viewport->start[yStart * current_viewport->y_pitch];
-
-                pos.x_left =  top.pos.x + (stepY * y_delta.x_left);
-                pos.x_right = top.pos.x + (stepY * y_delta.x_right);
-
-                if constexpr (render_flags & (ZTest | ZWrite))
-                {
-                    pos.z_left = top.pos.z + (stepY * y_delta.z_left);
-                    pos.z_right = top.pos.x + (stepY * y_delta.z_right);
-                }
-
-                for(int y = yStart; y < yEnd; y++)
-                {
-                    if(current_material->type == Material::Texture)
-                    {
-                        GetTriangleLerpXDeltasZWUV(x_delta, pos);
-                    }
-                    else
-                    {
-                        GetTriangleLerpXDeltasZ(x_delta, pos);
-                    }
-
-                    DrawSpan(pos, x_delta);
-
-                    pos.x_left += y_delta.x_left;
-                    pos.x_right += y_delta.x_right;
-                    pos.fb_ypos += current_viewport->y_pitch;
-
-                    if constexpr (render_flags & (ZTest | ZWrite))
-                    {
-                        pos.z_left += y_delta.z_left;
-                        pos.z_right += y_delta.z_right;
-                    }
-
-                    if(current_material->type == Material::Texture)
-                    {
-                        pos.u_left += y_delta.u_left;
-                        pos.u_right += y_delta.u_right;
-
-                        pos.v_left += y_delta.v_left;
-                        pos.v_right += y_delta.v_right;
-
-                        if constexpr(render_flags & PerspectiveMapping)
-                        {
-                            pos.w_left += y_delta.w_left;
-                            pos.w_right += y_delta.w_right;
-                        }
-                    }
-                }
+                DrawTriangleSpans(yStart, yEnd, pos, y_delta);
             }
 
             void DrawTriangleBottom(const Vertex4d points[3])
@@ -517,7 +452,6 @@ namespace P3D
                 //Flat top triangle.
 
                 TriEdgeTrace pos;
-                TriDrawXDeltaZWUV x_delta;
                 TriDrawYDeltaZWUV y_delta;
 
                 const Vertex4d& bottom  = points[2];
@@ -536,19 +470,26 @@ namespace P3D
                 int yStart = pixelCentreTopY;
                 int yEnd = PixelCentre(bottom.pos.y);
 
+                if(yEnd < 0 || yStart >= fb_y)
+                    return;
+
                 if(yEnd > fb_y)
                     yEnd = fb_y;
 
                 if(yStart < 0)
                     yStart = 0;
 
-                if(yEnd < 0 || yStart >= fb_y)
-                    return;
+                GetTriangleLerpYDeltas(left, right, bottom, y_delta);
 
+                PreStepYTriangle(stepY, left, right, pos, y_delta);
+
+                DrawTriangleSpans(yStart, yEnd, pos, y_delta);
+            }
+
+            void PreStepYTriangle(fp stepY, const Vertex4d& left, const Vertex4d& right, TriEdgeTrace& pos, const TriDrawYDeltaZWUV& y_delta)
+            {
                 if(current_material->type == Material::Texture)
                 {
-                    GetTriangleLerpYDeltasZWUV(left, right, bottom, y_delta);
-
                     pos.u_left = left.uv.x + (stepY * y_delta.u_left);
                     pos.u_right = right.uv.x + (stepY * y_delta.u_right);
 
@@ -561,10 +502,7 @@ namespace P3D
                         pos.w_right = right.pos.w + (stepY * y_delta.w_right);
                     }
                 }
-                else
-                    GetTriangleLerpYDeltasZ(left, right, bottom, y_delta);
 
-                pos.fb_ypos = &current_viewport->start[yStart * current_viewport->y_pitch];
                 pos.x_left =  left.pos.x + (stepY * y_delta.x_left);
                 pos.x_right = right.pos.x + (stepY * y_delta.x_right);
 
@@ -573,19 +511,16 @@ namespace P3D
                     pos.z_left = left.pos.z + (stepY * y_delta.z_left);
                     pos.z_right = right.pos.z + (stepY * y_delta.z_right);
                 }
+            }
+
+            void DrawTriangleSpans(int yStart, int yEnd, TriEdgeTrace& pos, TriDrawYDeltaZWUV y_delta)
+            {
+
+                pos.fb_ypos = &current_viewport->start[yStart * current_viewport->y_pitch];
 
                 for (int y = yStart; y < yEnd; y++)
                 {
-                    if(current_material->type == Material::Texture)
-                    {
-                        GetTriangleLerpXDeltasZWUV(x_delta, pos);
-                    }
-                    else
-                    {
-                        GetTriangleLerpXDeltasZ(x_delta, pos);
-                    }
-
-                    DrawSpan(pos, x_delta);
+                    DrawSpan(pos);
 
                     pos.x_left += y_delta.x_left;
                     pos.x_right += y_delta.x_right;
@@ -614,9 +549,10 @@ namespace P3D
                 }
             }
 
-            void DrawSpan(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta)
+            void DrawSpan(const TriEdgeTrace& pos)
             {
                 TriEdgeTrace span_pos;
+                TriDrawXDeltaZWUV delta;
 
                 const int fb_width = current_viewport->width;
 
@@ -641,6 +577,8 @@ namespace P3D
                 span_pos.x_left = x_start;
                 span_pos.x_right = x_end;
                 span_pos.fb_ypos = pos.fb_ypos;
+
+                GetTriangleLerpXDeltas(delta, pos);
 
                 if constexpr (render_flags & (ZTest | ZWrite))
                 {
@@ -868,6 +806,22 @@ namespace P3D
                 fp y2 = (screenSpacePoints[2].pos.y - screenSpacePoints[1].pos.y);
 
                 return ((x1 * y2) < (y1 * x2));
+            }
+
+            void GetTriangleLerpYDeltas(const Vertex4d& left, const Vertex4d& right, const Vertex4d& other, TriDrawYDeltaZWUV &y_delta)
+            {
+                if(current_material->type == Material::Texture)
+                    GetTriangleLerpYDeltasZWUV(left, right, other, y_delta);
+                else
+                    GetTriangleLerpYDeltasZ(left, right, other, y_delta);
+            }
+
+            void GetTriangleLerpXDeltas(TriDrawXDeltaZWUV& x_delta, const TriEdgeTrace& pos)
+            {
+                if(current_material->type == Material::Texture)
+                    GetTriangleLerpXDeltasZWUV(x_delta, pos);
+                else
+                    GetTriangleLerpXDeltasZ(x_delta, pos);
             }
 
             void GetTriangleLerpXDeltasZWUV(TriDrawXDeltaZWUV& x_delta, const TriEdgeTrace& pos)
