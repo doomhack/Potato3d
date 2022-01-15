@@ -66,7 +66,6 @@ namespace P3D
     //Matrix
     void RenderDevice::SetPerspective(fp vertical_fov, fp aspect_ratio, fp z_near, fp z_far)
     {
-        projection_matrix.setToIdentity();
         projection_matrix.perspective(vertical_fov, aspect_ratio, z_near, z_far);
 
         z_planes.z_near = z_near;
@@ -75,7 +74,6 @@ namespace P3D
 
     void RenderDevice::SetOrthographic(fp left, fp right, fp bottom, fp top, fp z_near, fp z_far)
     {
-        projection_matrix.setToIdentity();
         projection_matrix.orthographic(left, right, bottom, top, z_near, z_far);
     }
 

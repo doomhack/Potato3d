@@ -10,7 +10,7 @@
 MainWindow2::MainWindow2(QWidget *parent)
     : QMainWindow(parent)
 {
-    this->resize(960, 640);
+    this->resize(screenWidth * 3, screenHeight * 3);
     this->update();
 
     fpsTimer.start();

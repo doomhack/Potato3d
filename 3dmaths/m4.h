@@ -273,49 +273,28 @@ namespace P3D
         {
             T x, y, z, w;
 
-#if 0
             x = T(vector.x) * m[0][0] +
-                //T(vector.y) * m[1][0] +
+                T(vector.y) * m[1][0] +
                 T(vector.z) * m[2][0] +
                 m[3][0];
 
-            y = //T(vector.x) * m[0][1] +
+            y = T(vector.x) * m[0][1] +
                 T(vector.y) * m[1][1] +
-                //T(vector.z) * m[2][1] +
+                T(vector.z) * m[2][1] +
                 m[3][1];
 
             z = T(vector.x) * m[0][2] +
-                //T(vector.y) * m[1][2] +
+                T(vector.y) * m[1][2] +
                 T(vector.z) * m[2][2] +
                 m[3][2];
 
             w = T(vector.x) * m[0][3] +
-                //T(vector.y) * m[1][3] +
+                T(vector.y) * m[1][3] +
                 T(vector.z) * m[2][3] +
                 m[3][3];
-#else
-                x = T(vector.x) * m[0][0] +
-                    T(vector.y) * m[1][0] +
-                    T(vector.z) * m[2][0] +
-                    m[3][0];
 
-                y = T(vector.x) * m[0][1] +
-                    T(vector.y) * m[1][1] +
-                    T(vector.z) * m[2][1] +
-                    m[3][1];
 
-                z = T(vector.x) * m[0][2] +
-                    T(vector.y) * m[1][2] +
-                    T(vector.z) * m[2][2] +
-                    m[3][2];
-
-                w = T(vector.x) * m[0][3] +
-                    T(vector.y) * m[1][3] +
-                    T(vector.z) * m[2][3] +
-                    m[3][3];
-#endif
-
-                return V4<T>(x, y, z, w);
+            return V4<T>(x, y, z, w);
         }
 
         constexpr void translate(const V3<T>& vector)
@@ -359,9 +338,8 @@ namespace P3D
             else
             {
                 T a = pD2R(angle);
-                c = std::cos((float)a);
-                s = std::sin((float)a);
-
+                c = T(std::cos((double)a));
+                s = T(std::sin((double)a));
             }
 
 
@@ -374,8 +352,6 @@ namespace P3D
             m[0][2] = m[0][2] * c - tmp * s;
             m[2][3] = (tmp = m[2][3]) * c + m[0][3] * s;
             m[0][3] = m[0][3] * c - tmp * s;
-
-            return;
         }
 
         constexpr void rotateX(T angle)
@@ -405,9 +381,8 @@ namespace P3D
             else
             {
                 T a = pD2R(angle);
-                c = std::cos((float)a);
-                s = std::sin((float)a);
-
+                c = T(std::cos((double)a));
+                s = T(std::sin((double)a));
             }
 
             T tmp;
@@ -419,7 +394,6 @@ namespace P3D
             m[2][2] = m[2][2] * c - tmp * s;
             m[1][3] = (tmp = m[1][3]) * c + m[2][3] * s;
             m[2][3] = m[2][3] * c - tmp * s;
-            return;
         }
 
         constexpr void rotateZ(T angle)
@@ -449,8 +423,8 @@ namespace P3D
             else
             {
                 T a = pD2R(angle);
-                c = std::cos((float)a);
-                s = std::sin((float)a);
+                c = T(std::cos((double)a));
+                s = T(std::sin((double)a));
             }
 
             T tmp;
@@ -462,7 +436,6 @@ namespace P3D
             m[1][2] = m[1][2] * c - tmp * s;
             m[0][3] = (tmp = m[0][3]) * c + m[1][3] * s;
             m[1][3] = m[1][3] * c - tmp * s;
-            return;
         }
 
         constexpr void perspective(T verticalAngle, T aspectRatio, T nearPlane, T farPlane)
@@ -472,38 +445,34 @@ namespace P3D
 
             SetFlag(Updated);
 
-            M4 m;
-            float radians = pD2R(verticalAngle / 2);
-            float sine = std::sin(radians);
 
-            if (sine == 0)
-                return;
+            double va = verticalAngle;
+            double ar = aspectRatio;
+            double scale = 1.0 / std::tan(double(va) * 0.5 * M_PI / 180.0);
 
-            float cosRads = std::cos(radians);
+            double fp = farPlane;
+            double np = nearPlane;
+            double fd = (fp - np);
 
-            float cotan = (cosRads / sine);
-            float clip = farPlane - nearPlane;
-            float clip2 = -(nearPlane + farPlane) / clip;
-            float clip3 = -(2.0f * (float)nearPlane * (float)farPlane) / clip;
+            m[0][0] = T(scale / ar);
+            m[1][0] = 0;
+            m[2][0] = 0;
+            m[3][0] = 0;
 
-            m.m[0][0] = (cotan / (float)aspectRatio);
-            m.m[1][0] = 0;
-            m.m[2][0] = 0;
-            m.m[3][0] = 0;
-            m.m[0][1] = 0;
-            m.m[1][1] = cotan;
-            m.m[2][1] = 0;
-            m.m[3][1] = 0;
-            m.m[0][2] = 0;
-            m.m[1][2] = 0;
-            m.m[2][2] = clip2;
-            m.m[3][2] = clip3;
-            m.m[0][3] = 0;
-            m.m[1][3] = 0;
-            m.m[2][3] = -1;
-            m.m[3][3] = 0;
+            m[0][1] = 0;
+            m[1][1] = T(scale);
+            m[2][1] = 0;
+            m[3][1] = 0;
 
-            *this *= m;
+            m[0][2] = 0;
+            m[1][2] = 0;
+            m[2][2] = T(-(fp / fd));
+            m[3][2] = T(-fp * (np / fd));
+
+            m[0][3] = 0;
+            m[1][3] = 0;
+            m[2][3] = -1;
+            m[3][3] = 0;
         }
 
         constexpr void orthographic(T left, T right, T bottom, T top, T nearPlane, T farPlane)
@@ -511,29 +480,36 @@ namespace P3D
             if (left == right || bottom == top || nearPlane == farPlane)
                 return;
 
-            T width = right - left;
-            T invheight = top - bottom;
-            T clip = farPlane - nearPlane;
+            double fp = farPlane;
+            double np = nearPlane;
+            double l = left;
+            double r = right;
+            double t = top;
+            double b = bottom;
 
-            M4 m;
-            m.m[0][0] = 2.0f / (float)width;
-            m.m[1][0] = 0;
-            m.m[2][0] = 0;
-            m.m[3][0] = -(float)(left + right) / (float)width;
-            m.m[0][1] = 0;
-            m.m[1][1] = 2.0f / (float)invheight;
-            m.m[2][1] = 0;
-            m.m[3][1] = -(float)(top + bottom) / (float)invheight;
-            m.m[0][2] = 0;
-            m.m[1][2] = 0;
-            m.m[2][2] = -2.0f / (float)clip;
-            m.m[3][2] = -(float)(nearPlane + farPlane) / (float)clip;
-            m.m[0][3] = 0;
-            m.m[1][3] = 0;
-            m.m[2][3] = 0;
-            m.m[3][3] = 1;
+            double width = (r - l);
+            double height = (t - b);
+            double depth = (fp - np);
 
-            *this *= m;
+            m[0][0] = T(2.0 / width);
+            m[1][0] = 0;
+            m[2][0] = 0;
+            m[3][0] = T(-(l + r) / width);
+
+            m[0][1] = 0;
+            m[1][1] = T(2.0 / height);
+            m[2][1] = 0;
+            m[3][1] = T(-(t + b) / height);
+
+            m[0][2] = 0;
+            m[1][2] = 0;
+            m[2][2] = T(-2.0 / depth);
+            m[3][2] = T(-(np + fp) / depth);
+
+            m[0][3] = 0;
+            m[1][3] = 0;
+            m[2][3] = 0;
+            m[3][3] = 1;
         }
 
         constexpr M4 Inverted() const
