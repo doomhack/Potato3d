@@ -65,6 +65,8 @@ namespace P3D
 
         void DrawTriangle(const unsigned int vx_indexes[], const V2<fp> uvs[3] = nullptr);
 
+        const RenderStats& GetRenderStats() const;
+
     private:
 
         RenderTarget* render_target = nullptr;
@@ -84,6 +86,10 @@ namespace P3D
 
         P3D::Internal::RenderTriangleBase* triangle_render = nullptr;
         P3D::Internal::RenderFlagsBase* render_flags_base = nullptr;
+
+#ifdef RENDER_STATS
+        RenderStats render_stats;
+#endif
     };
 };
 #endif // RENDERDEVICE_H

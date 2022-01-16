@@ -49,8 +49,6 @@ namespace P3D
         V3<fp> cameraAngle = V3<fp>(0,0,0);
         pixel backgroundColor = 0;
 
-        RenderFlags renderFlags = RenderFlags::AutoPerspectiveCorrect;
-
         V3<fp> frustrumPoints[4]; //Top left and bottom-right frustrum points.
 
         std::map<const BspNodeTexture*, Texture*> textureMap;

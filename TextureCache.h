@@ -23,7 +23,7 @@ namespace P3D
             (void)texture;
         }
 
-        virtual const pixel* GetTexture(const pixel* texture)
+        virtual const pixel* GetTexture(const pixel* texture) const
         {
             return texture;
         }

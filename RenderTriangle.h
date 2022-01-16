@@ -42,21 +42,38 @@ namespace P3D
         public:
 
             virtual ~RenderTriangleBase() {};
-            virtual void DrawTriangle(TransformedTriangle& tri, const Material& material, TextureCacheBase& texture_cache, const RenderTargetViewport& viewport, const RenderDeviceNearFarPlanes& planes) = 0;
+            virtual void DrawTriangle(TransformedTriangle& tri, const Material& material) = 0;
+            virtual void SetRenderStateViewport(const RenderTargetViewport& viewport, const RenderDeviceNearFarPlanes& planes) = 0;
+            virtual void SetTextureCache(const TextureCacheBase* texture_cache) = 0;
+            virtual void SetRenderStats(RenderStats& render_stats) = 0;
         };
 
         template<const unsigned int render_flags> class RenderTriangle : public RenderTriangleBase
         {
         public:
-            void DrawTriangle(TransformedTriangle& tri, const Material& material, TextureCacheBase& texture_cache, const RenderTargetViewport& viewport, const RenderDeviceNearFarPlanes& planes) override
+            void DrawTriangle(TransformedTriangle& tri, const Material& material) override
             {
-                tex_cache = &texture_cache;
                 current_material = &material;
-                current_viewport = &viewport;
-                z_planes = &planes;
 
                 DrawTriangleClip(tri);
             }
+
+            void SetRenderStateViewport(const RenderTargetViewport& viewport, const RenderDeviceNearFarPlanes& planes)
+            {
+                current_viewport = &viewport;
+                z_planes = &planes;
+            }
+
+            void SetTextureCache(const TextureCacheBase* texture_cache)
+            {
+                tex_cache = texture_cache;
+            }
+
+            void SetRenderStats(RenderStats& stats)
+            {
+                render_stats = &stats;
+            }
+
 
         private:
 
@@ -922,10 +939,15 @@ namespace P3D
             }
 
         private:
-            TextureCacheBase* tex_cache = nullptr;
+            const TextureCacheBase* tex_cache = nullptr;
             const Material* current_material = nullptr;
             const RenderTargetViewport* current_viewport = nullptr;
             const RenderDeviceNearFarPlanes* z_planes = nullptr;
+
+#ifdef RENDER_STATS
+            RenderStats* render_stats = nullptr;
+#endif
+
         };
 
 

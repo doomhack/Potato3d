@@ -61,6 +61,9 @@ namespace P3D
 
         triangle_render = flags_ptr->GetRender();
         render_flags_base = flags_ptr;
+
+        triangle_render->SetRenderStateViewport(viewport, z_planes);
+        triangle_render->SetTextureCache(texture_cache);
     }
 
     //Matrix
@@ -167,6 +170,10 @@ namespace P3D
     void RenderDevice::BeginFrame()
     {
         UpdateTransformMatrix();
+
+#ifdef RENDER_STATS
+        render_stats.ResetToZero();
+#endif
     }
 
     void RenderDevice::EndFrame()
@@ -181,6 +188,8 @@ namespace P3D
             delete texture_cache;
 
         texture_cache = cache;
+
+        triangle_render->SetTextureCache(texture_cache);
     }
 
     void RenderDevice::SetMaterial(const Material& material, signed char importance)
@@ -233,6 +242,11 @@ namespace P3D
             tri.verts[2].uv =  uvs[2];
         }
 
-        triangle_render->DrawTriangle(tri, *current_material, *texture_cache, viewport, z_planes);
+        triangle_render->DrawTriangle(tri, *current_material);
+    }
+
+    const RenderStats& RenderDevice::GetRenderStats() const
+    {
+        return render_stats;
     }
 };

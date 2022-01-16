@@ -49,6 +49,27 @@ namespace P3D
         static constexpr unsigned int height = TEX_SIZE;
     };
 
+    class RenderStats
+    {
+    public:
+        unsigned int vertex_transformed;
+        unsigned int triangles_submitted;
+        unsigned int triangles_drawn;
+        unsigned int scanlines_drawn;
+        unsigned int span_checks;
+        unsigned int span_count;
+
+        void ResetToZero()
+        {
+            vertex_transformed = 0;
+            triangles_submitted = 0;
+            triangles_drawn = 0;
+            scanlines_drawn = 0;
+            span_checks = 0;
+            span_count = 0;
+        }
+    };
+
     namespace Internal
     {
         class RenderTargetViewport

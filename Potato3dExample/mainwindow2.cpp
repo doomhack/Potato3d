@@ -154,7 +154,7 @@ void MainWindow2::paintEvent(QPaintEvent *event)
 
     unsigned int elapsed = fpsTimer.elapsed();
 
-    //P3D::RenderStats rs = object3d->GetRender()->GetRenderStats();
+    P3D::RenderStats rs = render_device->GetRenderStats();
 
     if(elapsed > 1000)
     {
@@ -171,14 +171,14 @@ void MainWindow2::paintEvent(QPaintEvent *event)
 
     p.drawText(32,32, QString("FPS: %1").arg(currentFps));
     p.drawText(32,48, QString("Ave Render Time: %1ms").arg(aveRtime));
-/*
+
     p.drawText(32,64, QString("Triangles submitted: %1").arg(rs.triangles_submitted));
     p.drawText(32,80, QString("Triangles drawn: %1").arg(rs.triangles_drawn));
     p.drawText(32,96, QString("Vertexes transformed: %1").arg(rs.vertex_transformed));
     p.drawText(32,112, QString("Scanlines drawn: %1").arg(rs.scanlines_drawn));
     p.drawText(32,128, QString("Spans checked: %1").arg(rs.span_checks));
     p.drawText(32,144, QString("Spans generated: %1").arg(rs.span_count));
-*/
+
     this->update();
 }
 
