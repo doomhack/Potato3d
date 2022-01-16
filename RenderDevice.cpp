@@ -64,6 +64,7 @@ namespace P3D
 
         triangle_render->SetRenderStateViewport(viewport, z_planes);
         triangle_render->SetTextureCache(texture_cache);
+        triangle_render->SetRenderStats(render_stats);
     }
 
     //Matrix
@@ -217,7 +218,7 @@ namespace P3D
         if(transformed_vertexes_buffer_count < count)
         {
             delete[] transformed_vertexes;
-            transformed_vertexes = new V4<fp>[count]; //+5 is extra vertexs created by clipping.
+            transformed_vertexes = new V4<fp>[count];
             transformed_vertexes_buffer_count = count;
         }
 
@@ -225,6 +226,10 @@ namespace P3D
         {
             transformed_vertexes[i] = transform_matrix * vertexes[i];
         }
+
+#ifdef RENDER_STATS
+        render_stats.vertex_transformed += count;
+#endif
     }
 
     void RenderDevice::DrawTriangle(const unsigned int indexes[3], const V2<fp> uvs[3])

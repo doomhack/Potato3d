@@ -75,7 +75,7 @@ void MainWindow::paintEvent(QPaintEvent *event)
 
     unsigned int elapsed = fpsTimer.elapsed();
 
-    P3D::RenderStats rs = object3d->GetRender()->GetRenderStats();
+    P3D::RenderStats rs = object3d->GetRenderStats();
 
     if(elapsed > 1000)
     {

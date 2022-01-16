@@ -24,7 +24,6 @@ SOURCES += \
     ../RenderTarget.cpp \
     ../bspmodel.cpp \
     ../object3d.cpp \
-    ../render.cpp \
     bsp3d.cpp \
     main.cpp \
     mainwindow.cpp \
@@ -49,7 +48,6 @@ HEADERS += \
     ../common.h \
     ../object3d.h \
     ../potato3d.h \
-    ../render.h \
     ../rtypes.h \
     bsp3d.h \
     mainwindow.h \

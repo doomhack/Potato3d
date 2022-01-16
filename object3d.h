@@ -6,8 +6,9 @@
 
 #include "common.h"
 #include "rtypes.h"
-#include "render.h"
 #include "bspmodel.h"
+
+#include "RenderDevice.h"
 
 namespace P3D
 {
@@ -27,9 +28,7 @@ namespace P3D
 
         void SetBackgroundColor(pixel color);
 
-        void SetFramebuffer(pixel *framebuffer);
-
-        Render* GetRender();
+        const RenderStats& GetRenderStats();
 
         bool update_frustrum_bb = true;
 
@@ -39,7 +38,7 @@ namespace P3D
 
         void UpdateFrustrumAABB();
 
-        Render* render = nullptr;
+        RenderDevice* render_device = nullptr;
 
         const BspModel* model;
 
@@ -50,8 +49,6 @@ namespace P3D
         pixel backgroundColor = 0;
 
         V3<fp> frustrumPoints[4]; //Top left and bottom-right frustrum points.
-
-        std::map<const BspNodeTexture*, Texture*> textureMap;
     };
 }
 

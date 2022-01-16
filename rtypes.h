@@ -18,33 +18,10 @@ namespace P3D
         static const unsigned int no_vx_id = -1;
     };
 
-    class Vertex2d
-    {
-    public:
-        V4<fp> pos;
-        V2<fp> uv;
-
-        static const int uv_scale = 1;
-
-        void toPerspectiveCorrect()
-        {
-            pos.w = pScaledReciprocal(8, pos.w);
-
-            uv.x = uv.x * pos.w;
-            uv.y = uv.y * pos.w;
-        }
-    };
-
     class Triangle3d
     {
     public:
         Vertex3d verts[3];
-    };
-
-    class Triangle2d
-    {
-    public:
-        Vertex2d verts[3];
     };
 
     class Texture
@@ -186,30 +163,6 @@ namespace P3D
             return true;
         }
     };
-
-    typedef struct RenderStats
-    {
-        unsigned int vertex_transformed;
-        unsigned int triangles_submitted;
-        unsigned int triangles_drawn;
-        unsigned int scanlines_drawn;
-        unsigned int span_checks;
-        unsigned int span_count;
-    } RenderStats;
-
-    typedef enum RenderFlags : unsigned int
-    {
-        NoFlags = 0u,
-        NoBackfaceCull = 4u,
-        AlphaTest = 8u,
-        PerspectiveCorrect = 16u,
-        AutoPerspectiveCorrect = 32u,
-    } RenderFlags;
-
-    constexpr enum RenderFlags operator | ( const enum RenderFlags oldVal, const enum RenderFlags orVal )
-    {
-        return (enum RenderFlags)( (unsigned int)oldVal | (unsigned int)orVal);
-    }
 
     typedef struct BspPlane
     {

@@ -11,9 +11,6 @@ namespace P3D
 
     bool Object3d::Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov, fp zNear, fp zFar, pixel *framebuffer)
     {
-        this->render = new Render();
-
-        fp aspect = fp((int)screenWidth) / fp((int)screenHeight);
         //fp halfVFov = (aspect * hFov) / 2;
 
         fp halfVFov = 41;
@@ -26,7 +23,19 @@ namespace P3D
         frustrumPoints[2] = V3<fp>(-halfFrustrumWidth, halfFrustrumHeight, -zFar);
         frustrumPoints[3] = V3<fp>(halfFrustrumWidth, -halfFrustrumHeight, -zFar);
 
-        return render->Setup(screenWidth, screenHeight, hFov, zNear, zFar, framebuffer);
+        P3D::RenderTarget* render_target = new P3D::RenderTarget(screenWidth, screenHeight, framebuffer);
+
+        render_device = new P3D::RenderDevice();
+
+        render_device->SetRenderTarget(render_target);
+
+        float aspectRatio = (float)screenWidth / (float)screenHeight;
+
+        render_device->SetPerspective(hFov, aspectRatio, zNear, zFar);
+
+        render_device->SetRenderFlags(RENDER_FLAGS(P3D::NoFlags));
+
+        return true;
     }
 
     V3<fp>& Object3d::CameraPos()
@@ -43,7 +52,7 @@ namespace P3D
     {
         viewFrustrumBB = AABB();
 
-        M4<fp> camMatrix = render->GetMatrix(MatrixType::View).Inverted();
+        M4<fp> camMatrix = render_device->GetMatrix().Inverted();
 
         V4<fp> t1 = camMatrix * frustrumPoints[0];
         V4<fp> t2 = camMatrix * frustrumPoints[1];
@@ -70,34 +79,33 @@ namespace P3D
     }
 
     void Object3d::RenderScene()
-    {
-        render->ClearFramebuffer(backgroundColor);
+    {        
+        render_device->ClearColor(backgroundColor);
 
-        M4<fp>& viewMatrix = render->GetMatrix(MatrixType::View);
+        render_device->PushMatrix();
 
-        viewMatrix.setToIdentity();
-        viewMatrix.rotateX(-cameraAngle.x);
-        viewMatrix.rotateY(-cameraAngle.y);
-        viewMatrix.rotateZ(-cameraAngle.z);
+        render_device->RotateX(-cameraAngle.x);
+        render_device->RotateY(-cameraAngle.y);
+        render_device->RotateZ(-cameraAngle.z);
 
-        viewMatrix.translate(V3<fp>(-cameraPos.x, -cameraPos.y, -cameraPos.z));
+        render_device->Translate(V3<fp>(-cameraPos.x, -cameraPos.y, -cameraPos.z));
 
         if(update_frustrum_bb)
             UpdateFrustrumAABB();
 
-        render->BeginFrame();
+        render_device->BeginFrame();
 
         RenderBsp();
 
-        render->EndFrame();
+        render_device->EndFrame();
+
+        render_device->PopMatrix();
     }
 
     void Object3d::RenderBsp()
     {
         if(model == nullptr)
             return;
-
-        render->BeginObject();
 
         static std::vector<const BspModelTriangle*> tris;
 
@@ -109,34 +117,32 @@ namespace P3D
 
             const BspNodeTexture* ntex = model->GetTexture(tri->texture);
 
-            Texture* tex = nullptr;
+            V3<fp> verts[3] = {tri->tri.verts[0].pos, tri->tri.verts[1].pos, tri->tri.verts[2].pos};
+
+            Material m;
 
             if(ntex)
             {
-                tex = textureMap[ntex];
+                m.type = Material::Texture;
+                m.pixels = model->GetTexturePixels(ntex->texture_pixels_offset);
 
-                if(tex == nullptr)
-                {
-                    tex = new Texture;
+                V2<fp> uvs[3] = {tri->tri.verts[0].uv, tri->tri.verts[1].uv, tri->tri.verts[2].uv};
 
-                    tex->alpha = ntex->alpha;
-                    tex->width = ntex->width;
-                    tex->height = ntex->height;
-                    tex->u_mask = ntex->u_mask;
-                    tex->v_mask = ntex->v_mask;
-                    tex->v_shift = ntex ->v_shift;
-                    tex->pixels = model->GetTexturePixels(ntex->texture_pixels_offset);
-                    textureMap[ntex] = tex;
-                }
+                render_device->SetMaterial(m);
+
+                render_device->DrawTriangle(verts, uvs);
             }
+            else
+            {
+                m.color = tri->color;
 
-            render->DrawTriangle(&tri->tri, tex, tri->color, NoFlags);
-            //render->DrawTriangle(&tri->tri, nullptr, tri->color, renderFlags);
+                render_device->SetMaterial(m);
+
+                render_device->DrawTriangle(verts);
+            }
         }
 
         tris.clear();
-
-        render->EndObject();
     }
 
     void Object3d::SetModel(const BspModel *model)
@@ -149,14 +155,8 @@ namespace P3D
         backgroundColor = color;
     }
 
-    void Object3d::SetFramebuffer(pixel *framebuffer)
+    const RenderStats& Object3d::GetRenderStats()
     {
-        render->SetFramebuffer(framebuffer);
+        return render_device->GetRenderStats();
     }
-
-    Render* Object3d::GetRender()
-    {
-        return render;
-    }
-
 }

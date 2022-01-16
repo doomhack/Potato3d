@@ -56,6 +56,10 @@ namespace P3D
                 current_material = &material;
 
                 DrawTriangleClip(tri);
+
+#ifdef RENDER_STATS
+                render_stats->triangles_submitted++;
+#endif
             }
 
             void SetRenderStateViewport(const RenderTargetViewport& viewport, const RenderDeviceNearFarPlanes& planes)
@@ -371,6 +375,11 @@ namespace P3D
                     DrawTriangleTop(triangle);
                     DrawTriangleBottom(&triangle[1]);
                 }
+
+#ifdef RENDER_STATS
+                render_stats->triangles_drawn++;
+#endif
+
             }
 
             void SortPointsByY(Vertex4d pointsIn[3], Vertex4d pointsOut[3])
@@ -626,6 +635,10 @@ namespace P3D
                 {
                     DrawTriangleScanlineFlat(span_pos, current_material->color);
                 }
+
+#ifdef RENDER_STATS
+                render_stats->scanlines_drawn++;
+#endif
             }
 
             void DrawTriangleScanlinePerspectiveCorrect(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const pixel* texture)
