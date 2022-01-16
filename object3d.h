@@ -28,7 +28,11 @@ namespace P3D
 
         void SetBackgroundColor(pixel color);
 
+        void SetFrameBuffer(pixel* buffer);
+
+#ifdef RENDER_STATS
         const RenderStats& GetRenderStats();
+#endif
 
         bool update_frustrum_bb = true;
 
@@ -39,6 +43,8 @@ namespace P3D
         void UpdateFrustrumAABB();
 
         RenderDevice* render_device = nullptr;
+
+        RenderTarget* render_target = nullptr;
 
         const BspModel* model;
 

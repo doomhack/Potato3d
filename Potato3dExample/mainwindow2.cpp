@@ -36,7 +36,7 @@ MainWindow2::MainWindow2(QWidget *parent)
 
     render_device->SetPerspective(60, aspectRatio, 10, 1000);
 
-    render_device->SetRenderFlags(RENDER_FLAGS(P3D::NoFlags));
+    render_device->SetRenderFlags(RENDER_FLAGS(P3D::HalfPerspectiveMapping));
 }
 
 MainWindow2::~MainWindow2()
@@ -44,7 +44,7 @@ MainWindow2::~MainWindow2()
 
 }
 static P3D::fp rotateY = 0;
-static P3D::fp translate = -100;
+static P3D::fp translate = -200;
 
 void MainWindow2::paintEvent(QPaintEvent *event)
 {

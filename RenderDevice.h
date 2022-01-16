@@ -65,7 +65,9 @@ namespace P3D
 
         void DrawTriangle(const unsigned int vx_indexes[], const V2<fp> uvs[3] = nullptr);
 
+#ifdef RENDER_STATS
         const RenderStats& GetRenderStats() const;
+#endif
 
     private:
 

@@ -52,6 +52,11 @@ namespace P3D
             viewport.z_start = nullptr;
             viewport.z_y_pitch = 0;
         }
+
+        if(triangle_render)
+        {
+            triangle_render->SetRenderStateViewport(viewport, z_planes);
+        }
     }
 
     void RenderDevice::SetRenderFlags(P3D::Internal::RenderFlagsBase* flags_ptr)
@@ -64,7 +69,10 @@ namespace P3D
 
         triangle_render->SetRenderStateViewport(viewport, z_planes);
         triangle_render->SetTextureCache(texture_cache);
+
+#ifdef RENDER_STATS
         triangle_render->SetRenderStats(render_stats);
+#endif
     }
 
     //Matrix
@@ -109,7 +117,7 @@ namespace P3D
     {
         transform_matrix = projection_matrix * model_view_matrix_stack.back();
 
-        for(size_t i = model_view_matrix_stack.size() -1; i >= 1; i--)
+        for(int i = model_view_matrix_stack.size() -2; i >= 0; i--)
         {
             transform_matrix *= model_view_matrix_stack[i];
         }
@@ -250,8 +258,10 @@ namespace P3D
         triangle_render->DrawTriangle(tri, *current_material);
     }
 
+#ifdef RENDER_STATS
     const RenderStats& RenderDevice::GetRenderStats() const
     {
         return render_stats;
     }
+#endif
 };

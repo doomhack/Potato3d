@@ -45,7 +45,10 @@ namespace P3D
             virtual void DrawTriangle(TransformedTriangle& tri, const Material& material) = 0;
             virtual void SetRenderStateViewport(const RenderTargetViewport& viewport, const RenderDeviceNearFarPlanes& planes) = 0;
             virtual void SetTextureCache(const TextureCacheBase* texture_cache) = 0;
+
+#ifdef RENDER_STATS
             virtual void SetRenderStats(RenderStats& render_stats) = 0;
+#endif
         };
 
         template<const unsigned int render_flags> class RenderTriangle : public RenderTriangleBase
@@ -73,10 +76,12 @@ namespace P3D
                 tex_cache = texture_cache;
             }
 
+#ifdef RENDER_STATS
             void SetRenderStats(RenderStats& stats)
             {
                 render_stats = &stats;
             }
+#endif
 
 
         private:
@@ -317,7 +322,7 @@ namespace P3D
 
                 SortPointsByY(screenSpacePoints, points);
 
-                if constexpr (render_flags & PerspectiveMapping)
+                if constexpr (render_flags & (FullPerspectiveMapping | HalfPerspectiveMapping))
                 {
                     if(current_material->type == Material::Texture)
                     {
@@ -364,7 +369,7 @@ namespace P3D
                         triangle[2].uv.x = pLerp(points[0].uv.x, points[2].uv.x, splitFrac);
                         triangle[2].uv.y = pLerp(points[0].uv.y, points[2].uv.y, splitFrac);
 
-                        if constexpr(render_flags & PerspectiveMapping)
+                        if constexpr (render_flags & (FullPerspectiveMapping | HalfPerspectiveMapping))
                         {
                             triangle[2].pos.w = pLerp(points[0].pos.w, points[2].pos.w, splitFrac);
                         }
@@ -522,7 +527,7 @@ namespace P3D
                     pos.v_left = left.uv.y + (stepY * y_delta.v_left);
                     pos.v_right = right.uv.y + (stepY * y_delta.v_right);
 
-                    if constexpr(render_flags & PerspectiveMapping)
+                    if constexpr (render_flags & (FullPerspectiveMapping | HalfPerspectiveMapping))
                     {
                         pos.w_left = left.pos.w + (stepY * y_delta.w_left);
                         pos.w_right = right.pos.w + (stepY * y_delta.w_right);
@@ -565,7 +570,7 @@ namespace P3D
                         pos.v_left += y_delta.v_left;
                         pos.v_right += y_delta.v_right;
 
-                        if constexpr(render_flags & PerspectiveMapping)
+                        if constexpr (render_flags & (FullPerspectiveMapping | HalfPerspectiveMapping))
                         {
                             pos.w_left += y_delta.w_left;
                             pos.w_right += y_delta.w_right;
@@ -615,16 +620,20 @@ namespace P3D
                     span_pos.u_left = pos.u_left + (delta.u * stepX);
                     span_pos.v_left = pos.v_left + (delta.v * stepX);
 
-                    if constexpr (render_flags & PerspectiveMapping)
+                    if constexpr (render_flags & (FullPerspectiveMapping | HalfPerspectiveMapping))
                     {
                         span_pos.w_left = pos.w_left + (delta.w * stepX);
                     }
 
                     const pixel* texture = tex_cache->GetTexture(current_material->pixels);
 
-                    if constexpr (render_flags & PerspectiveMapping)
+                    if constexpr (render_flags & FullPerspectiveMapping)
                     {
                         DrawTriangleScanlinePerspectiveCorrect(span_pos, delta, texture);
+                    }
+                    else if constexpr (render_flags & HalfPerspectiveMapping)
+                    {
+                        DrawTriangleScanlineHalfPerspectiveCorrect(span_pos, delta, texture);
                     }
                     else
                     {
@@ -649,24 +658,73 @@ namespace P3D
                 unsigned int count = (x_end - x_start);
 
                 fp u = pos.u_left, v = pos.v_left, w = pos.w_left;
+                fp du = delta.u, dv = delta.v, dw = delta.w;
 
                 pixel* fb = pos.fb_ypos + x_start;
 
-                fp invw_0 = pReciprocal(w);
-                fp invw_15 = pReciprocal(w += pASL(delta.w, 4));
+                if((size_t)fb & 1)
+                {
+                    DrawScanlinePixelLinearHighByte(fb, texture, u/w, v/w); fb++; u += du, v += dv, w += dw, count--;
+                }
 
-                fp u0 = u * invw_0;
-                fp u15 = (u += pASL(delta.u, 4)) * invw_15;
+                unsigned int l = count >> 4;
 
-                fp v0 = v * invw_0;
-                fp v15 = (v += pASL(delta.v, 4)) * invw_15;
+                while(l--)
+                {
+                    DrawScanlinePixelLinearPair(fb, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, u += (du * 2), v += (dv * 2), w += (dw * 2);
+                    DrawScanlinePixelLinearPair(fb, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, u += (du * 2), v += (dv * 2), w += (dw * 2);
+                    DrawScanlinePixelLinearPair(fb, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, u += (du * 2), v += (dv * 2), w += (dw * 2);
+                    DrawScanlinePixelLinearPair(fb, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, u += (du * 2), v += (dv * 2), w += (dw * 2);
+                    DrawScanlinePixelLinearPair(fb, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, u += (du * 2), v += (dv * 2), w += (dw * 2);
+                    DrawScanlinePixelLinearPair(fb, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, u += (du * 2), v += (dv * 2), w += (dw * 2);
+                    DrawScanlinePixelLinearPair(fb, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, u += (du * 2), v += (dv * 2), w += (dw * 2);
+                    DrawScanlinePixelLinearPair(fb, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, u += (du * 2), v += (dv * 2), w += (dw * 2);
+                }
 
-                fp du = pASR(u15-u0, 4);
-                fp dv = pASR(v15-v0, 4);
+                unsigned int r = ((count & 15) >> 1);
+
+                switch(r)
+                {
+                    case 7: DrawScanlinePixelLinearPair(fb, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, u += (du * 2), v += (dv * 2), w += (dw * 2);
+                    case 6: DrawScanlinePixelLinearPair(fb, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, u += (du * 2), v += (dv * 2), w += (dw * 2);
+                    case 5: DrawScanlinePixelLinearPair(fb, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, u += (du * 2), v += (dv * 2), w += (dw * 2);
+                    case 4: DrawScanlinePixelLinearPair(fb, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, u += (du * 2), v += (dv * 2), w += (dw * 2);
+                    case 3: DrawScanlinePixelLinearPair(fb, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, u += (du * 2), v += (dv * 2), w += (dw * 2);
+                    case 2: DrawScanlinePixelLinearPair(fb, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, u += (du * 2), v += (dv * 2), w += (dw * 2);
+                    case 1: DrawScanlinePixelLinearPair(fb, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, u += (du * 2), v += (dv * 2), w += (dw * 2);
+                }
+
+                if(count & 1)
+                    DrawScanlinePixelLinearLowByte(fb, texture, u/w, v/w);
+            }
+
+            void DrawTriangleScanlineHalfPerspectiveCorrect(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const pixel* texture)
+            {
+                int x_start = (int)pos.x_left;
+                int x_end = (int)pos.x_right;
+
+                unsigned int count = (x_end - x_start);
+
+                pixel* fb = pos.fb_ypos + x_start;
+
+                fp u = pos.u_left, v = pos.v_left, w = pos.w_left;
+                fp idu = delta.u, idv = delta.v, idw = delta.w;
+
+                fp u0 = u / w;
+                fp v0 = v / w;
+
+                fp w15 = w += (idw * 16);
+
+                fp u15 = (u += (idu * 16)) / w15;
+                fp v15 = (v += (idv * 16)) / w15;
+
+                fp du = (u15 - u0) / 16;
+                fp dv = (v15 - v0) / 16;
+
 
                 if((size_t)fb & 1)
                 {
-                    DrawScanlinePixelLinearHighByte(fb, texture, u0, v0); fb++; u0 += du, v += dv, count--;
+                    DrawScanlinePixelLinearHighByte(fb, texture, u0, v0); fb++; u0 += du; v0 += dv; count--;
                 }
 
                 unsigned int l = count >> 4;
@@ -682,17 +740,16 @@ namespace P3D
                     DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
                     DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2;
 
-                    invw_0 = pReciprocal(w);
-                    invw_15 = pReciprocal(w += pASL(delta.w, 4));
+                    u0 = u / w;
+                    v0 = v / w;
 
-                    u0 = u * invw_0;
-                    u15 = (u += pASL(delta.u, 4)) * invw_15;
+                    w15 = w += (idw * 16);
 
-                    v0 = v * invw_0;
-                    v15 = (v += pASL(delta.v,4)) * invw_15;
+                    u15 = (u += (idu * 16)) / w15;
+                    v15 = (v += (idv * 16)) / w15;
 
-                    du = pASR(u15-u0, 4);
-                    dv = pASR(v15-v0, 4);
+                    du = (u15 - u0) / 16;
+                    dv = (v15 - v0) / 16;
                 }
 
                 unsigned int r = ((count & 15) >> 1);
@@ -711,6 +768,7 @@ namespace P3D
                 if(count & 1)
                     DrawScanlinePixelLinearLowByte(fb, texture, u0, v0);
             }
+
 
             void DrawTriangleScanlineAffine(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const pixel* texture)
             {
@@ -860,7 +918,7 @@ namespace P3D
                 x_delta.u = (pos.u_right - pos.u_left) / d_x;
                 x_delta.v = (pos.v_right - pos.v_left) / d_x;
 
-                if constexpr (render_flags & PerspectiveMapping)
+                if constexpr (render_flags & (FullPerspectiveMapping | HalfPerspectiveMapping))
                 {
                     x_delta.w = (pos.w_right - pos.w_left) / d_x;
                 }
@@ -884,7 +942,7 @@ namespace P3D
                 y_delta.v_left = (left.uv.y - other.uv.y) / d_y;
                 y_delta.v_right = (right.uv.y - other.uv.y) / d_y;
 
-                if constexpr (render_flags & PerspectiveMapping)
+                if constexpr (render_flags & (FullPerspectiveMapping | HalfPerspectiveMapping))
                 {
                     y_delta.w_left = (left.pos.w - other.pos.w) / d_y;
                     y_delta.w_right = (right.pos.w - other.pos.w) / d_y;

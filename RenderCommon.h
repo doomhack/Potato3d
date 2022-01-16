@@ -12,10 +12,11 @@ namespace P3D
         ZWrite = 2ul,
         AlphaTest = 4ul,
         CBuffer = 8ul,
-        PerspectiveMapping = 16ul,
-        BackFaceCulling = 32ul,
-        FrontFaceCulling = 64ul,
-        WireFrame = 128ul
+        FullPerspectiveMapping = 16ul,
+        HalfPerspectiveMapping = 32ul,
+        BackFaceCulling = 64ul,
+        FrontFaceCulling = 128ul,
+        WireFrame = 256ul
     };
 
     class Material
@@ -110,10 +111,17 @@ namespace P3D
 
             void toPerspectiveCorrect()
             {
+#if 1
+                pos.w = fp(256) / pos.w;
+                uv.x = uv.x * pos.w;
+                uv.y = uv.y * pos.w;
+
+#else
                 uv.x = uv.x / pos.w;
                 uv.y = uv.y / pos.w;
 
                 pos.w = fp(1) / pos.w;
+#endif
             }
         };
 

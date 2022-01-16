@@ -33,7 +33,7 @@ namespace P3D
 
         render_device->SetPerspective(hFov, aspectRatio, zNear, zFar);
 
-        render_device->SetRenderFlags(RENDER_FLAGS(P3D::NoFlags));
+        render_device->SetRenderFlags(RENDER_FLAGS(P3D::FullPerspectiveMapping));
 
         return true;
     }
@@ -155,8 +155,20 @@ namespace P3D
         backgroundColor = color;
     }
 
+    void Object3d::SetFrameBuffer(pixel* buffer)
+    {
+        int w = render_target->GetWidth();
+        int h = render_target->GetHeight();
+
+        render_target->AttachColorBuffer(w, h, buffer);
+
+        render_device->SetRenderTarget(render_target);
+    }
+
+#ifdef RENDER_STATS
     const RenderStats& Object3d::GetRenderStats()
     {
         return render_device->GetRenderStats();
     }
+#endif
 }

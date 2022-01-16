@@ -9,10 +9,10 @@ INCLUDEPATH += "include"
 INCLUDEPATH += "C:\devkitPro\libgba\include"
 
 SOURCES += \
-    source/bspmodel.iwram.cpp \
+    source/bspmodel.cpp \
     source/main.cpp \
     source/model.cpp \
-    source/object3d.iwram.cpp \
+    source/object3d.cpp \
     source/recip.cpp \
     source/render.iwram.cpp
 
