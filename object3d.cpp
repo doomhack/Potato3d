@@ -33,7 +33,7 @@ namespace P3D
 
         render_device->SetPerspective(hFov, aspectRatio, zNear, zFar);
 
-        render_device->SetRenderFlags(RENDER_FLAGS(P3D::FullPerspectiveMapping));
+        render_device->SetRenderFlags(RENDER_FLAGS(P3D::HalfPerspectiveMapping));
 
         return true;
     }

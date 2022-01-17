@@ -710,6 +710,39 @@ namespace P3D
                 fp u = pos.u_left, v = pos.v_left, w = pos.w_left;
                 fp idu = delta.u, idv = delta.v, idw = delta.w;
 
+                if((size_t)fb & 1)
+                {
+                    DrawScanlinePixelLinearHighByte(fb, texture, u/w, v/w); fb++; u += idu, v += idv, w += idw, count--;
+                }
+
+                unsigned int l = count >> 4;
+
+                while(l--)
+                {
+                    fp u0 = u / w;
+                    fp v0 = v / w;
+
+                    fp w15 = w += (idw * 16);
+
+                    fp u15 = (u += (idu * 16)) / w15;
+                    fp v15 = (v += (idv * 16)) / w15;
+
+                    fp du = (u15 - u0) / 16;
+                    fp dv = (v15 - v0) / 16;
+
+                    DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
+                }
+
+                unsigned int r = ((count & 15) >> 1);
+
+
                 fp u0 = u / w;
                 fp v0 = v / w;
 
@@ -720,39 +753,6 @@ namespace P3D
 
                 fp du = (u15 - u0) / 16;
                 fp dv = (v15 - v0) / 16;
-
-
-                if((size_t)fb & 1)
-                {
-                    DrawScanlinePixelLinearHighByte(fb, texture, u0, v0); fb++; u0 += du; v0 += dv; count--;
-                }
-
-                unsigned int l = count >> 4;
-
-                while(l--)
-                {
-                    DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
-                    DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
-                    DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
-                    DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
-                    DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
-                    DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
-                    DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
-                    DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2;
-
-                    u0 = u / w;
-                    v0 = v / w;
-
-                    w15 = w += (idw * 16);
-
-                    u15 = (u += (idu * 16)) / w15;
-                    v15 = (v += (idv * 16)) / w15;
-
-                    du = (u15 - u0) / 16;
-                    dv = (v15 - v0) / 16;
-                }
-
-                unsigned int r = ((count & 15) >> 1);
 
                 switch(r)
                 {
