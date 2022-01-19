@@ -16,13 +16,13 @@ namespace P3D
 
         void RemoveZBuffer();
 
-        unsigned int GetWidth()     {return width;}
-        unsigned int GetHeight()    {return height;}
-        unsigned int GetColorBufferYPitch()    {return color_buffer_y_pitch;}
-        pixel* GetColorBuffer()     {return color_buffer;}
+        unsigned int GetWidth() const               {return width;}
+        unsigned int GetHeight() const              {return height;}
+        unsigned int GetColorBufferYPitch() const   {return color_buffer_y_pitch;}
+        pixel* GetColorBuffer() const               {return color_buffer;}
 
-        z_val* GetZBuffer()         {return z_buffer;}
-        unsigned int GetZBufferYPitch() {return z_buffer_y_pitch;}
+        z_val* GetZBuffer() const                   {return z_buffer;}
+        unsigned int GetZBufferYPitch() const       {return z_buffer_y_pitch;}
     private:
 
         void RemoveColorBuffer();

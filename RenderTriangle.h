@@ -245,7 +245,7 @@ namespace P3D
                 }
             }
 
-            fp GetLineIntersectionFrac(const fp a1, const fp a2, const fp b1, const fp b2)
+            fp GetLineIntersectionFrac(const fp a1, const fp a2, const fp b1, const fp b2) const
             {
                 if((a1 <= b1 && a2 <= b2) || (a1 >= b1 && a2 >= b2))
                     return -1;
@@ -717,6 +717,7 @@ namespace P3D
 
                 unsigned int l = count >> 4;
 
+
                 while(l--)
                 {
                     fp u0 = u / w;
@@ -746,7 +747,6 @@ namespace P3D
                 }
 
                 unsigned int r = ((count & 15) >> 1);
-
 
                 fp u0 = u / w;
                 fp v0 = v / w;
@@ -894,7 +894,7 @@ namespace P3D
                 }
             }
 
-            bool IsTriangleFrontface(const Vertex4d screenSpacePoints[])
+            bool IsTriangleFrontface(const Vertex4d screenSpacePoints[]) const
             {
                 fp x1 = (screenSpacePoints[0].pos.x - screenSpacePoints[1].pos.x);
                 fp y1 = (screenSpacePoints[1].pos.y - screenSpacePoints[0].pos.y);
@@ -1000,21 +1000,21 @@ namespace P3D
                 out.uv.y = pLerp(left.uv.y, right.uv.y, frac);
             }
 
-            fp fracToY(fp frac)
+            fp fracToY(fp frac) const
             {
                 fp halfFbY = pASR(current_viewport->height, 1);
 
                 return ((halfFbY * -frac) + halfFbY);
             }
 
-            fp fracToX(fp frac)
+            fp fracToX(fp frac) const
             {
                 fp halfFbX = pASR(current_viewport->width, 1);
 
                 return ((halfFbX * frac) + halfFbX);
             }
 
-            fp PixelCentre(fp x)
+            fp PixelCentre(fp x) const
             {
                 return pCeil(x - fp(0.5)) + fp(0.5);
             }

@@ -36,7 +36,7 @@ MainWindow2::MainWindow2(QWidget *parent)
 
     render_device->SetPerspective(60, aspectRatio, 10, 1000);
 
-    render_device->SetRenderFlags(RENDER_FLAGS(P3D::HalfPerspectiveMapping));
+    render_device->SetRenderFlags(RENDER_FLAGS(P3D::FullPerspectiveMapping));
 }
 
 MainWindow2::~MainWindow2()

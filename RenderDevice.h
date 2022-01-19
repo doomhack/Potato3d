@@ -34,9 +34,6 @@ namespace P3D
         unsigned int PopMatrix();
         M4<fp>& GetMatrix();
 
-
-        void UpdateTransformMatrix();
-
         void LoadIdentity();
 
         void Translate(V3<fp> v);
@@ -63,13 +60,15 @@ namespace P3D
 
         void TransformVertexes(const V3<fp>* vertexes, const unsigned int count);
 
-        void DrawTriangle(const unsigned int vx_indexes[], const V2<fp> uvs[3] = nullptr);
+        void DrawTriangle(const unsigned int vx_indexes[], const V2<fp> uvs[3] = nullptr) const;
 
 #ifdef RENDER_STATS
         const RenderStats& GetRenderStats() const;
 #endif
 
     private:
+
+        void UpdateTransformMatrix();
 
         RenderTarget* render_target = nullptr;
         P3D::Internal::RenderTargetViewport viewport;

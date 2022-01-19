@@ -87,6 +87,9 @@ namespace P3D
     void RenderDevice::SetOrthographic(fp left, fp right, fp bottom, fp top, fp z_near, fp z_far)
     {
         projection_matrix.orthographic(left, right, bottom, top, z_near, z_far);
+
+        z_planes.z_near = z_near;
+        z_planes.z_far = z_far;
     }
 
     unsigned int RenderDevice::PushMatrix()
@@ -240,7 +243,7 @@ namespace P3D
 #endif
     }
 
-    void RenderDevice::DrawTriangle(const unsigned int indexes[3], const V2<fp> uvs[3])
+    void RenderDevice::DrawTriangle(const unsigned int indexes[3], const V2<fp> uvs[3]) const
     {
         P3D::Internal::TransformedTriangle tri;
 

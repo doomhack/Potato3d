@@ -83,7 +83,7 @@ namespace P3D
             return &((const pixel*)(GetBasePtr() + header.texture_pixels_offset))[n];
         }
 
-        const unsigned int GetColorMapColor(unsigned int n) const
+        unsigned int GetColorMapColor(unsigned int n) const
         {
             return ((const unsigned int*)(GetBasePtr() + header.texture_palette_offset))[n];
         }
