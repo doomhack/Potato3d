@@ -14,7 +14,7 @@ SOURCES += \
     source/model.cpp \
     source/object3d.cpp \
     source/recip.cpp \
-    source/render.iwram.cpp
+    source/render.cpp
 
 
 HEADERS += \

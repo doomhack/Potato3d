@@ -80,7 +80,7 @@ namespace P3D
 
     void Object3d::RenderScene()
     {        
-        render_device->ClearColor(backgroundColor);
+        //render_device->ClearColor(backgroundColor);
 
         render_device->PushMatrix();
 

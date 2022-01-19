@@ -722,10 +722,15 @@ namespace P3D
                     fp u0 = u / w;
                     fp v0 = v / w;
 
-                    fp w15 = w += (idw * 16);
+                    w += (idw * 16);
 
-                    fp u15 = (u += (idu * 16)) / w15;
-                    fp v15 = (v += (idv * 16)) / w15;
+                    fp w15 = w;
+
+                    u += (idu * 16);
+                    v += (idv * 16);
+
+                    fp u15 = u / w15;
+                    fp v15 = v / w15;
 
                     fp du = (u15 - u0) / 16;
                     fp dv = (v15 - v0) / 16;
@@ -746,10 +751,15 @@ namespace P3D
                 fp u0 = u / w;
                 fp v0 = v / w;
 
-                fp w15 = w += (idw * 16);
+                w += (idw * 16);
 
-                fp u15 = (u += (idu * 16)) / w15;
-                fp v15 = (v += (idv * 16)) / w15;
+                fp w15 = w;
+
+                u += (idu * 16);
+                v += (idv * 16);
+
+                fp u15 = u / w15;
+                fp v15 = v / w15;
 
                 fp du = (u15 - u0) / 16;
                 fp dv = (v15 - v0) / 16;
