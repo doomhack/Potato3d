@@ -20,7 +20,7 @@ namespace P3D
     typedef unsigned char pixel;
 
     #ifdef USE_FLOAT
-        typedef long double fp;
+        typedef double fp;
         typedef fp z_val;
     #else
         typedef FP fp;

@@ -33,6 +33,7 @@ namespace P3D
         unsigned int PushMatrix();
         unsigned int PopMatrix();
         M4<fp>& GetMatrix();
+        void LoadMatrix(M4<fp>& matrix);
 
         void LoadIdentity();
 

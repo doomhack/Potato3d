@@ -116,6 +116,13 @@ namespace P3D
         return model_view_matrix_stack.back();
     }
 
+    void RenderDevice::LoadMatrix(M4<fp>& matrix)
+    {
+        model_view_matrix_stack.pop_back();
+
+        model_view_matrix_stack.push_back(matrix);
+    }
+
     void RenderDevice::UpdateTransformMatrix()
     {
         transform_matrix = projection_matrix * model_view_matrix_stack.back();
