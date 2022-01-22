@@ -15,7 +15,7 @@ namespace P3D
     #define TEX_SIZE_PIXELS (TEX_SIZE * TEX_SIZE)
     #define TEX_SIZE_BYTES (TEX_SIZE_PIXELS * sizeof(pixel))
 
-    #define USE_FLOAT
+    //#define USE_FLOAT
 
     typedef unsigned char pixel;
 

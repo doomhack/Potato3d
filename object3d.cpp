@@ -33,7 +33,7 @@ namespace P3D
 
         render_device->SetPerspective(hFov, aspectRatio, zNear, zFar);
 
-        render_device->SetRenderFlags(RENDER_FLAGS(P3D::HalfPerspectiveMapping));
+        render_device->SetRenderFlags(RENDER_FLAGS(P3D::NoFlags));
 
         return true;
     }
@@ -80,7 +80,7 @@ namespace P3D
 
     void Object3d::RenderScene()
     {        
-        //render_device->ClearColor(backgroundColor);
+        render_device->ClearColor(backgroundColor);
 
         render_device->PushMatrix();
 
