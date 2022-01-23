@@ -90,52 +90,48 @@ namespace P3D
             {
                 unsigned int clip = 0;
 
-                fp zNear = z_planes->z_near;
-                fp zFar = z_planes->z_far;
 
-                fp w0 = clipSpacePoints.verts[0].pos.w;
-                fp w1 = clipSpacePoints.verts[1].pos.w;
-                fp w2 = clipSpacePoints.verts[2].pos.w;
+                ClipOperation op = GetClipOperation(clipSpacePoints.verts, W_Far);
 
-                if(w0 < zNear && w1 < zNear && w2 < zNear)
+//                if(op == Accept)
+//                    return;
+
+
+                op = GetClipOperation(clipSpacePoints.verts, W_Near);
+
+                if(op == Reject)
                     return;
-
-                if(w0 > zFar && w1 > zFar && w2 > zFar)
-                    return;
-
-                if(w0 < zNear || w1 < zNear || w2 < zNear)
+                else if(op == Clip)
                     clip |= W_Near;
 
-                fp x0 = clipSpacePoints.verts[0].pos.x;
-                fp x1 = clipSpacePoints.verts[1].pos.x;
-                fp x2 = clipSpacePoints.verts[2].pos.x;
 
-                if(x0 > w0 && x1 > w1 && x2 > w2)
+                op = GetClipOperation(clipSpacePoints.verts, X_W_Left);
+
+                if(op == Reject)
                     return;
-
-                if(-x0 > w0 && -x1 > w1 && -x2 > w2)
-                    return;
-
-                if(x0 > w0 || x1 > w1 || x2 > w2)
-                    clip |= X_W_Right;
-
-                if(-x0 > w0 || -x1 > w1 || -x2 > w2)
+                else if(op == Clip)
                     clip |= X_W_Left;
 
-                fp y0 = clipSpacePoints.verts[0].pos.y;
-                fp y1 = clipSpacePoints.verts[1].pos.y;
-                fp y2 = clipSpacePoints.verts[2].pos.y;
+                op = GetClipOperation(clipSpacePoints.verts, X_W_Right);
 
-                if(y0 > w0 && y1 > w1 && y2 > w2)
+                if(op == Reject)
                     return;
+                else if(op == Clip)
+                    clip |= X_W_Right;
 
-                if(-y0 > w0 && -y1 > w1 && -y2 > w2)
+
+                op = GetClipOperation(clipSpacePoints.verts, Y_W_Top);
+
+                if(op == Reject)
                     return;
-
-                if(y0 > w0 || y1 > w1 || y2 > w2)
+                else if(op == Clip)
                     clip |= Y_W_Top;
 
-                if(-y0 > w0 || -y1 > w1 || -y2 > w2)
+                op = GetClipOperation(clipSpacePoints.verts, Y_W_Bottom);
+
+                if(op == Reject)
+                    return;
+                else if(op == Clip)
                     clip |= Y_W_Bottom;
 
 
@@ -240,9 +236,35 @@ namespace P3D
                     case Y_W_Bottom:
                         return -vertex.pos.y;
 
+                    case W_Far:
+                        return z_planes->z_far;
+
                     default:
                         return 0;
                 }
+            }
+
+            ClipOperation GetClipOperation(const Vertex4d vertexes[3], ClipPlane plane) const
+            {
+                fp w0 = vertexes[0].pos.w;
+                fp w1 = vertexes[1].pos.w;
+                fp w2 = vertexes[2].pos.w;
+
+                fp p0 = GetClipPointForVertex(vertexes[0], plane);
+                fp p1 = GetClipPointForVertex(vertexes[1], plane);
+                fp p2 = GetClipPointForVertex(vertexes[2], plane);
+
+                fp d0 = w0 - p0;
+                fp d1 = w1 - p1;
+                fp d2 = w2 - p2;
+
+                if((d0 & d1 & d2) < 0) //All less than. (AND, check sign bit)
+                    return Reject;
+
+                if((d0 | d1 | d2) >= 0) //All greater or equal. (OR, check sign bit)
+                    return Accept;
+
+                return Clip;
             }
 
             fp GetLineIntersectionFrac(const fp a1, const fp a2, const fp b1, const fp b2) const
@@ -456,20 +478,14 @@ namespace P3D
                 if((top.pos.x >= fb_x && left.pos.x >= fb_x) || (right.pos.x < 0 && top.pos.x < 0))
                     return;
 
-                fp pixelCentreTopY = PixelCentre(top.pos.y);
+                fp pixelCentreTopY = PixelCentre(pMax(top.pos.y, fp(0)));
                 fp stepY = pixelCentreTopY - top.pos.y;
 
                 int yStart = pixelCentreTopY;
-                int yEnd = PixelCentre(left.pos.y);
+                int yEnd = PixelCentre(pMin(left.pos.y, fp(fb_y)));
 
                 if(yEnd < 0 || yStart >= fb_y)
                     return;
-
-                if(yEnd > fb_y)
-                    yEnd = fb_y;
-
-                if(yStart < 0)
-                    yStart = 0;
 
                 GetTriangleLerpYDeltas(left, right, top, y_delta);
 
@@ -495,20 +511,14 @@ namespace P3D
                 if((bottom.pos.x >= fb_x && left.pos.x >= fb_x) || (right.pos.x < 0 && bottom.pos.x < 0))
                     return;
 
-                fp pixelCentreTopY = PixelCentre(left.pos.y);
+                fp pixelCentreTopY = PixelCentre(pMax(left.pos.y, fp(0)));
                 fp stepY = pixelCentreTopY - left.pos.y;
 
                 int yStart = pixelCentreTopY;
-                int yEnd = PixelCentre(bottom.pos.y);
+                int yEnd = PixelCentre(pMin(bottom.pos.y, fp(fb_y)));
 
                 if(yEnd < 0 || yStart >= fb_y)
                     return;
-
-                if(yEnd > fb_y)
-                    yEnd = fb_y;
-
-                if(yStart < 0)
-                    yStart = 0;
 
                 GetTriangleLerpYDeltas(left, right, bottom, y_delta);
 
@@ -586,23 +596,17 @@ namespace P3D
 
                 const int fb_width = current_viewport->width;
 
-                fp pixelCentreLeftX = PixelCentre(pos.x_left);
+                fp pixelCentreLeftX = PixelCentre(pMax(pos.x_left, fp(0)));
                 fp stepX = pixelCentreLeftX - pos.x_left;
 
                 int x_start = pixelCentreLeftX;
-                int x_end = PixelCentre(pos.x_right);
+                int x_end = PixelCentre(pMin(pos.x_right, fp(fb_width)));
 
                 if(x_start > (x_end-1))
                     return;
 
                 if(x_start >= fb_width)
                     return;
-
-                if(x_start < 0)
-                    x_start = 0;
-
-                if(x_end > fb_width)
-                    x_end = fb_width;
 
                 span_pos.x_left = x_start;
                 span_pos.x_right = x_end;

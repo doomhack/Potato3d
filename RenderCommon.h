@@ -100,8 +100,15 @@ namespace P3D
             X_W_Right = 4u,
             Y_W_Top = 8u,
             Y_W_Bottom = 16u,
+            W_Far = 32u,
         } ClipPlane;
 
+        typedef enum ClipOperation
+        {
+            Accept = 0u, //No clip required.
+            Clip = 1u, //Clip required.
+            Reject = 2u //All out. Reject polygon.
+        } ClipOperation;
 
         class Vertex4d
         {
