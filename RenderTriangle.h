@@ -88,51 +88,21 @@ namespace P3D
 
             void DrawTriangleClip(TransformedTriangle& clipSpacePoints)
             {
+
+                if(GetClipOperation(clipSpacePoints.verts, W_Far) == Accept)
+                    return; //All > means outside plane.
+
                 unsigned int clip = 0;
 
+                for(unsigned int i = W_Near; i < W_Far; i <<= 1)
+                {
+                    ClipOperation op = GetClipOperation(clipSpacePoints.verts, ClipPlane(i));
 
-                ClipOperation op = GetClipOperation(clipSpacePoints.verts, W_Far);
-
-//                if(op == Accept)
-//                    return;
-
-
-                op = GetClipOperation(clipSpacePoints.verts, W_Near);
-
-                if(op == Reject)
-                    return;
-                else if(op == Clip)
-                    clip |= W_Near;
-
-
-                op = GetClipOperation(clipSpacePoints.verts, X_W_Left);
-
-                if(op == Reject)
-                    return;
-                else if(op == Clip)
-                    clip |= X_W_Left;
-
-                op = GetClipOperation(clipSpacePoints.verts, X_W_Right);
-
-                if(op == Reject)
-                    return;
-                else if(op == Clip)
-                    clip |= X_W_Right;
-
-
-                op = GetClipOperation(clipSpacePoints.verts, Y_W_Top);
-
-                if(op == Reject)
-                    return;
-                else if(op == Clip)
-                    clip |= Y_W_Top;
-
-                op = GetClipOperation(clipSpacePoints.verts, Y_W_Bottom);
-
-                if(op == Reject)
-                    return;
-                else if(op == Clip)
-                    clip |= Y_W_Bottom;
+                    if(op == Reject)
+                        return;
+                    else if(op == Clip)
+                        clip |= i;
+                }
 
 
                 if (clip == NoClip)
@@ -149,34 +119,13 @@ namespace P3D
                     Vertex4d* inBuffer = clipSpacePoints.verts;
                     Vertex4d* outBuffer = outputVxB;
 
-                    if(clip & W_Near)
+                    for(unsigned int i = W_Near; i < W_Far; i <<= 1)
                     {
-                        countA = ClipPolygon(inBuffer, countA, outBuffer, W_Near);
-                        std::swap(inBuffer, outBuffer);
-                    }
-
-                    if(clip & X_W_Left)
-                    {
-                        countA = ClipPolygon(inBuffer, countA, outBuffer, X_W_Left);
-                        std::swap(inBuffer, outBuffer);
-                    }
-
-                    if(clip & X_W_Right)
-                    {
-                        countA = ClipPolygon(inBuffer, countA, outBuffer, X_W_Right);
-                        std::swap(inBuffer, outBuffer);
-                    }
-
-                    if(clip & Y_W_Top)
-                    {
-                        countA = ClipPolygon(inBuffer, countA, outBuffer, Y_W_Top);
-                        std::swap(inBuffer, outBuffer);
-                    }
-
-                    if(clip & Y_W_Bottom)
-                    {
-                        countA = ClipPolygon(inBuffer, countA, outBuffer, Y_W_Bottom);
-                        std::swap(inBuffer, outBuffer);
+                        if(clip & i)
+                        {
+                            countA = ClipPolygon(inBuffer, countA, outBuffer, ClipPlane(i));
+                            std::swap(inBuffer, outBuffer);
+                        }
                     }
 
                     //Now outBuffer and outCount contain the final result.
