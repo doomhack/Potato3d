@@ -207,11 +207,19 @@ namespace P3D
                 fp d1 = w1 - p1;
                 fp d2 = w2 - p2;
 
-                if((d0 & d1 & d2) < 0) //All less than. (AND, check sign bit)
-                    return Reject;
+#if (fp==FP)
+                    if(d0 < 0 && d1 < 0 & d2 < 0) //All less than. (AND, check sign bit)
+                        return Reject;
 
-                if((d0 | d1 | d2) >= 0) //All greater or equal. (OR, check sign bit)
-                    return Accept;
+                    if(d0 >= 0 && d1 >= 0 && d2 >= 0) //All greater or equal. (OR, check sign bit)
+                        return Accept;
+#else
+                    if((d0 & d1 & d2) < 0) //All less than. (AND, check sign bit)
+                        return Reject;
+
+                    if((d0 | d1 | d2) >= 0) //All greater or equal. (OR, check sign bit)
+                        return Accept;
+#endif
 
                 return Clip;
             }
