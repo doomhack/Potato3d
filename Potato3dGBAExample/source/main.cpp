@@ -117,7 +117,7 @@ int main()
     }
 
 
-    obj3d->SetBackgroundColor(RGB8(0x4d, 0xc9, 0xff));
+    obj3d->SetBackgroundColor(10);
 
     while(true)
     {

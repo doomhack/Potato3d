@@ -19,7 +19,7 @@ namespace P3D
         ~RenderDevice();
 
         //Render Target
-        void SetRenderTarget(RenderTarget* target);
+        void SetRenderTarget(const RenderTarget *target);
         void SetViewport(unsigned int x, unsigned int y, unsigned int width, unsigned int height);
 
         //Flags
@@ -48,6 +48,9 @@ namespace P3D
         void ClearColor(pixel color);
         void ClearDepth(z_val depth);
 
+        void ClearViewportColor(pixel color);
+        void ClearViewportDepth(z_val depth);
+
         //Begin/End Frame.
         void BeginFrame();
         void EndFrame();
@@ -71,7 +74,7 @@ namespace P3D
 
         void UpdateTransformMatrix();
 
-        RenderTarget* render_target = nullptr;
+        const RenderTarget* render_target = nullptr;
         P3D::Internal::RenderTargetViewport viewport;
         P3D::Internal::RenderDeviceNearFarPlanes z_planes;
 

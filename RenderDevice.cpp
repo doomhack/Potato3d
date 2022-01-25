@@ -19,7 +19,7 @@ namespace P3D
     }
 
     //Render Target
-    void RenderDevice::SetRenderTarget(RenderTarget* target)
+    void RenderDevice::SetRenderTarget(const RenderTarget* target)
     {
         render_target = target;
 
@@ -45,7 +45,7 @@ namespace P3D
         if(render_target->GetZBuffer())
         {
             viewport.z_start = &render_target->GetZBuffer()[(y * render_target->GetZBufferYPitch()) + x];
-            viewport.y_pitch = render_target->GetZBufferYPitch();
+            viewport.z_y_pitch = render_target->GetZBufferYPitch();
         }
         else
         {
@@ -98,7 +98,7 @@ namespace P3D
 
         model_view_matrix_stack.push_back(m);
 
-        return (int)model_view_matrix_stack.size();
+        return model_view_matrix_stack.size();
     }
 
     unsigned int RenderDevice::PopMatrix()
@@ -108,7 +108,7 @@ namespace P3D
             model_view_matrix_stack.pop_back();
         }
 
-        return (int)model_view_matrix_stack.size();
+        return model_view_matrix_stack.size();
     }
 
     M4<fp>& RenderDevice::GetMatrix()
@@ -161,14 +161,25 @@ namespace P3D
     //Clear
     void RenderDevice::ClearColor(pixel color)
     {
+        unsigned int c32 = color;
+        unsigned int shift = 0;
+
+        if constexpr(sizeof(pixel) == 1)
+        {
+            c32 = (c32 << 24) | (c32 << 16) | (c32 << 8) | c32;
+            shift = 2;
+        }
+        else if constexpr(sizeof(pixel) == 2)
+        {
+            c32 = (c32 << 16) | c32;
+            shift = 1;
+        }
+
         for(unsigned int y = 0; y < render_target->GetHeight(); y++)
         {
             pixel* p = &render_target->GetColorBuffer()[y * render_target->GetColorBufferYPitch()];
 
-            for(unsigned int x = 0; x < render_target->GetWidth(); x++)
-            {
-                p[x] = color;
-            }
+            FastFill32((unsigned int*)p, c32, render_target->GetWidth() >> shift);
         }
     }
 
@@ -179,6 +190,58 @@ namespace P3D
             z_val* z = &render_target->GetZBuffer()[y * render_target->GetZBufferYPitch()];
 
             for(unsigned int x = 0; x < render_target->GetWidth(); x++)
+            {
+                z[x] = depth;
+            }
+        }
+    }
+
+    void RenderDevice::ClearViewportColor(pixel color)
+    {
+        unsigned int c32 = color;
+        unsigned int shift = 0;
+
+        if constexpr(sizeof(pixel) == 1)
+        {
+            c32 = (c32 << 24) | (c32 << 16) | (c32 << 8) | c32;
+            shift = 2;
+        }
+        else if constexpr(sizeof(pixel) == 2)
+        {
+            c32 = (c32 << 16) | c32;
+            shift = 1;
+        }
+
+        for(unsigned int y = 0; y < viewport.height; y++)
+        {
+            unsigned int count = viewport.width;
+
+            pixel* p = &viewport.start[y * viewport.y_pitch];
+
+            while(size_t(p) & 3)
+            {
+                *p = color;
+                p++;
+                count--;
+            }
+
+            FastFill32((unsigned int*)p, c32, count >> shift);
+
+            while(count & 3)
+            {
+                *p++ = color;
+                count--;
+            }
+        }
+    }
+
+    void RenderDevice::ClearViewportDepth(z_val depth)
+    {
+        for(unsigned int y = 0; y < viewport.height; y++)
+        {
+            z_val* z = &viewport.z_start[y * viewport.z_y_pitch];
+
+            for(unsigned int x = 0; x < viewport.width; x++)
             {
                 z[x] = depth;
             }

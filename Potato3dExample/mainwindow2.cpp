@@ -32,7 +32,7 @@ MainWindow2::MainWindow2(QWidget *parent)
 
     render_device->SetRenderTarget(render_target);
 
-    float aspectRatio = (float)screenWidth / (float)screenHeight;
+    const float aspectRatio = (float)screenWidth / (float)screenHeight;
 
     render_device->SetPerspective(60, aspectRatio, 10, 1000);
 
@@ -72,7 +72,6 @@ void MainWindow2::paintEvent(QPaintEvent *event)
     render_device->SetMaterial(mat1);
 
     render_device->ClearColor(0);
-
 
     render_device->PushMatrix();
     render_device->RotateY(rotateY);
