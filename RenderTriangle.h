@@ -319,21 +319,6 @@ namespace P3D
 
             }
 
-            fp PointOnLineSide2d(const V4<fp> l1, const V4<fp> l2, const V4<fp> p) const
-            {
-                //Left < 0
-                //Right > 0
-                //On = 0
-
-                //We shift down to ensure that cross doesn't overflow.
-                const fp dx = pASR(l2.x - l1.x, 8);
-                const fp dy = pASR(l2.y - l1.y, 8);
-                const fp cy = pASR(p.y - l1.y, 8);
-                const fp cx = pASR(p.x - l1.x, 8);
-
-                return -((dx*cy) - (dy*cx));
-            }
-
             void DrawTriangle2(const Vertex4d points[3])
             {
                 TriEdgeTrace pos;
@@ -358,7 +343,6 @@ namespace P3D
 
                 if(yEnd < 0 || yStart >= fb_y)
                     return;
-
 
                 GetTriangleLerpYDeltas(top, bottom, long_y_delta);
                 GetTriangleLerpYDeltas(top, middle, short_y_delta);
@@ -949,6 +933,21 @@ namespace P3D
             fp PixelCentre(fp x) const
             {
                 return pCeil(x - fp(0.5)) + fp(0.5);
+            }
+
+            fp PointOnLineSide2d(const V4<fp> l1, const V4<fp> l2, const V4<fp> p) const
+            {
+                //Left < 0
+                //Right > 0
+                //On = 0
+
+                //We shift down to ensure that cross doesn't overflow.
+                const fp dx = pASR(l2.x - l1.x, 8);
+                const fp dy = pASR(l2.y - l1.y, 8);
+                const fp cy = pASR(p.y - l1.y, 8);
+                const fp cx = pASR(p.x - l1.x, 8);
+
+                return -((dx*cy) - (dy*cx));
             }
 
         private:
