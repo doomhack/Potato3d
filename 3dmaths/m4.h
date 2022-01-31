@@ -437,6 +437,35 @@ namespace P3D
             m[1][3] = m[1][3] * c - tmp * s;
         }
 
+        constexpr void lookAt(const V3<T>& eye, const V3<T>& center, const V3<T>& up)
+        {
+            const V3<T>& forward = center - eye;
+
+            forward = forward.Normalised();
+
+            V3<T> side = forward.CrossProductNormalised(up);
+            V3<T> upVector = side.CrossProduct(forward);
+
+            m[0][0] = side.x();
+            m[1][0] = side.y();
+            m[2][0] = side.z();
+            m[3][0] = T(0);
+            m[0][1] = upVector.x();
+            m[1][1] = upVector.y();
+            m[2][1] = upVector.z();
+            m[3][1] = T(0);
+            m[0][2] = -forward.x();
+            m[1][2] = -forward.y();
+            m[2][2] = -forward.z();
+            m[3][2] = T(0);
+            m[0][3] = T(0);
+            m[1][3] = T(0);
+            m[2][3] = T(0);
+            m[3][3] = T(0);
+
+            translate(-eye);
+        }
+
         constexpr void perspective(T verticalAngle, T aspectRatio, T nearPlane, T farPlane)
         {
             if (nearPlane == farPlane || aspectRatio == 0)

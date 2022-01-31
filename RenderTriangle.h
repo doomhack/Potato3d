@@ -357,7 +357,6 @@ namespace P3D
                     return;
 
                 //Draw bottom half.
-
                 pixelCentreTopY = PixelCentre(pMax(middle.pos.y, fp(0)));
                 stepY = pixelCentreTopY - middle.pos.y;
 
