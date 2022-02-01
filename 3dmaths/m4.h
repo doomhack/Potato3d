@@ -17,24 +17,24 @@ namespace P3D
     public:
         explicit M4()   {flags = Updated;}
 
-        bool GetFlag(MatrixFlags flag) const
+        bool GetFlag(const MatrixFlags flag) const
         {
             return (flags & flag) > 0;
         }
 
-        void SetFlag(MatrixFlags flag)
+        void SetFlag(const MatrixFlags flag)
         {
             flags |= flag;
         }
 
-        void UnSetFlag(MatrixFlags flag)
+        void UnSetFlag(const MatrixFlags flag)
         {
             flags &= ~flag;
         }
 
-        bool ResetFlag(MatrixFlags flag)
+        bool ResetFlag(const MatrixFlags flag)
         {
-            bool isSet = GetFlag(flag);
+            const bool isSet = GetFlag(flag);
             UnSetFlag(flag);
 
             return isSet;
@@ -270,27 +270,25 @@ namespace P3D
 
         constexpr V4<T> operator*(const V3<T>& vector) const
         {
-            T x, y, z, w;
+            const T x = T(vector.x) * m[0][0] +
+                        T(vector.y) * m[1][0] +
+                        T(vector.z) * m[2][0] +
+                        m[3][0];
 
-            x = T(vector.x) * m[0][0] +
-                T(vector.y) * m[1][0] +
-                T(vector.z) * m[2][0] +
-                m[3][0];
+            const T y = T(vector.x) * m[0][1] +
+                        T(vector.y) * m[1][1] +
+                        T(vector.z) * m[2][1] +
+                        m[3][1];
 
-            y = T(vector.x) * m[0][1] +
-                T(vector.y) * m[1][1] +
-                T(vector.z) * m[2][1] +
-                m[3][1];
+            const T z = T(vector.x) * m[0][2] +
+                        T(vector.y) * m[1][2] +
+                        T(vector.z) * m[2][2] +
+                        m[3][2];
 
-            z = T(vector.x) * m[0][2] +
-                T(vector.y) * m[1][2] +
-                T(vector.z) * m[2][2] +
-                m[3][2];
-
-            w = T(vector.x) * m[0][3] +
-                T(vector.y) * m[1][3] +
-                T(vector.z) * m[2][3] +
-                m[3][3];
+            const T w = T(vector.x) * m[0][3] +
+                        T(vector.y) * m[1][3] +
+                        T(vector.z) * m[2][3] +
+                        m[3][3];
 
 
             return V4<T>(x, y, z, w);
@@ -300,9 +298,9 @@ namespace P3D
         {
             SetFlag(Updated);
 
-            T vx = vector.x;
-            T vy = vector.y;
-            T vz = vector.z;
+            const T vx = vector.x;
+            const T vy = vector.y;
+            const T vz = vector.z;
 
             m[3][0] += m[0][0] * vx + m[1][0] * vy + m[2][0] * vz;
             m[3][1] += m[0][1] * vx + m[1][1] * vy + m[2][1] * vz;
@@ -310,7 +308,7 @@ namespace P3D
             m[3][3] += m[0][3] * vx + m[1][3] * vy + m[2][3] * vz;
         }
 
-        constexpr void rotateY(T angle)
+        constexpr void rotateY(const T angle)
         {
             if (angle == 0)
                 return;
@@ -336,7 +334,7 @@ namespace P3D
             }
             else
             {
-                T a = pD2R(angle);
+                const T a = pD2R(angle);
                 c = T(std::cos((double)a));
                 s = T(std::sin((double)a));
             }
@@ -353,7 +351,7 @@ namespace P3D
             m[0][3] = m[0][3] * c - tmp * s;
         }
 
-        constexpr void rotateX(T angle)
+        constexpr void rotateX(const T angle)
         {
             if (angle == 0)
                 return;
@@ -379,7 +377,7 @@ namespace P3D
             }
             else
             {
-                T a = pD2R(angle);
+                const T a = pD2R(angle);
                 c = T(std::cos((double)a));
                 s = T(std::sin((double)a));
             }
@@ -395,7 +393,7 @@ namespace P3D
             m[2][3] = m[2][3] * c - tmp * s;
         }
 
-        constexpr void rotateZ(T angle)
+        constexpr void rotateZ(const T angle)
         {
             if (angle == 0)
                 return;
@@ -421,7 +419,7 @@ namespace P3D
             }
             else
             {
-                T a = pD2R(angle);
+                const T a = pD2R(angle);
                 c = T(std::cos((double)a));
                 s = T(std::sin((double)a));
             }
@@ -443,8 +441,8 @@ namespace P3D
 
             forward = forward.Normalised();
 
-            V3<T> side = forward.CrossProductNormalised(up);
-            V3<T> upVector = side.CrossProduct(forward);
+            const V3<T> side = forward.CrossProductNormalised(up);
+            const V3<T> upVector = side.CrossProduct(forward);
 
             m[0][0] = side.x();
             m[1][0] = side.y();
@@ -466,7 +464,7 @@ namespace P3D
             translate(-eye);
         }
 
-        constexpr void perspective(T verticalAngle, T aspectRatio, T nearPlane, T farPlane)
+        constexpr void perspective(const T verticalAngle, const T aspectRatio, const T nearPlane, const T farPlane)
         {
             if (nearPlane == farPlane || aspectRatio == 0)
                 return;
@@ -474,13 +472,13 @@ namespace P3D
             SetFlag(Updated);
 
 
-            double va = verticalAngle;
-            double ar = aspectRatio;
-            double scale = 1.0 / std::tan(double(va) * 0.5 * M_PI / 180.0);
+            const double va = verticalAngle;
+            const double ar = aspectRatio;
+            const double scale = 1.0 / std::tan(double(va) * 0.5 * M_PI / 180.0);
 
-            double fp = farPlane;
-            double np = nearPlane;
-            double fd = (fp - np);
+            const double fp = farPlane;
+            const double np = nearPlane;
+            const double fd = (fp - np);
 
             m[0][0] = T(scale / ar);
             m[1][0] = 0;
@@ -503,21 +501,21 @@ namespace P3D
             m[3][3] = 0;
         }
 
-        constexpr void orthographic(T left, T right, T bottom, T top, T nearPlane, T farPlane)
+        constexpr void orthographic(const T left, const T right, const T bottom, const T top, const T nearPlane, const T farPlane)
         {
             if (left == right || bottom == top || nearPlane == farPlane)
                 return;
 
-            double fp = farPlane;
-            double np = nearPlane;
-            double l = left;
-            double r = right;
-            double t = top;
-            double b = bottom;
+            const double fp = farPlane;
+            const double np = nearPlane;
+            const double l = left;
+            const double r = right;
+            const double t = top;
+            const double b = bottom;
 
-            double width = (r - l);
-            double height = (t - b);
-            double depth = (fp - np);
+            const double width = (r - l);
+            const double height = (t - b);
+            const double depth = (fp - np);
 
             m[0][0] = T(2.0 / width);
             m[1][0] = 0;

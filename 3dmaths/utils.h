@@ -13,67 +13,67 @@
 namespace P3D
 {
     template <class T>
-    constexpr inline T pD2R(T degrees)
+    constexpr inline T pD2R(const T degrees)
     {
         return (degrees * T(M_PI)) / T(180);
     }
 
     template <class T>
-    constexpr inline T pLerp(T a, T b, T frac)
+    constexpr inline T pLerp(const T a, const T b, const T frac)
     {
         return a + frac * (b - a);
     }
 
     template <class T>
-    constexpr inline int pRound(T val)
+    constexpr inline int pRound(const T val)
     {
         return (int)(val + T(0.5));
     }
 
     template <>
-    constexpr inline int pRound(FP val)
+    constexpr inline int pRound(const FP val)
     {
         return val + (FP(1) >> 1);
     }
 
     template <class T>
-    constexpr inline T pASL(T val, int shift)
+    constexpr inline T pASL(const T val, const int shift)
     {
         return val * (1 << shift);
     }
 
     template <>
-    constexpr inline FP pASL(FP val, int shift)
+    constexpr inline FP pASL(const FP val, const int shift)
     {
         return val << shift;
     }
 
     template <class T>
-    constexpr inline T pASR(T val, int shift)
+    constexpr inline T pASR(const T val, const int shift)
     {
         return val / (1 << shift);
     }
 
     template <>
-    constexpr inline FP pASR(FP val, int shift)
+    constexpr inline FP pASR(const FP val, const int shift)
     {
         return val >> shift;
     }
 
     template <class T>
-    constexpr inline T pCeil(T val)
+    constexpr inline T pCeil(const T val)
     {
         return std::ceil(val);
     }
 
     template <>
-    constexpr inline FP pCeil(FP val)
+    constexpr inline FP pCeil(const FP val)
     {
         return (val.toFPInt() + 0xffff) >> 16;
     }
 
     template <class T>
-    constexpr inline T pAbs(T v)
+    constexpr inline T pAbs(const T v)
     {
         if(v >= T(0))
             return v;
@@ -82,15 +82,39 @@ namespace P3D
     }
 
     template <class T>
-    constexpr inline T pMin(T a, T b)
+    constexpr inline T pMin(const T a, const T b)
     {
         return a < b ? a : b;
     }
 
     template <class T>
-    constexpr inline T pMax(T a, T b)
+    constexpr inline T pMax(const T a, const T b)
     {
         return a > b ? a : b;
+    }
+
+    template <class T>
+    constexpr inline bool pAllLTZ3(const T a, const T b, const T c)
+    {
+        return (a < 0) && (b < 0) && (c < 0);
+    }
+
+    template <>
+    constexpr inline bool pAllLTZ3(const FP a, const FP b, const FP c)
+    {
+        return (a & b & c) < 0;
+    }
+
+    template <class T>
+    constexpr inline bool pAllGTEqZ3(const T a, const T b, const T c)
+    {
+        return (a >= 0) && (b >= 0) && (c >= 0);
+    }
+
+    template <>
+    constexpr inline bool pAllGTEqZ3(const FP a, const FP b, const FP c)
+    {
+        return (a | b | c) >= 0;
     }
 
     inline void FastCopy32(unsigned int* dest, const unsigned int* src, const unsigned int len)
@@ -115,7 +139,7 @@ namespace P3D
     #endif
     }
 
-    inline void FastFill32(unsigned int* dest, volatile unsigned int value, unsigned int words)
+    inline void FastFill32(unsigned int* dest, volatile const unsigned int value, unsigned int words)
     {
 #ifndef __arm__
         while(words--)
@@ -127,7 +151,7 @@ namespace P3D
 #endif
     }
 
-    inline void FastFill16(unsigned short* dest, volatile unsigned short value, unsigned int words)
+    inline void FastFill16(unsigned short* dest, volatile const unsigned short value, unsigned int words)
     {
 #ifndef __arm__
         while(words--)
@@ -140,13 +164,13 @@ namespace P3D
     }
 
     template <class T>
-    constexpr inline T pReciprocal(T val)
+    constexpr inline T pReciprocal(const T val)
     {
         return T(1)/val;
     }
 
     template <>
-    constexpr inline FP pReciprocal(FP v)
+    constexpr inline FP pReciprocal(const FP v)
     {
         FP val = v < 0 ? -v : v;
 
@@ -154,7 +178,7 @@ namespace P3D
 
         while(val > 1)
         {
-            val = (val >> 1);
+            val >>= 1;
             shift++;
         }
 
@@ -164,14 +188,14 @@ namespace P3D
     }
 
     template <class T>
-    constexpr inline T pScaledReciprocal(unsigned int shift, T val)
+    constexpr inline T pScaledReciprocal(const unsigned int shift, const T val)
     {
         return pReciprocal(pASR(val, shift));
     }
 
     //Approx fixed point divide of a/b using reciprocal. -> a * (1/b).
     template <class T>
-    constexpr inline T pApproxDiv(T a, T b)
+    constexpr inline T pApproxDiv(const T a, const T b)
     {
         return a * pReciprocal(b);
     }
