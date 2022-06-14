@@ -575,7 +575,7 @@ namespace P3D
 
     typedef M4<float> M4F;
     typedef M4<double> M4D;
-    typedef M4<FP> M4FP;
+    typedef M4<FP16> M4FP;
 
 }
 

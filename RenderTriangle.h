@@ -94,6 +94,7 @@ namespace P3D
 
                 unsigned int clip = 0;
 
+                //
                 for(unsigned int i = W_Near; i < W_Far; i <<= 1)
                 {
                     ClipOperation op = GetClipOperation(clipSpacePoints.verts, ClipPlane(i));
@@ -334,9 +335,6 @@ namespace P3D
                 int yStart = pixelCentreTopY;
                 int yEnd = PixelCentre(pMin(middle.pos.y, fp(fb_y)));
 
-                if(yEnd < 0 || yStart >= fb_y)
-                    return;
-
                 GetTriangleLerpYDeltas(top, bottom, long_y_delta);
                 GetTriangleLerpYDeltas(top, middle, short_y_delta);
 
@@ -346,15 +344,15 @@ namespace P3D
 
                 DrawTriangleSpans(yStart, yEnd, pos, y_delta_left, y_delta_right);
 
-                if(middle.pos.y == bottom.pos.y)
-                    return;
-
                 //Draw bottom half.
                 pixelCentreTopY = PixelCentre(pMax(middle.pos.y, fp(0)));
                 stepY = pixelCentreTopY - middle.pos.y;
 
                 yStart = pixelCentreTopY;
                 yEnd = PixelCentre(pMin(bottom.pos.y, fp(fb_y)));
+
+                if(yStart == yEnd)
+                    return;
 
                 GetTriangleLerpYDeltas(middle, bottom, short_y_delta);
 

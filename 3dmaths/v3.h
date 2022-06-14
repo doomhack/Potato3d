@@ -153,7 +153,7 @@ namespace P3D
 
     typedef V3<float> V3F;
     typedef V3<double> V3D;
-    typedef V3<FP> V3FP;
+    typedef V3<FP16> V3FP;
 
 }
 

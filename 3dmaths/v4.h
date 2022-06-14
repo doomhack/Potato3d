@@ -111,7 +111,7 @@ namespace P3D
 
     typedef V4<float> V4F;
     typedef V4<double> V4D;
-    typedef V4<FP> V4FP;
+    typedef V4<FP16> V4FP;
 
 }
 

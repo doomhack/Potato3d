@@ -23,7 +23,7 @@ namespace P3D
         typedef double fp;
         typedef fp z_val;
     #else
-        typedef FP fp;
+        typedef FP16 fp;
         typedef unsigned short z_val;
     #endif
 

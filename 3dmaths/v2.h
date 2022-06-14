@@ -74,7 +74,7 @@ namespace P3D
 
     typedef V2<float> V2F;
     typedef V2<double> V2D;
-    typedef V2<FP> V2FP;
+    typedef V2<FP16> V2FP;
 
 }
 #endif // V2_H

@@ -31,9 +31,9 @@ namespace P3D
     }
 
     template <>
-    constexpr inline int pRound(const FP val)
+    constexpr inline int pRound(const FP16 val)
     {
-        return val + (FP(1) >> 1);
+        return val + (FP16(1) >> 1);
     }
 
     template <class T>
@@ -43,7 +43,7 @@ namespace P3D
     }
 
     template <>
-    constexpr inline FP pASL(const FP val, const int shift)
+    constexpr inline FP16 pASL(const FP16 val, const int shift)
     {
         return val << shift;
     }
@@ -55,7 +55,7 @@ namespace P3D
     }
 
     template <>
-    constexpr inline FP pASR(const FP val, const int shift)
+    constexpr inline FP16 pASR(const FP16 val, const int shift)
     {
         return val >> shift;
     }
@@ -67,7 +67,7 @@ namespace P3D
     }
 
     template <>
-    constexpr inline FP pCeil(const FP val)
+    constexpr inline FP16 pCeil(const FP16 val)
     {
         return (val.toFPInt() + 0xffff) >> 16;
     }
@@ -100,7 +100,7 @@ namespace P3D
     }
 
     template <>
-    constexpr inline bool pAllLTZ3(const FP a, const FP b, const FP c)
+    constexpr inline bool pAllLTZ3(const FP16 a, const FP16 b, const FP16 c)
     {
         return (a & b & c) < 0;
     }
@@ -112,7 +112,7 @@ namespace P3D
     }
 
     template <>
-    constexpr inline bool pAllGTEqZ3(const FP a, const FP b, const FP c)
+    constexpr inline bool pAllGTEqZ3(const FP16 a, const FP16 b, const FP16 c)
     {
         return (a | b | c) >= 0;
     }
@@ -170,7 +170,7 @@ namespace P3D
     }
 
     template <>
-    constexpr inline FP pReciprocal(const FP v)
+    constexpr inline FP16 pReciprocal(const FP16 v)
     {
         FP val = v < 0 ? -v : v;
 
@@ -182,7 +182,7 @@ namespace P3D
             shift++;
         }
 
-        FP result = FP::fromFPInt(reciprocalTable[val.toFPInt()] >> shift);
+        FP result = FP16::fromFPInt(reciprocalTable[val.toFPInt()] >> shift);
 
         return v < 0 ? -result : result;
     }

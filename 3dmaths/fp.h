@@ -12,7 +12,7 @@
 
 namespace P3D
 {
-    class FP
+    template<const unsigned int fracbits> class FP
     {
     public:
         FP()                                                {}
@@ -227,13 +227,15 @@ namespace P3D
         constexpr FP operator>>(const int r) const {FP v(*this);   return v>>=r;}
         constexpr FP& operator>>=(const int r)     {n >>= r;  return *this;}
 
-        static const unsigned int fracbits = 16;
-
     private:
         int n;
 
         static constexpr int one = (1 << fracbits);
     };
+
+    typedef FP<16>  FP16;   //s + 15 + 16 (-32768 to +32767) (0.000015)
+    typedef FP<8>   FP8;    //s + 23 + 8  (-8,388,608 to +8,388,608) (0.039)
+    typedef FP<24>  FP24;   //s + 7 + 24  (-128 to +127) (0.0000000596)
 
 }
 
