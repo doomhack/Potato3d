@@ -5,7 +5,6 @@
 
 namespace P3D
 {
-
     class TextureCacheBase
     {
     public:

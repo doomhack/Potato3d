@@ -254,7 +254,7 @@ namespace P3D
                 }
             }
 
-            void DrawTriangleCull(Vertex4d screenSpacePoints[3])
+            void DrawTriangleCull(const Vertex4d screenSpacePoints[3])
             {
                 if constexpr (render_flags & (BackFaceCulling | FrontFaceCulling))
                 {
