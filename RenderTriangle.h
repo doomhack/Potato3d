@@ -58,26 +58,38 @@ namespace P3D
             {
                 current_material = &material;
 
-                DrawTriangleClip(tri);
+                ClipTriangle(tri);
 
 #ifdef RENDER_STATS
                 render_stats->triangles_submitted++;
 #endif
             }
 
-            void SetRenderStateViewport(const RenderTargetViewport& viewport, const RenderDeviceNearFarPlanes& planes)
+            void SetRenderStateViewport(const RenderTargetViewport& viewport, const RenderDeviceNearFarPlanes& planes) override
             {
                 current_viewport = &viewport;
                 z_planes = &planes;
+
+                if constexpr (render_flags & (FullPerspectiveMapping | HalfPerspectiveMapping))
+                {
+                    if constexpr(!std::is_floating_point<fp>::value)
+                    {
+                        max_w_tex_scale = fp((32767 * (int)planes.z_near) / (TEX_SIZE * TEX_MAX_TILE));
+                    }
+                    else
+                    {
+                        max_w_tex_scale = 1;
+                    }
+                }
             }
 
-            void SetTextureCache(const TextureCacheBase* texture_cache)
+            void SetTextureCache(const TextureCacheBase* texture_cache) override
             {
                 tex_cache = texture_cache;
             }
 
 #ifdef RENDER_STATS
-            void SetRenderStats(RenderStats& stats)
+            void SetRenderStats(RenderStats& stats) override
             {
                 render_stats = &stats;
             }
@@ -86,7 +98,7 @@ namespace P3D
 
         private:
 
-            void DrawTriangleClip(TransformedTriangle& clipSpacePoints)
+            void ClipTriangle(TransformedTriangle& clipSpacePoints)
             {
 
                 if(GetClipOperation(clipSpacePoints.verts, W_Far) == Accept)
@@ -124,7 +136,7 @@ namespace P3D
                     {
                         if(clip & i)
                         {
-                            countA = ClipPolygon(inBuffer, countA, outBuffer, ClipPlane(i));
+                            countA = ClipPolygonToPlane(inBuffer, countA, outBuffer, ClipPlane(i));
                             std::swap(inBuffer, outBuffer);
                         }
                     }
@@ -134,7 +146,7 @@ namespace P3D
                 }
             }
 
-            unsigned int ClipPolygon(const Vertex4d clipSpacePointsIn[], const int vxCount, Vertex4d clipSpacePointsOut[], ClipPlane clipPlane)
+            unsigned int ClipPolygonToPlane(const Vertex4d clipSpacePointsIn[], const int vxCount, Vertex4d clipSpacePointsOut[], ClipPlane clipPlane)
             {
                 if(vxCount < 3)
                     return 0;
@@ -243,18 +255,18 @@ namespace P3D
                     clipSpacePoints[i].pos.y = fracToY(clipSpacePoints[i].pos.y);
                 }
 
-                DrawTriangleCull(clipSpacePoints);
+                CullTriangle(clipSpacePoints);
 
                 int rounds = vxCount - 3;
 
                 for(int i = 0; i < rounds; i++)
                 {
                     clipSpacePoints[i+1] = clipSpacePoints[0];
-                    DrawTriangleCull(&clipSpacePoints[i+1]);
+                    CullTriangle(&clipSpacePoints[i+1]);
                 }
             }
 
-            void DrawTriangleCull(const Vertex4d screenSpacePoints[3])
+            void CullTriangle(const Vertex4d screenSpacePoints[3])
             {
                 if constexpr (render_flags & (BackFaceCulling | FrontFaceCulling))
                 {
@@ -286,10 +298,10 @@ namespace P3D
                         return;
                 }
 
-                DrawTriangleSplit(screenSpacePoints);
+                SortTrianglePoints(screenSpacePoints);
             }
 
-            void DrawTriangleSplit(const Vertex4d screenSpacePoints[3])
+            void SortTrianglePoints(const Vertex4d screenSpacePoints[3])
             {
                 Vertex4d points[3];
 
@@ -299,9 +311,9 @@ namespace P3D
                 {
                     if(current_material->type == Material::Texture)
                     {
-                        points[0].toPerspectiveCorrect();
-                        points[1].toPerspectiveCorrect();
-                        points[2].toPerspectiveCorrect();
+                        points[0].toPerspectiveCorrect(max_w_tex_scale);
+                        points[1].toPerspectiveCorrect(max_w_tex_scale);
+                        points[2].toPerspectiveCorrect(max_w_tex_scale);
                     }
                 }
 
@@ -310,7 +322,6 @@ namespace P3D
 #ifdef RENDER_STATS
                 render_stats->triangles_drawn++;
 #endif
-
             }
 
             void DrawTriangleEdge(const Vertex4d points[3])
@@ -696,6 +707,13 @@ namespace P3D
 
             inline void DrawScanlinePixelLinearPair(pixel* fb, const pixel* texels, const fp u1, const fp v1, const fp u2, const fp v2)
             {
+                /*
+                if(u1 > 64 || v1 > 64 || u2 > 64 || v2 > 64)
+                {
+                    return;
+                }
+                */
+
                 const unsigned int tx = (int)u1 & TEX_MASK;
                 const unsigned int ty = ((int)v1 & TEX_MASK) << TEX_SHIFT;
 
@@ -945,6 +963,8 @@ namespace P3D
             const Material* current_material = nullptr;
             const RenderTargetViewport* current_viewport = nullptr;
             const RenderDeviceNearFarPlanes* z_planes = nullptr;
+            fp max_w_tex_scale = 0;
+
 
 #ifdef RENDER_STATS
             RenderStats* render_stats = nullptr;

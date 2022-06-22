@@ -116,13 +116,12 @@ namespace P3D
             V4<fp> pos;
             V2<fp> uv;
 
-            void toPerspectiveCorrect()
+            void toPerspectiveCorrect(const fp scale = fp(256))
             {
 #if 1
-                pos.w = fp(256) / pos.w;
+                pos.w = fp(scale) / pos.w;
                 uv.x = uv.x * pos.w;
                 uv.y = uv.y * pos.w;
-
 #else
                 uv.x = uv.x / pos.w;
                 uv.y = uv.y / pos.w;
