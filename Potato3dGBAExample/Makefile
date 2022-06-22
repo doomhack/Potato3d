@@ -32,7 +32,7 @@ MUSIC		:= music
 #---------------------------------------------------------------------------------
 ARCH	:=	-mthumb -mthumb-interwork
 
-CFLAGS	:=	-g -Wall -O3 -fgcse-after-reload -gdwarf-4\
+CFLAGS	:=	-g -Wall -O3 -fgcse-after-reload -gdwarf-4 -fno-eliminate-unused-debug-symbols\
 		-mcpu=arm7tdmi -mtune=arm7tdmi\
                 -ffast-math -ffunction-sections\
 		$(ARCH)

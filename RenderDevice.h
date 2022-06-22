@@ -24,32 +24,32 @@ namespace P3D
 
         //Flags
         #define RENDER_FLAGS(x) (new P3D::Internal::TriangleRenderFlags<x>())
-        void SetRenderFlags(P3D::Internal::RenderFlagsBase* flags_ptr);
+        void SetRenderFlags(Internal::RenderFlagsBase *flags_ptr);
 
         //Matrix
-        void SetPerspective(fp vertical_fov, fp aspect_ratio, fp z_near, fp z_far);
-        void SetOrthographic(fp left, fp right, fp bottom, fp top, fp z_near, fp z_far);
+        void SetPerspective(const fp vertical_fov, const fp aspect_ratio, const fp z_near, const fp z_far);
+        void SetOrthographic(const fp left, const fp right, const fp bottom, const fp top, const fp z_near, const fp z_far);
 
         unsigned int PushMatrix();
         unsigned int PopMatrix();
         M4<fp>& GetMatrix();
-        void LoadMatrix(M4<fp>& matrix);
+        void LoadMatrix(const M4<fp> &matrix);
 
         void LoadIdentity();
 
-        void Translate(V3<fp> v);
+        void Translate(const V3<fp>& v);
 
-        void RotateX(fp angle);
-        void RotateY(fp angle);
-        void RotateZ(fp angle);
+        void RotateX(const fp angle);
+        void RotateY(const fp angle);
+        void RotateZ(const fp angle);
 
 
         //Clear
-        void ClearColor(pixel color);
-        void ClearDepth(z_val depth);
+        void ClearColor(const pixel color);
+        void ClearDepth(const z_val depth);
 
-        void ClearViewportColor(pixel color);
-        void ClearViewportDepth(z_val depth);
+        void ClearViewportColor(const pixel color);
+        void ClearViewportDepth(const z_val depth);
 
         //Begin/End Frame.
         void BeginFrame();
@@ -57,7 +57,7 @@ namespace P3D
 
         //
         void SetTextureCache(TextureCacheBase* cache);
-        void SetMaterial(const Material& material, signed char importance = 0);
+        void SetMaterial(const Material& material, const signed char importance = 0);
 
         //Draw Objects.
         void DrawTriangle(const V3<fp> vertexes[3], const V2<fp> uvs[3] = nullptr);

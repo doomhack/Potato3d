@@ -15,7 +15,10 @@ namespace P3D
     #define TEX_SIZE_PIXELS (TEX_SIZE * TEX_SIZE)
     #define TEX_SIZE_BYTES (TEX_SIZE_PIXELS * sizeof(pixel))
 
-    //#define USE_FLOAT
+    //Maximum UV tiling. Increasing this will reduce bits available for perspective correct texture mapper.
+    #define TEX_MAX_TILE 2
+
+    #define USE_FLOAT
 
     typedef unsigned char pixel;
 
@@ -23,7 +26,7 @@ namespace P3D
         typedef double fp;
         typedef fp z_val;
     #else
-        typedef FP fp;
+        typedef FP16 fp;
         typedef unsigned short z_val;
     #endif
 

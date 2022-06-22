@@ -5,14 +5,13 @@
 
 namespace P3D
 {
-
     class TextureCacheBase
     {
     public:
         TextureCacheBase() = default;
         virtual ~TextureCacheBase() = default;
 
-        virtual void AddTexture(const pixel* texture, signed char importance = 0)
+        virtual void AddTexture(const pixel* texture, const signed char importance = 0)
         {
             (void)texture;
             (void)importance;

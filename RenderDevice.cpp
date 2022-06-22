@@ -59,7 +59,7 @@ namespace P3D
         }
     }
 
-    void RenderDevice::SetRenderFlags(P3D::Internal::RenderFlagsBase* flags_ptr)
+    void RenderDevice::SetRenderFlags(Internal::RenderFlagsBase *flags_ptr)
     {
         if(render_flags_base != nullptr)
             delete render_flags_base;
@@ -76,7 +76,7 @@ namespace P3D
     }
 
     //Matrix
-    void RenderDevice::SetPerspective(fp vertical_fov, fp aspect_ratio, fp z_near, fp z_far)
+    void RenderDevice::SetPerspective(const fp vertical_fov, const fp aspect_ratio, const fp z_near, const fp z_far)
     {
         projection_matrix.perspective(vertical_fov, aspect_ratio, z_near, z_far);
 
@@ -84,7 +84,7 @@ namespace P3D
         z_planes.z_far = z_far;
     }
 
-    void RenderDevice::SetOrthographic(fp left, fp right, fp bottom, fp top, fp z_near, fp z_far)
+    void RenderDevice::SetOrthographic(const fp left, const fp right, const fp bottom, const fp top, const fp z_near, const fp z_far)
     {
         projection_matrix.orthographic(left, right, bottom, top, z_near, z_far);
 
@@ -94,7 +94,7 @@ namespace P3D
 
     unsigned int RenderDevice::PushMatrix()
     {
-        M4<fp> m = model_view_matrix_stack.back();
+        const M4<fp> m = model_view_matrix_stack.back();
 
         model_view_matrix_stack.push_back(m);
 
@@ -116,7 +116,7 @@ namespace P3D
         return model_view_matrix_stack.back();
     }
 
-    void RenderDevice::LoadMatrix(M4<fp>& matrix)
+    void RenderDevice::LoadMatrix(const M4<fp>& matrix)
     {
         model_view_matrix_stack.pop_back();
 
@@ -138,28 +138,28 @@ namespace P3D
         model_view_matrix_stack.back().setToIdentity();
     }
 
-    void RenderDevice::Translate(V3<fp> v)
+    void RenderDevice::Translate(const V3<fp> &v)
     {
         model_view_matrix_stack.back().translate(v);
     }
 
-    void RenderDevice::RotateX(fp angle)
+    void RenderDevice::RotateX(const fp angle)
     {
         model_view_matrix_stack.back().rotateX(angle);
     }
 
-    void RenderDevice::RotateY(fp angle)
+    void RenderDevice::RotateY(const fp angle)
     {
         model_view_matrix_stack.back().rotateY(angle);
     }
 
-    void RenderDevice::RotateZ(fp angle)
+    void RenderDevice::RotateZ(const fp angle)
     {
         model_view_matrix_stack.back().rotateZ(angle);
     }
 
     //Clear
-    void RenderDevice::ClearColor(pixel color)
+    void RenderDevice::ClearColor(const pixel color)
     {
         unsigned int c32 = color;
         unsigned int shift = 0;
@@ -183,7 +183,7 @@ namespace P3D
         }
     }
 
-    void RenderDevice::ClearDepth(z_val depth)
+    void RenderDevice::ClearDepth(const z_val depth)
     {
         for(unsigned int y = 0; y < render_target->GetHeight(); y++)
         {
@@ -196,7 +196,7 @@ namespace P3D
         }
     }
 
-    void RenderDevice::ClearViewportColor(pixel color)
+    void RenderDevice::ClearViewportColor(const pixel color)
     {
         unsigned int c32 = color;
         unsigned int shift = 0;
@@ -235,7 +235,7 @@ namespace P3D
         }
     }
 
-    void RenderDevice::ClearViewportDepth(z_val depth)
+    void RenderDevice::ClearViewportDepth(const z_val depth)
     {
         for(unsigned int y = 0; y < viewport.height; y++)
         {
@@ -274,7 +274,7 @@ namespace P3D
         triangle_render->SetTextureCache(texture_cache);
     }
 
-    void RenderDevice::SetMaterial(const Material& material, signed char importance)
+    void RenderDevice::SetMaterial(const Material& material, const signed char importance)
     {
         current_material = &material;
 

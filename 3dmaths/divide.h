@@ -7,7 +7,7 @@
 #endif
 
 template <class T>
-constexpr inline T FixedDiv(T a, T b)
+constexpr inline T FixedDiv(const T a, const T b)
 {
     return (a * (1 << 16)) / b;
 }
@@ -17,7 +17,7 @@ constexpr inline int FixedDiv(int a, int b)
 {
 #ifndef __arm__
 
-    long long int tmp = ((long long int)a << 16) / b;
+    const long long int tmp = ((const long long int)a << 16) / b;
 
     return (int)tmp;
 #else

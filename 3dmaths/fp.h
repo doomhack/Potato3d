@@ -12,16 +12,16 @@
 
 namespace P3D
 {
-    class FP
+    template<const unsigned int fracbits> class FP
     {
     public:
         FP()                                                {}
 
         constexpr FP(const FP& r)   : n(r.n)                {}
-        constexpr FP(int v)         : n(v << fracbits)      {}
-        constexpr FP(unsigned int v): n(v << fracbits)      {}
-        constexpr FP(float v)       : n((int)(v * one))     {}
-        constexpr FP(double v)      : n((int)(v * one))     {}
+        constexpr FP(const int v)   : n(v << fracbits)      {}
+        constexpr FP(const unsigned int v)  : n(v << fracbits)      {}
+        constexpr FP(const float v) : n((int)(v * one))     {}
+        constexpr FP(const double v): n((int)(v * one))     {}
 
 
 
@@ -34,7 +34,7 @@ namespace P3D
         static constexpr FP fromFPInt(const int r)          {FP v(0); v.n = r; return v;}
         constexpr int toFPInt() const                       {return n;}
 
-        constexpr int intMul(int r) const                   {return ((long long int)n * r) >> fracbits;}
+        constexpr int intMul(const int r) const             {return ((long long int)n * r) >> fracbits;}
 
         constexpr static int max()
         {
@@ -134,7 +134,7 @@ namespace P3D
 
         constexpr FP& operator*=(const FP& r)
         {
-            long long int tmp = (((long long int)n * r.n) >> fracbits);
+            const long long int tmp = (((const long long int)n * r.n) >> fracbits);
 
     #ifdef OVERFLOW_CHECK
 
@@ -209,7 +209,7 @@ namespace P3D
 
         //|
         constexpr FP operator|(const FP& r) const           {FP v(r); v.n |= n;  return v;}
-        constexpr FP operator|(int r) const                 {FP v(r);   return v|=*this;}
+        constexpr FP operator|(const int r) const           {FP v(r);   return v|=*this;}
         constexpr FP& operator|=(const FP& r)               {n |= r.n;  return *this;}
         constexpr FP& operator|=(const int& r)              {return *this|=FP(r);}
 
@@ -227,13 +227,15 @@ namespace P3D
         constexpr FP operator>>(const int r) const {FP v(*this);   return v>>=r;}
         constexpr FP& operator>>=(const int r)     {n >>= r;  return *this;}
 
-        static const unsigned int fracbits = 16;
-
     private:
         int n;
 
-        static const unsigned int one = (1 << fracbits);
+        static constexpr int one = (1 << fracbits);
     };
+
+    typedef FP<16>  FP16;   //s + 15 + 16 (-32768 to +32767) (0.000015)
+    typedef FP<8>   FP8;    //s + 23 + 8  (-8,388,608 to +8,388,608) (0.039)
+    typedef FP<24>  FP24;   //s + 7 + 24  (-128 to +127) (0.0000000596)
 
 }
 
