@@ -98,7 +98,7 @@ namespace P3D
 
         model_view_matrix_stack.push_back(m);
 
-        return model_view_matrix_stack.size();
+        return (unsigned int)model_view_matrix_stack.size();
     }
 
     unsigned int RenderDevice::PopMatrix()
@@ -108,7 +108,7 @@ namespace P3D
             model_view_matrix_stack.pop_back();
         }
 
-        return model_view_matrix_stack.size();
+        return (unsigned int)model_view_matrix_stack.size();
     }
 
     M4<fp>& RenderDevice::GetMatrix()

@@ -12,7 +12,7 @@ SOURCES += \
     source/bspmodel.cpp \
     source/main.cpp \
     source/model.cpp \
-    source/object3d.iwram.cpp \
+    source/object3d.cpp \
     source/recip.cpp \
     source/render.iwram.cpp
 

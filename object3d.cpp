@@ -24,6 +24,8 @@ namespace P3D
         frustrumPoints[3] = V3<fp>(halfFrustrumWidth, -halfFrustrumHeight, -zFar);
 
         P3D::RenderTarget* render_target = new P3D::RenderTarget(screenWidth, screenHeight, framebuffer);
+        render_target->AttachZBuffer();
+
 
         render_device = new P3D::RenderDevice();
 
@@ -33,6 +35,7 @@ namespace P3D
 
         render_device->SetPerspective(hFov, aspectRatio, zNear, zFar);
 
+        //render_device->SetRenderFlags(RENDER_FLAGS(P3D::ZWrite | P3D::ZTest));
         render_device->SetRenderFlags(RENDER_FLAGS(P3D::NoFlags));
 
         return true;
@@ -81,6 +84,7 @@ namespace P3D
     void Object3d::RenderScene()
     {        
         render_device->ClearColor(backgroundColor);
+        render_device->ClearDepth(1);
 
         render_device->PushMatrix();
 
@@ -109,7 +113,8 @@ namespace P3D
 
         static std::vector<const BspModelTriangle*> tris;
 
-        model->SortBackToFront(cameraPos, viewFrustrumBB, tris, true);
+        //model->SortBackToFront(cameraPos, viewFrustrumBB, tris, true);
+        model->SortFrontToBack(cameraPos, viewFrustrumBB, tris, true);
 
         for(unsigned int i = 0; i < tris.size(); i++)
         {            
@@ -125,6 +130,9 @@ namespace P3D
             {
                 m.type = Material::Texture;
                 m.pixels = model->GetTexturePixels(ntex->texture_pixels_offset);
+
+                //m.type = Material::Color;
+                //m.color = *model->GetTexturePixels(ntex->texture_pixels_offset);
 
                 V2<fp> uvs[3] = {tri->tri.verts[0].uv, tri->tri.verts[1].uv, tri->tri.verts[2].uv};
 

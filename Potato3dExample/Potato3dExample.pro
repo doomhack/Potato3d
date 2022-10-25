@@ -65,3 +65,8 @@ RESOURCES += \
 #LIBS += $$PWD/codeprophet.lib
 #QMAKE_CXXFLAGS += /GH /Gh
 #QMAKE_CFLAGS += /GH /Gh
+
+QMAKE_CXXFLAGS += /GL
+QMAKE_CFLAGS += /GL
+
+QMAKE_LFLAGS += /LTCG

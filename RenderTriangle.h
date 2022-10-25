@@ -17,6 +17,7 @@ namespace P3D
             fp w_left, w_right;
             fp z_left, z_right;
             pixel* fb_ypos;
+            z_val* zb_ypos;
         } TriEdgeTrace;
 
         typedef struct TriDrawXDeltaZWUV
@@ -427,6 +428,11 @@ namespace P3D
             {
                 pos.fb_ypos = &current_viewport->start[yStart * current_viewport->y_pitch];
 
+                if constexpr (render_flags & (ZTest | ZWrite))
+                {
+                    pos.zb_ypos = &current_viewport->z_start[yStart * current_viewport->z_y_pitch];
+                }
+
                 for (int y = yStart; y < yEnd; y++)
                 {
                     DrawSpan(pos);
@@ -437,8 +443,9 @@ namespace P3D
 
                     if constexpr (render_flags & (ZTest | ZWrite))
                     {
-                        pos.z_left = y_delta_left.z;
-                        pos.z_right = y_delta_right.z;
+                        pos.zb_ypos += current_viewport->z_y_pitch;
+                        pos.z_left += y_delta_left.z;
+                        pos.z_right += y_delta_right.z;
                     }
 
                     if(current_material->type == Material::Texture)
@@ -481,10 +488,16 @@ namespace P3D
                 span_pos.x_right = x_end;
                 span_pos.fb_ypos = pos.fb_ypos;
 
+                if constexpr (render_flags & (ZTest | ZWrite))
+                {
+                    span_pos.zb_ypos = pos.zb_ypos;
+                }
+
                 GetTriangleLerpXDeltas(delta, pos);
 
                 if constexpr (render_flags & (ZTest | ZWrite))
                 {
+                    span_pos.zb_ypos = pos.zb_ypos;
                     span_pos.z_left = pos.z_left + (delta.z * stepX);
                 }
 
@@ -515,7 +528,7 @@ namespace P3D
                 }
                 else
                 {
-                    DrawTriangleScanlineFlat(span_pos, current_material->color);
+                    DrawTriangleScanlineFlat(span_pos, delta, current_material->color);
                 }
 
 #ifdef RENDER_STATS
@@ -534,41 +547,45 @@ namespace P3D
                 const fp du = delta.u, dv = delta.v, dw = delta.w;
 
                 pixel* fb = pos.fb_ypos + x_start;
+                z_val* zb = pos.zb_ypos + x_start;
+
+                fp z = pos.z_left;
+                const fp dz = delta.z;
 
                 if((size_t)fb & 1)
                 {
-                    DrawScanlinePixelLinearHighByte(fb, texture, u/w, v/w); fb++; u += du, v += dv, w += dw, count--;
+                    DrawScanlinePixelLinearHighByte(fb, zb, z, texture, u/w, v/w); fb++, zb++, z += dz, u += du, v += dv, w += dw, count--;
                 }
 
                 unsigned int l = count >> 4;
 
                 while(l--)
                 {
-                    DrawScanlinePixelLinearPair(fb, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, u += (du * 2), v += (dv * 2), w += (dw * 2);
-                    DrawScanlinePixelLinearPair(fb, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, u += (du * 2), v += (dv * 2), w += (dw * 2);
-                    DrawScanlinePixelLinearPair(fb, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, u += (du * 2), v += (dv * 2), w += (dw * 2);
-                    DrawScanlinePixelLinearPair(fb, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, u += (du * 2), v += (dv * 2), w += (dw * 2);
-                    DrawScanlinePixelLinearPair(fb, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, u += (du * 2), v += (dv * 2), w += (dw * 2);
-                    DrawScanlinePixelLinearPair(fb, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, u += (du * 2), v += (dv * 2), w += (dw * 2);
-                    DrawScanlinePixelLinearPair(fb, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, u += (du * 2), v += (dv * 2), w += (dw * 2);
-                    DrawScanlinePixelLinearPair(fb, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, u += (du * 2), v += (dv * 2), w += (dw * 2);
+                    DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2);
+                    DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2);
+                    DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2);
+                    DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2);
+                    DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2);
+                    DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2);
+                    DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2);
+                    DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2);
                 }
 
                 unsigned int r = ((count & 15) >> 1);
 
                 switch(r)
                 {
-                    case 7: DrawScanlinePixelLinearPair(fb, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, u += (du * 2), v += (dv * 2), w += (dw * 2);
-                    case 6: DrawScanlinePixelLinearPair(fb, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, u += (du * 2), v += (dv * 2), w += (dw * 2);
-                    case 5: DrawScanlinePixelLinearPair(fb, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, u += (du * 2), v += (dv * 2), w += (dw * 2);
-                    case 4: DrawScanlinePixelLinearPair(fb, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, u += (du * 2), v += (dv * 2), w += (dw * 2);
-                    case 3: DrawScanlinePixelLinearPair(fb, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, u += (du * 2), v += (dv * 2), w += (dw * 2);
-                    case 2: DrawScanlinePixelLinearPair(fb, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, u += (du * 2), v += (dv * 2), w += (dw * 2);
-                    case 1: DrawScanlinePixelLinearPair(fb, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, u += (du * 2), v += (dv * 2), w += (dw * 2);
+                    case 7: DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2);
+                    case 6: DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2);
+                    case 5: DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2);
+                    case 4: DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2);
+                    case 3: DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2);
+                    case 2: DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2);
+                    case 1: DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw)); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2);
                 }
 
                 if(count & 1)
-                    DrawScanlinePixelLinearLowByte(fb, texture, u/w, v/w);
+                    DrawScanlinePixelLinearLowByte(fb, zb, z, texture, u/w, v/w);
             }
 
             void DrawTriangleScanlineHalfPerspectiveCorrect(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const pixel* texture)
@@ -579,13 +596,18 @@ namespace P3D
                 unsigned int count = (x_end - x_start);
 
                 pixel* fb = pos.fb_ypos + x_start;
+                z_val* zb = pos.zb_ypos + x_start;
+
+                fp z = pos.z_left;
+                const fp dz = delta.z;
+
 
                 fp u = pos.u_left, v = pos.v_left, w = pos.w_left;
                 const fp idu = delta.u, idv = delta.v, idw = delta.w;
 
                 if((size_t)fb & 1)
                 {
-                    DrawScanlinePixelLinearHighByte(fb, texture, u/w, v/w); fb++; u += idu, v += idv, w += idw, count--;
+                    DrawScanlinePixelLinearHighByte(fb, zb, z, texture, u/w, v/w); fb++; zb++, z += dz, u += idu, v += idv, w += idw, count--;
                 }
 
                 unsigned int l = count >> 4;
@@ -609,14 +631,14 @@ namespace P3D
                     const fp du = (u15 - u0) / 16;
                     const fp dv = (v15 - v0) / 16;
 
-                    DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
-                    DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
-                    DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
-                    DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
-                    DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
-                    DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
-                    DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
-                    DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u0, v0, u0+du, v0+dv); fb+=2, zb+=2, z += (dz * 2), u0 += (du * 2), v0 += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u0, v0, u0+du, v0+dv); fb+=2, zb+=2, z += (dz * 2), u0 += (du * 2), v0 += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u0, v0, u0+du, v0+dv); fb+=2, zb+=2, z += (dz * 2), u0 += (du * 2), v0 += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u0, v0, u0+du, v0+dv); fb+=2, zb+=2, z += (dz * 2), u0 += (du * 2), v0 += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u0, v0, u0+du, v0+dv); fb+=2, zb+=2, z += (dz * 2), u0 += (du * 2), v0 += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u0, v0, u0+du, v0+dv); fb+=2, zb+=2, z += (dz * 2), u0 += (du * 2), v0 += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u0, v0, u0+du, v0+dv); fb+=2, zb+=2, z += (dz * 2), u0 += (du * 2), v0 += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u0, v0, u0+du, v0+dv); fb+=2, zb+=2, z += (dz * 2), u0 += (du * 2), v0 += (dv * 2);
                 }
 
                 unsigned int r = ((count & 15) >> 1);
@@ -639,17 +661,17 @@ namespace P3D
 
                 switch(r)
                 {
-                    case 7: DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
-                    case 6: DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
-                    case 5: DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
-                    case 4: DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
-                    case 3: DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
-                    case 2: DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
-                    case 1: DrawScanlinePixelLinearPair(fb, texture, u0, v0, u0+du, v0+dv); fb+=2, u0 += (du * 2), v0 += (dv * 2);
+                    case 7: DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u0, v0, u0+du, v0+dv); fb+=2, zb+=2, z += (dz * 2), u0 += (du * 2), v0 += (dv * 2);
+                    case 6: DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u0, v0, u0+du, v0+dv); fb+=2, zb+=2, z += (dz * 2), u0 += (du * 2), v0 += (dv * 2);
+                    case 5: DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u0, v0, u0+du, v0+dv); fb+=2, zb+=2, z += (dz * 2), u0 += (du * 2), v0 += (dv * 2);
+                    case 4: DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u0, v0, u0+du, v0+dv); fb+=2, zb+=2, z += (dz * 2), u0 += (du * 2), v0 += (dv * 2);
+                    case 3: DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u0, v0, u0+du, v0+dv); fb+=2, zb+=2, z += (dz * 2), u0 += (du * 2), v0 += (dv * 2);
+                    case 2: DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u0, v0, u0+du, v0+dv); fb+=2, zb+=2, z += (dz * 2), u0 += (du * 2), v0 += (dv * 2);
+                    case 1: DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u0, v0, u0+du, v0+dv); fb+=2, zb+=2, z += (dz * 2), u0 += (du * 2), v0 += (dv * 2);
                 }
 
                 if(count & 1)
-                    DrawScanlinePixelLinearLowByte(fb, texture, u0, v0);
+                    DrawScanlinePixelLinearLowByte(fb, zb, z, texture, u0, v0);
             }
 
 
@@ -661,6 +683,10 @@ namespace P3D
                 unsigned int count = (x_end - x_start);
 
                 pixel* fb = pos.fb_ypos + x_start;
+                z_val* zb = pos.zb_ypos + x_start;
+
+                fp z = pos.z_left;
+                const fp dz = delta.z;
 
                 fp u = pos.u_left;
                 fp v = pos.v_left;
@@ -671,48 +697,122 @@ namespace P3D
 
                 if((size_t)fb & 1)
                 {
-                    DrawScanlinePixelLinearHighByte(fb, texture, u, v); fb++; u += du; v += dv; count--;
+                    DrawScanlinePixelLinearHighByte(fb, zb, z, texture, u, v); fb++, zb++, z += dz, u += du; v += dv; count--;
                 }
 
                 unsigned int l = count >> 4;
 
                 while(l--)
                 {
-                    DrawScanlinePixelLinearPair(fb, texture, u, v, u+du, v+dv); fb+=2, u += (du * 2), v += (dv * 2);
-                    DrawScanlinePixelLinearPair(fb, texture, u, v, u+du, v+dv); fb+=2, u += (du * 2), v += (dv * 2);
-                    DrawScanlinePixelLinearPair(fb, texture, u, v, u+du, v+dv); fb+=2, u += (du * 2), v += (dv * 2);
-                    DrawScanlinePixelLinearPair(fb, texture, u, v, u+du, v+dv); fb+=2, u += (du * 2), v += (dv * 2);
-                    DrawScanlinePixelLinearPair(fb, texture, u, v, u+du, v+dv); fb+=2, u += (du * 2), v += (dv * 2);
-                    DrawScanlinePixelLinearPair(fb, texture, u, v, u+du, v+dv); fb+=2, u += (du * 2), v += (dv * 2);
-                    DrawScanlinePixelLinearPair(fb, texture, u, v, u+du, v+dv); fb+=2, u += (du * 2), v += (dv * 2);
-                    DrawScanlinePixelLinearPair(fb, texture, u, v, u+du, v+dv); fb+=2, u += (du * 2), v += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2);
+                    DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2);
                 }
 
                 const unsigned int r = ((count & 15) >> 1);
 
                 switch(r)
                 {
-                    case 7: DrawScanlinePixelLinearPair(fb, texture, u, v, u+du, v+dv); fb+=2; u += (du * 2), v += (dv * 2);
-                    case 6: DrawScanlinePixelLinearPair(fb, texture, u, v, u+du, v+dv); fb+=2; u += (du * 2), v += (dv * 2);
-                    case 5: DrawScanlinePixelLinearPair(fb, texture, u, v, u+du, v+dv); fb+=2; u += (du * 2), v += (dv * 2);
-                    case 4: DrawScanlinePixelLinearPair(fb, texture, u, v, u+du, v+dv); fb+=2; u += (du * 2), v += (dv * 2);
-                    case 3: DrawScanlinePixelLinearPair(fb, texture, u, v, u+du, v+dv); fb+=2; u += (du * 2), v += (dv * 2);
-                    case 2: DrawScanlinePixelLinearPair(fb, texture, u, v, u+du, v+dv); fb+=2; u += (du * 2), v += (dv * 2);
-                    case 1: DrawScanlinePixelLinearPair(fb, texture, u, v, u+du, v+dv); fb+=2; u += (du * 2), v += (dv * 2);
+                    case 7: DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv); fb+=2; zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2);
+                    case 6: DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv); fb+=2; zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2);
+                    case 5: DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv); fb+=2; zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2);
+                    case 4: DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv); fb+=2; zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2);
+                    case 3: DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv); fb+=2; zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2);
+                    case 2: DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv); fb+=2; zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2);
+                    case 1: DrawScanlinePixelLinearPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv); fb+=2; zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2);
                 }
 
                 if(count & 1)
-                    DrawScanlinePixelLinearLowByte(fb, texture, u, v);
+                    DrawScanlinePixelLinearLowByte(fb, zb, z, texture, u, v);
             }
 
-            inline void DrawScanlinePixelLinearPair(pixel* fb, const pixel* texels, const fp u1, const fp v1, const fp u2, const fp v2)
+            void DrawTriangleScanlineFlat(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta,  const pixel color)
             {
-                /*
-                if(u1 > 64 || v1 > 64 || u2 > 64 || v2 > 64)
+                const int x_start = (int)pos.x_left;
+                const int x_end = (int)pos.x_right;
+
+                unsigned int count = (x_end - x_start);
+
+                pixel* fb = pos.fb_ypos + x_start;
+                z_val* zb = pos.zb_ypos + x_start;
+
+                fp z = pos.z_left;
+                const fp dz = delta.z;
+
+                if((size_t)fb & 1)
                 {
-                    return;
+                    DrawScanlinePixelLinearHighByte(fb, zb, z, &color, 0, 0); fb++, zb++, z += dz, count--;
                 }
-                */
+
+                if constexpr (render_flags & (ZTest | ZWrite))
+                {
+                    unsigned int l = count >> 4;
+
+                    while(l--)
+                    {
+                        DrawScanlinePixelLinearPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0); fb+=2, zb+=2, z += (dz * 2);
+                        DrawScanlinePixelLinearPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0); fb+=2, zb+=2, z += (dz * 2);
+                        DrawScanlinePixelLinearPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0); fb+=2, zb+=2, z += (dz * 2);
+                        DrawScanlinePixelLinearPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0); fb+=2, zb+=2, z += (dz * 2);
+                        DrawScanlinePixelLinearPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0); fb+=2, zb+=2, z += (dz * 2);
+                        DrawScanlinePixelLinearPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0); fb+=2, zb+=2, z += (dz * 2);
+                        DrawScanlinePixelLinearPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0); fb+=2, zb+=2, z += (dz * 2);
+                        DrawScanlinePixelLinearPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0); fb+=2, zb+=2, z += (dz * 2);
+                    }
+
+                    const unsigned int r = ((count & 15) >> 1);
+
+                    switch(r)
+                    {
+                        case 7: DrawScanlinePixelLinearPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0); fb+=2; zb+=2, z += (dz * 2);
+                        case 6: DrawScanlinePixelLinearPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0); fb+=2; zb+=2, z += (dz * 2);
+                        case 5: DrawScanlinePixelLinearPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0); fb+=2; zb+=2, z += (dz * 2);
+                        case 4: DrawScanlinePixelLinearPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0); fb+=2; zb+=2, z += (dz * 2);
+                        case 3: DrawScanlinePixelLinearPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0); fb+=2; zb+=2, z += (dz * 2);
+                        case 2: DrawScanlinePixelLinearPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0); fb+=2; zb+=2, z += (dz * 2);
+                        case 1: DrawScanlinePixelLinearPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0); fb+=2; zb+=2, z += (dz * 2);
+                    }
+                }
+                else
+                {
+                    if(count >> 1)
+                    {
+                        FastFill16((unsigned short*)fb, color | color << 8, count >> 1); fb+=count-1;
+                    }
+
+                }
+
+                if(count & 1)
+                    DrawScanlinePixelLinearLowByte(fb, zb, z, &color, 0, 0);
+            }
+
+            inline void DrawScanlinePixelLinearPair(pixel* fb, z_val *zb, const z_val zv1, const z_val zv2, const pixel* texels, const fp u1, const fp v1, const fp u2, const fp v2)
+            {
+                if constexpr (render_flags & ZTest)
+                {
+                    if(zv1 >= zb[0]) //Reject left?
+                    {
+                        if(zv2 >= zb[1]) //Reject right?
+                            return; //Both Z Reject.
+
+                        //Accept right.
+                        DrawScanlinePixelLinearHighByte(fb+1, zb+1, zv2, texels, u2, v2);
+                        return;
+                    }
+                    else //Accept left.
+                    {
+                        if(zv2 >= zb[1]) //Reject right?
+                        {
+                            DrawScanlinePixelLinearLowByte(fb, zb, zv1, texels, u1, v1);
+                            return;
+                        }
+                    }
+                }
 
                 const unsigned int tx = (int)u1 & TEX_MASK;
                 const unsigned int ty = ((int)v1 & TEX_MASK) << TEX_SHIFT;
@@ -721,10 +821,26 @@ namespace P3D
                 const unsigned int ty2 = ((int)v2 & TEX_MASK) << TEX_SHIFT;
 
                 *(unsigned short*)fb = ((texels[ty + tx]) | (texels[(ty2 + tx2)] << 8));
+
+                if constexpr (render_flags & ZWrite)
+                {
+                    zb[0] = zv1, zb[1] = zv2;
+                }
             }
 
-            inline void DrawScanlinePixelLinearLowByte(pixel *fb, const pixel* texels, const fp u, const fp v)
+            inline void DrawScanlinePixelLinearLowByte(pixel *fb, z_val *zb, const z_val zv, const pixel* texels, const fp u, const fp v)
             {
+                if constexpr (render_flags & ZTest)
+                {
+                    if(*zb <= zv)
+                        return;
+                }
+
+                if constexpr (render_flags & ZWrite)
+                {
+                    *zb = zv;
+                }
+
                 const unsigned int tx = (int)u & TEX_MASK;
                 const unsigned int ty = ((int)v & TEX_MASK) << TEX_SHIFT;
 
@@ -736,8 +852,19 @@ namespace P3D
                 *p16 = texel;
             }
 
-            inline void DrawScanlinePixelLinearHighByte(pixel *fb, const pixel* texels, const fp u, const fp v)
+            inline void DrawScanlinePixelLinearHighByte(pixel *fb, z_val *zb, const z_val zv, const pixel* texels, const fp u, const fp v)
             {
+                if constexpr (render_flags & ZTest)
+                {
+                    if(*zb <= zv)
+                        return;
+                }
+
+                if constexpr (render_flags & ZWrite)
+                {
+                    *zb = zv;
+                }
+
                 const unsigned int tx = (int)u & TEX_MASK;
                 const unsigned int ty = ((int)v & TEX_MASK) << TEX_SHIFT;
 
@@ -747,31 +874,6 @@ namespace P3D
                 const unsigned short texel = (texels[(ty + tx)] << 8) | *p8;
 
                 *p16 = texel;
-            }
-
-            void DrawTriangleScanlineFlat(const TriEdgeTrace& pos, const pixel color)
-            {
-                const int x_start = (int)pos.x_left;
-                const int x_end = (int)pos.x_right;
-
-                unsigned int count = (x_end - x_start);
-
-                pixel* fb = pos.fb_ypos + x_start;
-
-                if((size_t)fb & 1)
-                {
-                    DrawScanlinePixelLinearHighByte(fb, &color, 0, 0); fb++; count--;
-                }
-
-                if(count >> 1)
-                {
-                    FastFill16((unsigned short*)fb, color | color << 8, count >> 1);
-                }
-
-                if(count & 1)
-                {
-                    DrawScanlinePixelLinearLowByte(&fb[count-1], &color, 0, 0);
-                }
             }
 
             constexpr bool IsTriangleFrontface(const Vertex4d screenSpacePoints[]) const

@@ -59,10 +59,12 @@ namespace P3D
         if(buffer)
         {
             z_buffer = buffer;
+            z_buffer_y_pitch = y_pitch;
         }
         else
         {
             z_buffer = new z_val[width * height];
+            z_buffer_y_pitch = width;
             owned_z_buffer = true;
         }
 

@@ -27,6 +27,7 @@ MainWindow2::MainWindow2(QWidget *parent)
     frameBufferImage.setColorTable(color_table);
 
     render_target = new P3D::RenderTarget(screenWidth, screenHeight, frameBufferImage.scanLine(0));
+    render_target->AttachZBuffer();
 
     render_device = new P3D::RenderDevice();
 
@@ -36,7 +37,8 @@ MainWindow2::MainWindow2(QWidget *parent)
 
     render_device->SetPerspective(60, aspectRatio, 10, 1000);
 
-    render_device->SetRenderFlags(RENDER_FLAGS(P3D::HalfPerspectiveMapping));
+    //render_device->SetRenderFlags(RENDER_FLAGS(P3D::ZTest | P3D::ZWrite));
+    render_device->SetRenderFlags(RENDER_FLAGS(P3D::NoFlags));
 }
 
 MainWindow2::~MainWindow2()
@@ -72,6 +74,7 @@ void MainWindow2::paintEvent(QPaintEvent *event)
     render_device->SetMaterial(mat1);
 
     render_device->ClearColor(0);
+    render_device->ClearDepth(1);
 
     render_device->PushMatrix();
     render_device->RotateY(rotateY);
