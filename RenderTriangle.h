@@ -1073,24 +1073,6 @@ namespace P3D
 #endif
 
         };
-
-
-        class RenderFlagsBase
-        {
-        public:
-            virtual ~RenderFlagsBase() = default;
-            virtual RenderTriangleBase* GetRender() = 0;
-        };
-
-        template<const int render_flags> class TriangleRenderFlags : public RenderFlagsBase
-        {
-        public:
-            TriangleRenderFlags() {};
-            RenderTriangleBase* GetRender() override {return &render_triangle;};
-
-        private:
-            RenderTriangle<render_flags> render_triangle;
-        };
     };
 };
 

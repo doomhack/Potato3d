@@ -59,22 +59,6 @@ namespace P3D
         }
     }
 
-    void RenderDevice::SetRenderFlags(Internal::RenderFlagsBase *flags_ptr)
-    {
-        if(render_flags_base != nullptr)
-            delete render_flags_base;
-
-        triangle_render = flags_ptr->GetRender();
-        render_flags_base = flags_ptr;
-
-        triangle_render->SetRenderStateViewport(viewport, z_planes);
-        triangle_render->SetTextureCache(texture_cache);
-
-#ifdef RENDER_STATS
-        triangle_render->SetRenderStats(render_stats);
-#endif
-    }
-
     //Matrix
     void RenderDevice::SetPerspective(const fp vertical_fov, const fp aspect_ratio, const fp z_near, const fp z_far)
     {

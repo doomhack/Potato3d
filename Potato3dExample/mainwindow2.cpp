@@ -38,7 +38,8 @@ MainWindow2::MainWindow2(QWidget *parent)
     render_device->SetPerspective(60, aspectRatio, 10, 1000);
 
     //render_device->SetRenderFlags(RENDER_FLAGS(P3D::ZTest | P3D::ZWrite));
-    render_device->SetRenderFlags(RENDER_FLAGS(P3D::NoFlags));
+    //render_device->SetRenderFlags(RENDER_FLAGS(P3D::NoFlags));
+    render_device->SetRenderFlags<P3D::NoFlags>();
 }
 
 MainWindow2::~MainWindow2()

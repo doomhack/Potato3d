@@ -22,9 +22,20 @@ namespace P3D
         void SetRenderTarget(const RenderTarget *target);
         void SetViewport(unsigned int x, unsigned int y, unsigned int width, unsigned int height);
 
-        //Flags
-        #define RENDER_FLAGS(x) (new P3D::Internal::TriangleRenderFlags<x>())
-        void SetRenderFlags(Internal::RenderFlagsBase *flags_ptr);
+        template<const unsigned int render_flags> void SetRenderFlags()
+        {
+            if(triangle_render)
+                delete triangle_render;
+
+            triangle_render = new P3D::Internal::RenderTriangle<render_flags>();
+
+            triangle_render->SetRenderStateViewport(viewport, z_planes);
+            triangle_render->SetTextureCache(texture_cache);
+
+    #ifdef RENDER_STATS
+            triangle_render->SetRenderStats(render_stats);
+    #endif
+        }
 
         //Matrix
         void SetPerspective(const fp vertical_fov, const fp aspect_ratio, const fp z_near, const fp z_far);
@@ -90,7 +101,6 @@ namespace P3D
         const Material* current_material = nullptr;
 
         P3D::Internal::RenderTriangleBase* triangle_render = nullptr;
-        P3D::Internal::RenderFlagsBase* render_flags_base = nullptr;
 
 #ifdef RENDER_STATS
         RenderStats render_stats;
