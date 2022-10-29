@@ -235,14 +235,22 @@ namespace P3D
     //Begin/End Frame.
     void RenderDevice::BeginFrame()
     {
-        UpdateTransformMatrix();
-
 #ifdef RENDER_STATS
         render_stats.ResetToZero();
 #endif
     }
 
     void RenderDevice::EndFrame()
+    {
+
+    }
+
+    void RenderDevice::BeginDraw()
+    {
+        UpdateTransformMatrix();
+    }
+
+    void RenderDevice::EndDraw()
     {
 
     }

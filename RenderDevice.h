@@ -66,6 +66,9 @@ namespace P3D
         void BeginFrame();
         void EndFrame();
 
+        void BeginDraw();
+        void EndDraw();
+
         //
         void SetTextureCache(TextureCacheBase* cache);
         void SetMaterial(const Material& material, const signed char importance = 0);

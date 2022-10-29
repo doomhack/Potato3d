@@ -36,7 +36,9 @@ namespace P3D
         render_device->SetPerspective(hFov, aspectRatio, zNear, zFar);
 
         //render_device->SetRenderFlags(RENDER_FLAGS(P3D::ZWrite | P3D::ZTest));
-        render_device->SetRenderFlags<P3D::NoFlags>();
+        //render_device->SetRenderFlags<P3D::NoFlags>();
+        render_device->SetRenderFlags<P3D::ZWrite | P3D::ZTest>();
+
 
         return true;
     }
@@ -99,7 +101,11 @@ namespace P3D
 
         render_device->BeginFrame();
 
+        render_device->BeginDraw();
+
         RenderBsp();
+
+        render_device->EndDraw();
 
         render_device->EndFrame();
 

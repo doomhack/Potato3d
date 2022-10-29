@@ -38,8 +38,8 @@ MainWindow2::MainWindow2(QWidget *parent)
     render_device->SetPerspective(60, aspectRatio, 10, 1000);
 
     //render_device->SetRenderFlags(RENDER_FLAGS(P3D::ZTest | P3D::ZWrite));
-    //render_device->SetRenderFlags(RENDER_FLAGS(P3D::NoFlags));
-    render_device->SetRenderFlags<P3D::NoFlags>();
+    //render_device->SetRenderFlags<P3D::NoFlags>();
+    render_device->SetRenderFlags<P3D::ZTest | P3D::ZWrite>();
 }
 
 MainWindow2::~MainWindow2()
@@ -116,6 +116,8 @@ void MainWindow2::paintEvent(QPaintEvent *event)
 
     render_device->BeginFrame();
 
+    render_device->BeginDraw();
+
     P3D::V3<P3D::fp> v[4];
     v[0] = P3D::V3<P3D::fp>(-100,100,0);
     v[1] = P3D::V3<P3D::fp>(100,100,0);
@@ -140,6 +142,9 @@ void MainWindow2::paintEvent(QPaintEvent *event)
     unsigned int vi2[3] = {0,2,3};
 
     render_device->DrawTriangle(vi2, uv);
+
+
+    render_device->EndDraw();
 
     render_device->EndFrame();
 
