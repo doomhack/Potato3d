@@ -1,6 +1,8 @@
 #include "common.h"
 #include "object3d.h"
 
+#include "PixelShaderDefault.h"
+
 #include <string.h>
 
 namespace P3D
@@ -35,10 +37,10 @@ namespace P3D
 
         render_device->SetPerspective(hFov, aspectRatio, zNear, zFar);
 
-        //render_device->SetRenderFlags(RENDER_FLAGS(P3D::ZWrite | P3D::ZTest));
-        //render_device->SetRenderFlags<P3D::NoFlags>();
-        render_device->SetRenderFlags<P3D::ZWrite | P3D::ZTest>();
+        render_device->SetRenderFlags<P3D::NoFlags>();
+        //render_device->SetRenderFlags<P3D::ZWrite | P3D::ZTest>();
 
+        //render_device->SetRenderFlags<P3D::ZWrite | P3D::ZTest, PixelShaderGBA8<P3D::ZWrite | P3D::ZTest>>();
 
         return true;
     }
