@@ -39,6 +39,7 @@ HEADERS += \
     ../3dmaths/v2.h \
     ../3dmaths/v3.h \
     ../3dmaths/v4.h \
+    ../PixelShaderDefault.h \
     ../RenderCommon.h \
     ../RenderDevice.h \
     ../RenderTarget.h \
