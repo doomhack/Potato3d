@@ -37,8 +37,8 @@ namespace P3D
 
         render_device->SetPerspective(hFov, aspectRatio, zNear, zFar);
 
-        render_device->SetRenderFlags<P3D::NoFlags>();
-        //render_device->SetRenderFlags<P3D::ZWrite | P3D::ZTest>();
+        //render_device->SetRenderFlags<P3D::NoFlags>();
+        render_device->SetRenderFlags<P3D::ZWrite | P3D::ZTest>();
 
         //render_device->SetRenderFlags<P3D::ZWrite | P3D::ZTest, PixelShaderGBA8<P3D::ZWrite | P3D::ZTest>>();
 

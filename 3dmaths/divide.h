@@ -7,17 +7,17 @@
 #endif
 
 template <class T>
-constexpr inline T FixedDiv(const T a, const T b)
+constexpr inline T FixedDiv(const T a, const T b, int fracbits)
 {
-    return (a * (1 << 16)) / b;
+    return (a * (1 << fracbits)) / b;
 }
 
 template<>
-constexpr inline int FixedDiv(int a, int b)
+constexpr inline int FixedDiv(int a, int b, int fracbits)
 {
 #ifndef __arm__
 
-    const long long int tmp = ((const long long int)a << 16) / b;
+    const long long int tmp = ((const long long int)a << fracbits) / b;
 
     return (int)tmp;
 #else
@@ -27,8 +27,8 @@ constexpr inline int FixedDiv(int a, int b)
     a = a<0 ? -a:a;
     b = b<0 ? -b:b;
 
-    unsigned int l = (a << 16);
-    unsigned int h = (a >> 16);
+    unsigned int l = (a << fracbits);
+    unsigned int h = (a >> fracbits);
 
     int q = udiv64_arm (h,l,b);
     if (sign)
