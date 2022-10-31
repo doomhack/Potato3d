@@ -1,8 +1,10 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <cstdint>
 #include <cmath>
 #include <cstring>
+
 #include "fp.h"
 #include "recip.h"
 
@@ -199,6 +201,17 @@ namespace P3D
     {
         return a * pReciprocal(b);
     }
+
+
+
+    template <class> struct double_width;
+    template <class T> using double_width_t = typename double_width<T>::type;
+
+    template <class T> struct t { using type = T; };
+
+    template <> struct double_width<uint_least8_t>  : t<uint_least16_t> {};
+    template <> struct double_width<uint_least16_t> : t<uint_least32_t> {};
+    template <> struct double_width<uint_least32_t> : t<uint_least64_t> {};
 }
 
 #endif // UTILS_H

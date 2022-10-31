@@ -8,6 +8,7 @@
 #include "RenderTarget.h"
 #include "RenderTriangle.h"
 #include "TextureCache.h"
+#include "PixelShaderDefault.h"
 
 namespace P3D
 {
@@ -22,12 +23,12 @@ namespace P3D
         void SetRenderTarget(const RenderTarget *target);
         void SetViewport(unsigned int x, unsigned int y, unsigned int width, unsigned int height);
 
-        template<const unsigned int render_flags> void SetRenderFlags()
+        template<const unsigned int render_flags, class TPixelShader = PixelShaderDefault<render_flags>> void SetRenderFlags()
         {
             if(triangle_render)
                 delete triangle_render;
 
-            triangle_render = new P3D::Internal::RenderTriangle<render_flags>();
+            triangle_render = new P3D::Internal::RenderTriangle<render_flags, TPixelShader>();
 
             triangle_render->SetRenderStateViewport(viewport, z_planes);
             triangle_render->SetTextureCache(texture_cache);
