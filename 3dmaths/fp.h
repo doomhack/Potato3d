@@ -38,12 +38,12 @@ namespace P3D
 
         constexpr static int max()
         {
-            return std::numeric_limits<short>::max();
+            return (std::numeric_limits<int>::max() >> fracbits);
         }
 
         constexpr static int min()
         {
-            return std::numeric_limits<short>::min();
+            return (std::numeric_limits<int>::min() >> fracbits);
         }
 
         constexpr FP& operator=(const FP& r)

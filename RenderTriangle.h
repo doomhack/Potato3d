@@ -75,7 +75,7 @@ namespace P3D
                 {
                     if constexpr(!std::is_floating_point<fp>::value)
                     {
-                        max_w_tex_scale = fp((32767 * (int)planes.z_near) / (TEX_SIZE * TEX_MAX_TILE));
+                        max_w_tex_scale = fp((fp::max() * (int)planes.z_near) / (TEX_SIZE * TEX_MAX_TILE));
                     }
                     else
                     {
