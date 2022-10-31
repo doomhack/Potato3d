@@ -1,7 +1,7 @@
 #ifndef RENDERTARGET_H
 #define RENDERTARGET_H
 
-#include "common.h"
+#include "Config.h"
 
 namespace P3D
 {

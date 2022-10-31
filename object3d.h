@@ -4,7 +4,7 @@
 #include <vector>
 #include <map>
 
-#include "common.h"
+#include "Config.h"
 #include "rtypes.h"
 #include "bspmodel.h"
 

@@ -1,4 +1,4 @@
-#include "common.h"
+#include "Config.h"
 #include "object3d.h"
 
 #include "PixelShaderDefault.h"

@@ -1,7 +1,7 @@
 #ifndef RENDERCOMMON_H
 #define RENDERCOMMON_H
 
-#include "common.h"
+#include "Config.h"
 
 namespace P3D
 {
@@ -116,18 +116,11 @@ namespace P3D
             V4<fp> pos;
             V2<fp> uv;
 
-            void toPerspectiveCorrect(const fp scale = fp(256))
+            void toPerspectiveCorrect(const fp scale = fp(1))
             {
-#if 1
                 pos.w = fp(scale) / pos.w;
                 uv.x = uv.x * pos.w;
                 uv.y = uv.y * pos.w;
-#else
-                uv.x = uv.x / pos.w;
-                uv.y = uv.y / pos.w;
-
-                pos.w = fp(1) / pos.w;
-#endif
             }
         };
 

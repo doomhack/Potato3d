@@ -2,7 +2,7 @@
 #define RENDERDEVICE_H
 
 #include <vector>
-#include "common.h"
+#include "Config.h"
 
 #include "RenderCommon.h"
 #include "RenderTarget.h"

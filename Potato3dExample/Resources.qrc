@@ -318,5 +318,47 @@
         <file>models/Streets/wall6.png</file>
         <file>models/Streets/wall8.png</file>
         <file>models/test_text.png</file>
+        <file>models/gymclass/bleachers.png</file>
+        <file>models/gymclass/brick_green.png</file>
+        <file>models/gymclass/brick_wall.png</file>
+        <file>models/gymclass/bus_back.png</file>
+        <file>models/gymclass/bus_front.png</file>
+        <file>models/gymclass/bus_front_window.png</file>
+        <file>models/gymclass/bus_stop.png</file>
+        <file>models/gymclass/bus_windows.png</file>
+        <file>models/gymclass/doors.png</file>
+        <file>models/gymclass/football_field.png</file>
+        <file>models/gymclass/green_building_window.png</file>
+        <file>models/gymclass/green_window_half.png</file>
+        <file>models/gymclass/gymclass.mtl</file>
+        <file>models/gymclass/gymclass.obj</file>
+        <file>models/gymclass/gymclass2.mtl</file>
+        <file>models/gymclass/gymclass2.obj</file>
+        <file>models/gymclass/purple_building_windows.png</file>
+        <file>models/gymclass/purple_window_half.png</file>
+        <file>models/gymclass/road.png</file>
+        <file>models/gymclass/school_door.png</file>
+        <file>models/gymclass/school_roof_bottom.png</file>
+        <file>models/gymclass/school_sign.png</file>
+        <file>models/gymclass/school_walls.png</file>
+        <file>models/gymclass/school_windows.png</file>
+        <file>models/gymclass/scoreboard_1.png</file>
+        <file>models/gymclass/scoreboard_2.png</file>
+        <file>models/gymclass/sidewalk.png</file>
+        <file>models/gymclass/sidewalk_corner.png</file>
+        <file>models/gymclass/snow.png</file>
+        <file>models/gymclass/snow_building.png</file>
+        <file>models/gymclass/snow_corner.png</file>
+        <file>models/gymclass/snow_edge.png</file>
+        <file>models/gymclass/snow_road.png</file>
+        <file>models/gymclass/snow_roof.png</file>
+        <file>models/gymclass/snow_roof_side.png</file>
+        <file>models/gymclass/snow_sidewalk.png</file>
+        <file>models/gymclass/tree.png</file>
+        <file>models/gymclass/tree_tops.png</file>
+        <file>models/gymclass/tree_wall_1.png</file>
+        <file>models/gymclass/tree_wall_2.png</file>
+        <file>models/gymclass/yellow_buildings_windows.png</file>
+        <file>models/gymclass/yellow_window_half.png</file>
     </qresource>
 </RCC>

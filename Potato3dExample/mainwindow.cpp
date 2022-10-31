@@ -29,8 +29,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     //P3D::Model3d* runway = LoadObjFile(":/models/temple.obj", ":/models/temple.mtl");
     //P3D::Model3d* runway = LoadObjFile(":/models/Mk64Beach/Mk64Kb.obj", ":/models/Mk64Beach/Mk64Kb.mtl");
-    P3D::Model3d* runway = LoadObjFile(":/models/Streets/Streets.obj", ":/models/Streets/Streets.mtl");
-
+    //P3D::Model3d* runway = LoadObjFile(":/models/Streets/Streets.obj", ":/models/Streets/Streets.mtl");
+    P3D::Model3d* runway = LoadObjFile(":/models/gymclass/gymclass2.obj", ":/models/gymclass/gymclass2.mtl");
 
     P3D::Bsp3d* bsp = new P3D::Bsp3d;
 
@@ -231,7 +231,7 @@ P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
 
                 QImage* image = new QImage(texBase + "/" + lastBit);
 
-                *image = image->scaled(TEX_SIZE, TEX_SIZE, Qt::IgnoreAspectRatio, Qt::SmoothTransformation).mirrored();
+                *image = image->scaled(P3D::TEX_SIZE, P3D::TEX_SIZE, Qt::IgnoreAspectRatio, Qt::SmoothTransformation).mirrored();
 
                 textureColors[currMtlName] = image->scaled(1,1, Qt::IgnoreAspectRatio, Qt::SmoothTransformation).pixel(0,0);
 
@@ -266,13 +266,13 @@ P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
 
     //
     unsigned int numTextures = textureMap.keys().count();
-    QImage allTexImage = QImage(TEX_SIZE, TEX_SIZE * numTextures, QImage::Format_RGB32);
+    QImage allTexImage = QImage(P3D::TEX_SIZE, P3D::TEX_SIZE * numTextures, QImage::Format_RGB32);
 
     for(int i =0; i < numTextures; i++)
     {
-        unsigned int* scanline = (unsigned int*)allTexImage.scanLine(i * TEX_SIZE);
+        unsigned int* scanline = (unsigned int*)allTexImage.scanLine(i * P3D::TEX_SIZE);
 
-        memcpy(scanline, textureMap.value(textureMap.keys().at(i))->pixels, TEX_SIZE * TEX_SIZE * 4);
+        memcpy(scanline, textureMap.value(textureMap.keys().at(i))->pixels, P3D::TEX_SIZE * P3D::TEX_SIZE * 4);
     }
 
     //Quantise to 256 colors.
@@ -287,10 +287,12 @@ P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
 
     QImage* allTex256 = new QImage("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\allTex-WUquant256.png");
     //QImage* allTex256 = new QImage("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\allTex-WUquant128.png");
+    //QImage* allTex256 = new QImage("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\allTex.png");
+
 
     for(int i =0; i < numTextures; i++)
     {
-        unsigned char* scanline = (unsigned char*)allTex256->scanLine(i * TEX_SIZE);
+        unsigned char* scanline = (unsigned char*)allTex256->scanLine(i * P3D::TEX_SIZE);
 
         textureMap.value(textureMap.keys().at(i))->pixels = scanline;
     }
@@ -334,8 +336,20 @@ P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
 
         if(elements[0] == "vt")
         {
-            float u = (elements[1].toFloat() * TEX_SIZE);
-            float v = (elements[2].toFloat() * TEX_SIZE);
+            float u = (elements[1].toFloat() * P3D::TEX_SIZE);
+            float v = (elements[2].toFloat() * P3D::TEX_SIZE);
+
+            if(u > (P3D::TEX_MAX_TILE * P3D::TEX_SIZE))
+            {
+                qDebug() << "Clamp u" << u << "to" << P3D::TEX_MAX_TILE * P3D::TEX_SIZE;
+                u = P3D::TEX_MAX_TILE * P3D::TEX_SIZE;
+            }
+
+            if(v > (P3D::TEX_MAX_TILE * P3D::TEX_SIZE))
+            {
+                qDebug() << "Clamp v" << v << "to" << P3D::TEX_MAX_TILE * P3D::TEX_SIZE;
+                v = P3D::TEX_MAX_TILE * P3D::TEX_SIZE;
+            }
 
             uvs.append(P3D::V2<P3D::fp>(u, v));
         }

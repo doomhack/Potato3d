@@ -1,7 +1,7 @@
 #ifndef TEXTURECACHE_H
 #define TEXTURECACHE_H
 
-#include "common.h"
+#include "Config.h"
 
 namespace P3D
 {

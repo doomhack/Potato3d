@@ -39,6 +39,9 @@ HEADERS += \
     ../3dmaths/v2.h \
     ../3dmaths/v3.h \
     ../3dmaths/v4.h \
+    ../Config.h \
+    ../ConfigInternal.h \
+    ../ConfigUser.h \
     ../PixelShaderDefault.h \
     ../PixelShaderGBA8.h \
     ../RenderCommon.h \
@@ -47,7 +50,6 @@ HEADERS += \
     ../RenderTriangle.h \
     ../TextureCache.h \
     ../bspmodel.h \
-    ../common.h \
     ../object3d.h \
     ../potato3d.h \
     ../rtypes.h \
