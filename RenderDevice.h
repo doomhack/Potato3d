@@ -63,6 +63,12 @@ namespace P3D
         void ClearViewportColor(const pixel color);
         void ClearViewportDepth(const z_val depth);
 
+        void SetFogTable(const pixel* fog_table, unsigned int table_count);
+        void SetFogColor(const pixel color);
+        void SetFogMode(FogMode mode);
+        void SetFogDepth(fp fog_start, fp fog_end);
+        void SetFogDensity(fp density);
+
         //Begin/End Frame.
         void BeginFrame();
         void EndFrame();
@@ -92,6 +98,7 @@ namespace P3D
         const RenderTarget* render_target = nullptr;
         P3D::Internal::RenderTargetViewport viewport;
         P3D::Internal::RenderDeviceNearFarPlanes z_planes;
+        P3D::Internal::RenderDeviceFogParameters fog_params;
 
         //Matrixes.
         M4<fp> projection_matrix;

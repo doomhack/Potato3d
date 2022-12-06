@@ -18,7 +18,7 @@ namespace P3D
     //Maximum UV tiling. Increasing this will reduce bits available for perspective correct texture mapper.
     inline constexpr int TEX_MAX_TILE = 4;
 
-    //#define USE_FLOAT
+    #define USE_FLOAT
     #ifdef USE_FLOAT
         typedef double fp;
     #else

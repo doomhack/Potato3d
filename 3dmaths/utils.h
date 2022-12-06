@@ -202,8 +202,6 @@ namespace P3D
         return a * pReciprocal(b);
     }
 
-
-
     template <class> struct double_width;
     template <class T> using double_width_t = typename double_width<T>::type;
 

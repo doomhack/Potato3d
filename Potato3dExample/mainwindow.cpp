@@ -29,8 +29,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     //P3D::Model3d* runway = LoadObjFile(":/models/temple.obj", ":/models/temple.mtl");
     //P3D::Model3d* runway = LoadObjFile(":/models/Mk64Beach/Mk64Kb.obj", ":/models/Mk64Beach/Mk64Kb.mtl");
-    //P3D::Model3d* runway = LoadObjFile(":/models/Streets/Streets.obj", ":/models/Streets/Streets.mtl");
-    P3D::Model3d* runway = LoadObjFile(":/models/gymclass/gymclass2.obj", ":/models/gymclass/gymclass2.mtl");
+    P3D::Model3d* runway = LoadObjFile(":/models/Streets/Streets.obj", ":/models/Streets/Streets.mtl");
+    //P3D::Model3d* runway = LoadObjFile(":/models/gymclass/gymclass2.obj", ":/models/gymclass/gymclass2.mtl");
 
     P3D::Bsp3d* bsp = new P3D::Bsp3d;
 
@@ -275,12 +275,26 @@ P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
         memcpy(scanline, textureMap.value(textureMap.keys().at(i))->pixels, P3D::TEX_SIZE * P3D::TEX_SIZE * 4);
     }
 
+
+
     //Quantise to 256 colors.
     allTexImage.save("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\allTex.png");
 
+    QDir d = QDir::current();
+    d.cdUp();
+    d.cd("Potato3dExample");
+    d.cd("models");
+
+
     QProcess p;
-    p.setWorkingDirectory("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\");
-    p.start("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\nQuantCpp.exe allTex.png /m 256");
+    p.setWorkingDirectory(d.path());
+
+    QStringList params;
+    params.append("allTex.png");
+    params.append("/m");
+    params.append("256");
+
+    p.start("nQuantCpp.exe", params);
     p.waitForFinished();
 
     qDebug() << p.readAll();

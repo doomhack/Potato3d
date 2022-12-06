@@ -232,6 +232,39 @@ namespace P3D
         }
     }
 
+
+    //Fog modes.
+    void RenderDevice::SetFogTable(const pixel* fog_table, unsigned int table_count)
+    {
+        fog_params.type = Internal::RenderDeviceFogParameters::TableFog;
+
+        fog_params.fog_table = fog_table;
+        fog_params.fog_table_count = table_count;
+    }
+
+    void RenderDevice::SetFogColor(const pixel color)
+    {
+        fog_params.type = Internal::RenderDeviceFogParameters::BlendFog;
+
+        fog_params.fog_color = color;
+    }
+
+    void RenderDevice::SetFogMode(FogMode mode)
+    {
+        fog_params.mode = mode;
+    }
+
+    void RenderDevice::SetFogDepth(fp fog_start, fp fog_end)
+    {
+        fog_params.fog_start = fog_start;
+        fog_params.fog_end = fog_end;
+    }
+
+    void RenderDevice::SetFogDensity(fp density)
+    {
+        fog_params.fog_density = density;
+    }
+
     //Begin/End Frame.
     void RenderDevice::BeginFrame()
     {
