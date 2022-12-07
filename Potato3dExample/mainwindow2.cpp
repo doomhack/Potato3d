@@ -15,7 +15,8 @@ MainWindow2::MainWindow2(QWidget *parent)
 
     fpsTimer.start();
 
-    frameBufferImage = QImage(screenWidth, screenHeight, QImage::Format::Format_Indexed8);
+    //frameBufferImage = QImage(screenWidth, screenHeight, QImage::Format::Format_Indexed8);
+    frameBufferImage = QImage(screenWidth, screenHeight, QImage::Format::Format_RGB32);
 
     QVector<QRgb> color_table;
 
@@ -26,7 +27,7 @@ MainWindow2::MainWindow2(QWidget *parent)
 
     frameBufferImage.setColorTable(color_table);
 
-    render_target = new P3D::RenderTarget(screenWidth, screenHeight, frameBufferImage.scanLine(0));
+    render_target = new P3D::RenderTarget(screenWidth, screenHeight, (P3D::pixel*)frameBufferImage.scanLine(0));
     render_target->AttachZBuffer();
 
     render_device = new P3D::RenderDevice();
@@ -39,7 +40,11 @@ MainWindow2::MainWindow2(QWidget *parent)
 
     //render_device->SetRenderFlags(RENDER_FLAGS(P3D::ZTest | P3D::ZWrite));
     //render_device->SetRenderFlags<P3D::NoFlags>();
-    render_device->SetRenderFlags<P3D::ZTest | P3D::ZWrite>();
+    render_device->SetRenderFlags<P3D::Fog>();
+
+    render_device->SetFogMode(P3D::FogLinear);
+    render_device->SetFogColor(0);
+    render_device->SetFogDepth(500, 1000);
 }
 
 MainWindow2::~MainWindow2()
@@ -64,12 +69,13 @@ void MainWindow2::paintEvent(QPaintEvent *event)
 
 
     QImage texture = QImage(":/models/test_text.png");
-    texture.convertTo(QImage::Format_Indexed8);
-    frameBufferImage.setColorTable(texture.colorTable());
+    //texture.convertTo(QImage::Format_Indexed8);
+    texture.convertTo(QImage::Format_RGB32);
+    //frameBufferImage.setColorTable(texture.colorTable());
 
     P3D::Material mat1;
     mat1.type = P3D::Material::Texture;
-    mat1.pixels = texture.constBits();
+    mat1.pixels = (P3D::pixel*)texture.constBits();
 
 
     render_device->SetMaterial(mat1);

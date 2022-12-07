@@ -10,7 +10,8 @@ namespace P3D
     #endif
 
     //Type of a texture and framebuffer pixel.
-    typedef unsigned char pixel;
+    //typedef unsigned char pixel;
+    typedef unsigned int pixel;
 
     //Width & height of a texture in pixels.
     inline constexpr int TEX_SIZE = 64;

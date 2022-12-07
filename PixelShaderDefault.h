@@ -294,13 +294,13 @@ namespace P3D
                 zb[0] = zv1, zb[1] = zv2;
             }
 
-            const unsigned int tx = (int)u1 & TEX_MASK;
-            const unsigned int ty = ((int)v1 & TEX_MASK) << TEX_SHIFT;
+            const unsigned int tx = (unsigned int)u1 & TEX_MASK;
+            const unsigned int ty = ((unsigned int)v1 & TEX_MASK) << TEX_SHIFT;
 
-            const unsigned int tx2 = (int)u2 & TEX_MASK;
-            const unsigned int ty2 = ((int)v2 & TEX_MASK) << TEX_SHIFT;
+            const unsigned int tx2 = (unsigned int)u2 & TEX_MASK;
+            const unsigned int ty2 = ((unsigned int)v2 & TEX_MASK) << TEX_SHIFT;
 
-            *(pixel_pair*)fb = ( (texels[ty + tx]) | (texels[(ty2 + tx2)] << (sizeof(pixel)*8)) );
+            *(pixel_pair*)fb = ( (texels[ty + tx]) | ((pixel_pair)texels[(ty2 + tx2)] << (sizeof(pixel)*8)) );
         }
 
         static void DrawScanlinePixel(pixel *fb, z_val *zb, const z_val zv, const pixel* texels, const fp u, const fp v)

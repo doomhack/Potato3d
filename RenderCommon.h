@@ -108,8 +108,8 @@ namespace P3D
             {
                 struct
                 {
-                    fp fog_start = 0;
-                    fp fog_end = 0;
+                    fp fog_start;
+                    fp fog_end;
                 };
                 struct
                 {
@@ -136,8 +136,8 @@ namespace P3D
                 };
                 struct
                 {
-                    const pixel* fog_table = nullptr;
-                    unsigned int fog_table_count = 0;
+                    const pixel* fog_table;
+                    unsigned int fog_table_count;
                 };
             };
         };
@@ -165,6 +165,7 @@ namespace P3D
         public:
             V4<fp> pos;
             V2<fp> uv;
+            fp fog_factor;
 
             void toPerspectiveCorrect(const fp scale = fp(1))
             {

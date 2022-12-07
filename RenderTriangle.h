@@ -46,6 +46,7 @@ namespace P3D
             virtual void DrawTriangle(TransformedTriangle& tri, const Material& material) = 0;
             virtual void SetRenderStateViewport(const RenderTargetViewport& viewport, const RenderDeviceNearFarPlanes& planes) = 0;
             virtual void SetTextureCache(const TextureCacheBase* texture_cache) = 0;
+            virtual void SetFogParams(const RenderDeviceFogParameters& fog_params) = 0;
 
 #ifdef RENDER_STATS
             virtual void SetRenderStats(RenderStats& render_stats) = 0;
@@ -88,6 +89,12 @@ namespace P3D
             {
                 tex_cache = texture_cache;
             }
+
+            void SetFogParams(const RenderDeviceFogParameters& fog) override
+            {
+                this->fog_params = &fog;
+            }
+
 
 #ifdef RENDER_STATS
             void SetRenderStats(RenderStats& stats) override
@@ -254,6 +261,11 @@ namespace P3D
 
                     clipSpacePoints[i].pos.x = fracToX(clipSpacePoints[i].pos.x);
                     clipSpacePoints[i].pos.y = fracToY(clipSpacePoints[i].pos.y);
+
+                    if constexpr (render_flags & (Fog))
+                    {
+                        clipSpacePoints[i].fog_factor = GetFogFactor(clipSpacePoints[i].pos);
+                    }
                 }
 
                 CullTriangle(clipSpacePoints);
@@ -720,11 +732,59 @@ namespace P3D
                 return (dy*cx) - (dx*cy);
             }
 
+            fp GetFogFactor(const V4<fp>& pos)
+            {
+                switch(fog_params->mode)
+                {
+                    case P3D::FogMode::FogLinear:
+                        return GetLinearFogFactor(pos.w);
+
+                    case P3D::FogMode::FogExponential:
+                        return GetExponentialFogFactor(pos.z);
+
+                    case P3D::FogMode::FogExponential2:
+                        return GetExponential2FogFactor(pos.z);
+                }
+            }
+
+            fp GetLinearFogFactor(const fp w)
+            {
+                if(w >= fog_params->fog_end)
+                    return 1;
+                else if(w <= fog_params->fog_start)
+                    return 0;
+
+                const fp x = fog_params->fog_end - w;
+                const fp y = fog_params->fog_end - fog_params->fog_start;
+
+                return x/y;
+            }
+
+            fp GetExponentialFogFactor(const fp z)
+            {
+                const fp d = (z * fog_params->fog_density);
+
+                const fp r = pow(M_E, d);
+
+                return 1/r;
+            }
+
+            fp GetExponential2FogFactor(const fp z)
+            {
+                const fp d = ((z * fog_params->fog_density) * (z * fog_params->fog_density));
+
+                const fp r = pow(M_E, d);
+
+                return 1/r;
+            }
+
+
         private:
             const TextureCacheBase* tex_cache = nullptr;
             const Material* current_material = nullptr;
             const RenderTargetViewport* current_viewport = nullptr;
             const RenderDeviceNearFarPlanes* z_planes = nullptr;
+            const RenderDeviceFogParameters* fog_params = nullptr;
             fp max_w_tex_scale = 0;
 
 

@@ -202,6 +202,7 @@ namespace P3D
         return a * pReciprocal(b);
     }
 
+    //Double width type. double_width<uint16> -> uint32.
     template <class> struct double_width;
     template <class T> using double_width_t = typename double_width<T>::type;
 
@@ -210,6 +211,28 @@ namespace P3D
     template <> struct double_width<uint_least8_t>  : t<uint_least16_t> {};
     template <> struct double_width<uint_least16_t> : t<uint_least32_t> {};
     template <> struct double_width<uint_least32_t> : t<uint_least64_t> {};
+
+    template <> struct double_width<int_least8_t>  : t<int_least16_t> {};
+    template <> struct double_width<int_least16_t> : t<int_least32_t> {};
+    template <> struct double_width<int_least32_t> : t<int_least64_t> {};
+
+
+    //Fast types. fast_int<uint16> -> uint32 on ARM.
+    template <class> struct fast_int;
+    template <class T> using fast_int_t = typename fast_int<T>::type;
+
+    template <class T> struct f { using type = T; };
+
+    template <> struct fast_int<uint8_t>  : t<uint_fast8_t> {};
+    template <> struct fast_int<uint16_t> : t<uint_fast16_t> {};
+    template <> struct fast_int<uint32_t> : t<uint_fast32_t> {};
+    template <> struct fast_int<uint64_t> : t<uint_fast64_t> {};
+
+    template <> struct fast_int<int8_t>  : t<int_fast8_t> {};
+    template <> struct fast_int<int16_t> : t<int_fast16_t> {};
+    template <> struct fast_int<int32_t> : t<int_fast32_t> {};
+    template <> struct fast_int<int64_t> : t<int_fast64_t> {};
+
 }
 
 #endif // UTILS_H

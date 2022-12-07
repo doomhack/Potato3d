@@ -256,7 +256,7 @@ P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
 
                     t->v_mask = (t->height-1) << t->v_shift;
 
-                    t->pixels = image->constScanLine(0);
+                    t->pixels = (P3D::pixel*)image->constScanLine(0);
                 }
 
                 currMtlName.clear();
@@ -306,7 +306,7 @@ P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
 
     for(int i =0; i < numTextures; i++)
     {
-        unsigned char* scanline = (unsigned char*)allTex256->scanLine(i * P3D::TEX_SIZE);
+        P3D::pixel* scanline = (P3D::pixel*)allTex256->scanLine(i * P3D::TEX_SIZE);
 
         textureMap.value(textureMap.keys().at(i))->pixels = scanline;
     }

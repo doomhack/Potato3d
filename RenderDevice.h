@@ -32,6 +32,7 @@ namespace P3D
 
             triangle_render->SetRenderStateViewport(viewport, z_planes);
             triangle_render->SetTextureCache(texture_cache);
+            triangle_render->SetFogParams(fog_params);
 
     #ifdef RENDER_STATS
             triangle_render->SetRenderStats(render_stats);
