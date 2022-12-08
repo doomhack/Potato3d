@@ -42,12 +42,15 @@ MainWindow2::MainWindow2(QWidget *parent)
     //render_device->SetRenderFlags<P3D::NoFlags>();
     render_device->SetRenderFlags<P3D::Fog>();
 
-    //render_device->SetFogMode(P3D::FogLinear);
     render_device->SetFogColor(0);
-    //render_device->SetFogDepth(200, 400);
 
-    render_device->SetFogMode(P3D::FogExponential);
-    render_device->SetFogDensity(0.66);
+#if 1
+    render_device->SetFogMode(P3D::FogLinear);
+    render_device->SetFogDepth(200, 400);
+#else
+    render_device->SetFogMode(P3D::FogExponential2);
+    render_device->SetFogDensity(0.0025);
+#endif
 }
 
 MainWindow2::~MainWindow2()
@@ -79,7 +82,6 @@ void MainWindow2::paintEvent(QPaintEvent *event)
     P3D::Material mat1;
     mat1.type = P3D::Material::Texture;
     mat1.pixels = (P3D::pixel*)texture.constBits();
-
 
     render_device->SetMaterial(mat1);
 

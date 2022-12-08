@@ -791,10 +791,13 @@ namespace P3D
                         return GetLinearFogFactor(pos.w);
 
                     case P3D::FogMode::FogExponential:
-                        return GetExponentialFogFactor(pos.z);
+                        return GetExponentialFogFactor(pos.w * pos.z);
 
                     case P3D::FogMode::FogExponential2:
-                        return GetExponential2FogFactor(pos.z);
+                        return GetExponential2FogFactor(pos.w * pos.z);
+
+                    default:
+                        return 0;
                 }
             }
 
@@ -808,25 +811,27 @@ namespace P3D
                 const fp x = fog_params->fog_end - w;
                 const fp y = fog_params->fog_end - fog_params->fog_start;
 
-                return 1-(x/y);
+                return pClamp(fp(0), fp(1)-(x/y), fp(1));
             }
 
-            fp GetExponentialFogFactor(const fp z)
+            fp GetExponentialFogFactor(const fp w)
             {
-                const fp d = (z * fog_params->fog_density);
+                const fp d = (w * fog_params->fog_density);
 
-                const fp r = pow(M_E, d);
+                const fp r = exp(-d);
 
-                return 1-(1/r);
+                return pClamp(fp(0), fp(1)-r, fp(1));
             }
 
-            fp GetExponential2FogFactor(const fp z)
+            fp GetExponential2FogFactor(const fp w)
             {
-                const fp d = ((z * fog_params->fog_density) * (z * fog_params->fog_density));
+                fp d = (w * fog_params->fog_density);
 
-                const fp r = pow(M_E, d);
+                d = (d * d);
 
-                return 1-(1/r);
+                const fp r = exp(-d);
+
+                return pClamp(fp(0), fp(1)-r, fp(1));
             }
 
 

@@ -96,6 +96,12 @@ namespace P3D
     }
 
     template <class T>
+    constexpr inline T pClamp(const T min, const T v, const T max)
+    {
+        return pMin(pMax(min, v), max);
+    }
+
+    template <class T>
     constexpr inline bool pAllLTZ3(const T a, const T b, const T c)
     {
         return (a < 0) && (b < 0) && (c < 0);
