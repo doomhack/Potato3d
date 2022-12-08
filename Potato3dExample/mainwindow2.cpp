@@ -42,9 +42,12 @@ MainWindow2::MainWindow2(QWidget *parent)
     //render_device->SetRenderFlags<P3D::NoFlags>();
     render_device->SetRenderFlags<P3D::Fog>();
 
-    render_device->SetFogMode(P3D::FogLinear);
+    //render_device->SetFogMode(P3D::FogLinear);
     render_device->SetFogColor(0);
-    render_device->SetFogDepth(500, 1000);
+    //render_device->SetFogDepth(200, 400);
+
+    render_device->SetFogMode(P3D::FogExponential);
+    render_device->SetFogDensity(0.66);
 }
 
 MainWindow2::~MainWindow2()

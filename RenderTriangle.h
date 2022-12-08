@@ -16,8 +16,10 @@ namespace P3D
             fp v_left, v_right;
             fp w_left, w_right;
             fp z_left, z_right;
+            fp f_left, f_right;
             pixel* fb_ypos;
             z_val* zb_ypos;
+            pixel fog_color;
         } TriEdgeTrace;
 
         typedef struct TriDrawXDeltaZWUV
@@ -26,6 +28,7 @@ namespace P3D
             fp v;
             fp w;
             fp z;
+            fp f;
         } TriDrawXDeltaZWUV;
 
         typedef struct TriDrawYDeltaZWUV
@@ -35,6 +38,7 @@ namespace P3D
             fp v;
             fp w;
             fp z;
+            fp f;
         } TriDrawYDeltaZWUV;
 
 
@@ -359,6 +363,11 @@ namespace P3D
                 int yStart = pixelCentreTopY;
                 int yEnd = PixelCentre(pMin(middle.pos.y, fp(fb_y)));
 
+                if constexpr (render_flags & Fog)
+                {
+                    pos.fog_color = fog_params->fog_color;
+                }
+
                 GetTriangleLerpYDeltas(top, bottom, long_y_delta);
                 GetTriangleLerpYDeltas(top, middle, short_y_delta);
 
@@ -412,6 +421,11 @@ namespace P3D
                 {
                     pos.z_left = left.pos.z + (stepY * y_delta_left.z);
                 }
+
+                if constexpr (render_flags & Fog)
+                {
+                    pos.f_left = left.fog_factor + (stepY * y_delta_left.f);
+                }
             }
 
             void PreStepYTriangleRight(const fp stepY, const Vertex4d& right, TriEdgeTrace& pos, const TriDrawYDeltaZWUV& y_delta_right)
@@ -433,6 +447,11 @@ namespace P3D
                 if constexpr (render_flags & (ZTest | ZWrite))
                 {
                     pos.z_right = right.pos.z + (stepY * y_delta_right.z);
+                }
+
+                if constexpr (render_flags & Fog)
+                {
+                    pos.f_right = right.fog_factor + (stepY * y_delta_right.f);
                 }
             }
 
@@ -474,6 +493,12 @@ namespace P3D
                             pos.w_right += y_delta_right.w;
                         }
                     }
+
+                    if constexpr (render_flags & Fog)
+                    {
+                        pos.f_left += y_delta_left.f;
+                        pos.f_right += y_delta_right.f;
+                    }
                 }
             }
 
@@ -511,6 +536,12 @@ namespace P3D
                 {
                     span_pos.zb_ypos = pos.zb_ypos;
                     span_pos.z_left = pos.z_left + (delta.z * stepX);
+                }
+
+                if constexpr (render_flags & Fog)
+                {
+                    span_pos.f_left = pos.f_left + (delta.f * stepX);
+                    span_pos.fog_color = pos.fog_color;
                 }
 
                 if(current_material->type == Material::Texture)
@@ -643,6 +674,11 @@ namespace P3D
                 {
                     x_delta.z = (pos.z_right - pos.z_left) / d_x;
                 }
+
+                if constexpr (render_flags & Fog)
+                {
+                    x_delta.f = (pos.f_right - pos.f_left) / d_x;
+                }
             }
 
             constexpr void GetTriangleLerpYDeltasZWUV(const Vertex4d& a, const Vertex4d& b, TriDrawYDeltaZWUV &y_delta)
@@ -663,15 +699,25 @@ namespace P3D
                 {
                     y_delta.z = (a.pos.z - b.pos.z) / d_y;
                 }
+
+                if constexpr (render_flags & Fog)
+                {
+                    y_delta.f = (a.fog_factor - b.fog_factor) / d_y;
+                }
             }
 
             constexpr void GetTriangleLerpXDeltasZ(TriDrawXDeltaZWUV& x_delta, const TriEdgeTrace& pos)
             {
+                const fp d_x = (pos.x_right - pos.x_left) != 0 ? (pos.x_right - pos.x_left) : fp(1);
+
                 if constexpr (render_flags & (ZTest | ZWrite))
                 {
-                    const fp d_x = (pos.x_right - pos.x_left) != 0 ? (pos.x_right - pos.x_left) : fp(1);
-
                     x_delta.z = (pos.z_right - pos.z_left) / d_x;
+                }
+
+                if constexpr (render_flags & Fog)
+                {
+                    x_delta.f = (pos.f_right - pos.f_left) / d_x;
                 }
             }
 
@@ -684,6 +730,11 @@ namespace P3D
                 if constexpr (render_flags & (ZTest | ZWrite))
                 {
                     y_delta.z = (a.pos.z - b.pos.z) / d_y;
+                }
+
+                if constexpr (render_flags & Fog)
+                {
+                    y_delta.f = (a.fog_factor - b.fog_factor) / d_y;
                 }
             }
 
@@ -757,7 +808,7 @@ namespace P3D
                 const fp x = fog_params->fog_end - w;
                 const fp y = fog_params->fog_end - fog_params->fog_start;
 
-                return x/y;
+                return 1-(x/y);
             }
 
             fp GetExponentialFogFactor(const fp z)
@@ -766,7 +817,7 @@ namespace P3D
 
                 const fp r = pow(M_E, d);
 
-                return 1/r;
+                return 1-(1/r);
             }
 
             fp GetExponential2FogFactor(const fp z)
@@ -775,7 +826,7 @@ namespace P3D
 
                 const fp r = pow(M_E, d);
 
-                return 1/r;
+                return 1-(1/r);
             }
 
 
