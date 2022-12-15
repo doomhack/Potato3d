@@ -7,6 +7,8 @@
 #include "../RenderDevice.h"
 #include "../RenderTarget.h"
 
+const QImage::Format format = QImage::Format::Format_RGB32;
+
 MainWindow2::MainWindow2(QWidget *parent)
     : QMainWindow(parent)
 {
@@ -16,7 +18,7 @@ MainWindow2::MainWindow2(QWidget *parent)
     fpsTimer.start();
 
     //frameBufferImage = QImage(screenWidth, screenHeight, QImage::Format::Format_Indexed8);
-    frameBufferImage = QImage(screenWidth, screenHeight, QImage::Format::Format_RGB32);
+    frameBufferImage = QImage(screenWidth, screenHeight, format);
 
     QVector<QRgb> color_table;
 
@@ -76,7 +78,7 @@ void MainWindow2::paintEvent(QPaintEvent *event)
 
     QImage texture = QImage(":/models/test_text.png");
     //texture.convertTo(QImage::Format_Indexed8);
-    texture.convertTo(QImage::Format_RGB32);
+    texture.convertTo(format);
     //frameBufferImage.setColorTable(texture.colorTable());
 
     P3D::Material mat1;

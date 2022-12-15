@@ -14,7 +14,6 @@ namespace P3D
 
         static void DrawTriangleScanlineAffine(const Internal::TriEdgeTrace& pos, const Internal::TriDrawXDeltaZWUV& delta, const pixel* texture)
         {
-
             const int x_start = (int)pos.x_left;
             const int x_end = (int)pos.x_right;
 
@@ -315,8 +314,8 @@ namespace P3D
             const unsigned int tx2 = (unsigned int)u2 & TEX_MASK;
             const unsigned int ty2 = ((unsigned int)v2 & TEX_MASK) << TEX_SHIFT;
 
-            pixel p1 = FogPixel(texels[(ty + tx)], fog_color, f1);
-            pixel p2 = FogPixel(texels[(ty2 + tx2)], fog_color, f2);
+            pixel p1 = BlendPixel(texels[(ty + tx)], fog_color, f1);
+            pixel p2 = BlendPixel(texels[(ty2 + tx2)], fog_color, f2);
 
             *(pixel_pair*)fb = ( (p1) | ((pixel_pair)p2 << (sizeof(pixel)*8)) );
         }
@@ -337,27 +336,27 @@ namespace P3D
             const unsigned int tx = (int)u & TEX_MASK;
             const unsigned int ty = ((int)v & TEX_MASK) << TEX_SHIFT;
 
-            *fb = FogPixel(texels[(ty + tx)], fog_color, f);
+            *fb = BlendPixel(texels[(ty + tx)], fog_color, f);
         }
 
-        static pixel FogPixel(const pixel src, const pixel fog_color, const fp f)
+        static pixel BlendPixel(const pixel src_color, const pixel dst_color, const fp f)
         {
             if constexpr (render_flags & Fog)
             {
-                const pixelType srcp(src);
-                const pixelType fogp(fog_color);
+                const pixelType src(src_color);
+                const pixelType dst(dst_color);
 
-                const pixelType dst = pixelType(
-                            pLerp(fp(srcp.R()), fp(fogp.R()), f),
-                            pLerp(fp(srcp.G()), fp(fogp.G()), f),
-                            pLerp(fp(srcp.B()), fp(fogp.B()), f)
+                const pixelType out = pixelType(
+                            pLerp(fp(src.R()), fp(dst.R()), f),
+                            pLerp(fp(src.G()), fp(dst.G()), f),
+                            pLerp(fp(src.B()), fp(dst.B()), f)
                         );
 
-                return dst;
+                return out;
             }
             else
             {
-                return src;
+                return src_color;
             }
         }
     };
