@@ -344,23 +344,16 @@ namespace P3D
         {
             if constexpr (render_flags & Fog)
             {
-                fp r1 = (src & 0xff);
-                fp g1 = (src & 0xff00) >> 8;
-                fp b1 = (src & 0xff0000) >> 16;
+                const pixelType srcp(src);
+                const pixelType fogp(fog_color);
 
-                fp r2 = (fog_color & 0xff);
-                fp g2 = (fog_color & 0xff00) >> 8;
-                fp b2 = (fog_color & 0xff0000) >> 16;
+                const pixelType dst = pixelType(
+                            pLerp(fp(srcp.R()), fp(fogp.R()), f),
+                            pLerp(fp(srcp.G()), fp(fogp.G()), f),
+                            pLerp(fp(srcp.B()), fp(fogp.B()), f)
+                        );
 
-                fp r3 = pLerp(r1, r2, f);
-                fp g3 = pLerp(g1, g2, f);
-                fp b3 = pLerp(b1, b2, f);
-
-                unsigned int r4 = r3;
-                unsigned int g4 = g3;
-                unsigned int b4 = b3;
-
-                return (r4 | (g4 << 8) | (b4 << 16));
+                return dst;
             }
             else
             {

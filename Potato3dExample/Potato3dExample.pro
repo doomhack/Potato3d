@@ -49,6 +49,7 @@ HEADERS += \
     ../RenderTarget.h \
     ../RenderTriangle.h \
     ../TextureCache.h \
+    ../Pixel.h \
     ../bspmodel.h \
     ../object3d.h \
     ../potato3d.h \

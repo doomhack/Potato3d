@@ -2,6 +2,7 @@
 #define CONFIGUSER_H
 
 #include "3dmaths/f3dmath.h"
+#include "Pixel.h"
 
 namespace P3D
 {
@@ -12,6 +13,8 @@ namespace P3D
     //Type of a texture and framebuffer pixel.
     //typedef unsigned char pixel;
     typedef unsigned int pixel;
+    typedef Pixel<8,8,8, pixel> pixelType;
+
 
     //Width & height of a texture in pixels.
     inline constexpr int TEX_SIZE = 64;
