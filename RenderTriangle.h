@@ -466,7 +466,7 @@ namespace P3D
 
                 for (int y = yStart; y < yEnd; y++)
                 {
-                    DrawSpan(pos);
+                    SubdivideSpan(pos);
 
                     pos.x_left += y_delta_left.x;
                     pos.x_right += y_delta_right.x;
@@ -502,6 +502,41 @@ namespace P3D
                 }
             }
 
+            void SubdivideSpan(const TriEdgeTrace& pos)
+            {
+                if constexpr (render_flags & (HalfPerspectiveMapping))
+                {
+                    if(current_material->type == Material::Texture)
+                    {
+                        if(((pos.x_right - pos.x_left) > MIN_SPLIT_SPAN_LEN) && (pAbs(pos.w_left - pos.w_right) > MAX_SPAN_W_DELTA))
+                        {
+                            TriEdgeTrace l,r;
+
+                            SplitSpan(pos, l, r);
+
+                            SubdivideSpan(l);
+                            SubdivideSpan(r);
+                        }
+                        else
+                        {
+                            TriEdgeTrace s = pos;
+
+                            s.u_left = s.u_left / s.w_left;
+                            s.u_right = s.u_right / s.w_right;
+
+                            s.v_left = s.v_left / s.w_left;
+                            s.v_right = s.v_right / s.w_right;
+
+                            DrawSpan(s);
+                        }
+
+                        return;
+                    }
+                }
+
+                DrawSpan(pos);
+            }
+
             void DrawSpan(const TriEdgeTrace& pos)
             {
                 TriEdgeTrace span_pos;
@@ -525,11 +560,6 @@ namespace P3D
                 span_pos.x_right = x_end;
                 span_pos.fb_ypos = pos.fb_ypos;
 
-                if constexpr (render_flags & (ZTest | ZWrite))
-                {
-                    span_pos.zb_ypos = pos.zb_ypos;
-                }
-
                 GetTriangleLerpXDeltas(delta, pos);
 
                 if constexpr (render_flags & (ZTest | ZWrite))
@@ -549,7 +579,7 @@ namespace P3D
                     span_pos.u_left = pos.u_left + (delta.u * stepX);
                     span_pos.v_left = pos.v_left + (delta.v * stepX);
 
-                    if constexpr (render_flags & (FullPerspectiveMapping | HalfPerspectiveMapping))
+                    if constexpr (render_flags & FullPerspectiveMapping)
                     {
                         span_pos.w_left = pos.w_left + (delta.w * stepX);
                     }
@@ -559,10 +589,6 @@ namespace P3D
                     if constexpr (render_flags & FullPerspectiveMapping)
                     {
                         TPixelShader::DrawTriangleScanlinePerspectiveCorrect(span_pos, delta, texture);
-                    }
-                    else if constexpr (render_flags & HalfPerspectiveMapping)
-                    {
-                        TPixelShader::DrawTriangleScanlineHalfPerspectiveCorrect(span_pos, delta, texture);
                     }
                     else
                     {
@@ -642,7 +668,7 @@ namespace P3D
                 }
             }
 
-            void GetTriangleLerpYDeltas(const Vertex4d& a, const Vertex4d& b, TriDrawYDeltaZWUV &y_delta)
+            constexpr void GetTriangleLerpYDeltas(const Vertex4d& a, const Vertex4d& b, TriDrawYDeltaZWUV &y_delta)
             {
                 if(current_material->type == Material::Texture)
                     GetTriangleLerpYDeltasZWUV(a, b, y_delta);
@@ -650,7 +676,7 @@ namespace P3D
                     GetTriangleLerpYDeltasZ(a, b, y_delta);
             }
 
-            void GetTriangleLerpXDeltas(TriDrawXDeltaZWUV& x_delta, const TriEdgeTrace& pos)
+            constexpr void GetTriangleLerpXDeltas(TriDrawXDeltaZWUV& x_delta, const TriEdgeTrace& pos)
             {
                 if(current_material->type == Material::Texture)
                     GetTriangleLerpXDeltasZWUV(x_delta, pos);
@@ -665,7 +691,7 @@ namespace P3D
                 x_delta.u = (pos.u_right - pos.u_left) / d_x;
                 x_delta.v = (pos.v_right - pos.v_left) / d_x;
 
-                if constexpr (render_flags & (FullPerspectiveMapping | HalfPerspectiveMapping))
+                if constexpr (render_flags & FullPerspectiveMapping)
                 {
                     x_delta.w = (pos.w_right - pos.w_left) / d_x;
                 }
@@ -747,6 +773,57 @@ namespace P3D
 
                 out.uv.x = pLerp(left.uv.x, right.uv.x, frac);
                 out.uv.y = pLerp(left.uv.y, right.uv.y, frac);
+            }
+
+            constexpr void SplitSpan(const TriEdgeTrace& pos, TriEdgeTrace& left, TriEdgeTrace& right)
+            {
+                left.fb_ypos = right.fb_ypos = pos.fb_ypos;
+
+                left.x_left = pos.x_left;
+                left.x_right = pos.x_left + ((pos.x_right - pos.x_left) / 2);
+
+                right.x_left = left.x_right;
+                right.x_right = pos.x_right;
+
+                left.u_left = pos.u_left;
+                left.u_right = pos.u_left + ((pos.u_right - pos.u_left) / 2);
+
+                right.u_left = left.u_right;
+                right.u_right = pos.u_right;
+
+                left.v_left = pos.v_left;
+                left.v_right = pos.v_left + ((pos.v_right - pos.v_left) / 2);
+
+                right.v_left = left.v_right;
+                right.v_right = pos.v_right;
+
+                left.w_left = pos.w_left;
+                left.w_right = pos.w_left + ((pos.w_right - pos.w_left) / 2);
+
+                right.w_left = left.w_right;
+                right.w_right = pos.w_right;
+
+                if constexpr (render_flags & (ZTest | ZWrite))
+                {
+                    left.z_left = pos.z_left;
+                    left.z_right = pos.z_left + ((pos.z_right - pos.z_left) / 2);
+
+                    right.z_left = left.z_right;
+                    right.z_right = pos.z_right;
+
+                    left.zb_ypos = right.zb_ypos = pos.zb_ypos;
+                }
+
+                if constexpr (render_flags & Fog)
+                {
+                    left.f_left = pos.f_left;
+                    left.f_right = pos.f_left + ((pos.f_right - pos.f_left) / 2);
+
+                    right.f_left = left.f_right;
+                    right.f_right = pos.f_right;
+
+                    left.fog_color = right.fog_color = pos.fog_color;
+                }
             }
 
             fp fracToY(const fp frac) const

@@ -42,7 +42,7 @@ MainWindow2::MainWindow2(QWidget *parent)
 
     //render_device->SetRenderFlags(RENDER_FLAGS(P3D::ZTest | P3D::ZWrite));
     //render_device->SetRenderFlags<P3D::NoFlags>();
-    render_device->SetRenderFlags<P3D::Fog>();
+    render_device->SetRenderFlags<P3D::Fog | P3D::HalfPerspectiveMapping>();
 
     render_device->SetFogColor(0);
 

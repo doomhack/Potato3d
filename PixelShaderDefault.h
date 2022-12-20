@@ -72,95 +72,6 @@ namespace P3D
                 DrawScanlinePixel(fb, zb, z, texture, u, v, f, fog_color);
         }
 
-        static void DrawTriangleScanlineHalfPerspectiveCorrect(const Internal::TriEdgeTrace& pos, const Internal::TriDrawXDeltaZWUV& delta, const pixel* texture)
-        {
-            const int x_start = (int)pos.x_left;
-            const int x_end = (int)pos.x_right;
-
-            unsigned int count = (x_end - x_start);
-
-            pixel* fb = pos.fb_ypos + x_start;
-            z_val* zb = pos.zb_ypos + x_start;
-
-            fp z = pos.z_left;
-            const fp dz = delta.z;
-
-            fp f = pos.f_left;
-            const fp df = delta.f;
-            const pixel fog_color = pos.fog_color;
-
-            fp u = pos.u_left, v = pos.v_left, w = pos.w_left;
-            const fp idu = delta.u, idv = delta.v, idw = delta.w;
-
-            if((size_t)fb & 1)
-            {
-                DrawScanlinePixel(fb, zb, z, texture, u/w, v/w, f, fog_color); fb++; zb++, z += dz, u += idu, v += idv, w += idw, f += df, count--;
-            }
-
-            unsigned int l = count >> 4;
-
-
-            while(l--)
-            {
-                fp u0 = u / w;
-                fp v0 = v / w;
-
-                w += (idw * 16);
-
-                const fp w15 = w;
-
-                u += (idu * 16);
-                v += (idv * 16);
-
-                const fp u15 = u / w15;
-                const fp v15 = v / w15;
-
-                const fp du = (u15 - u0) / 16;
-                const fp dv = (v15 - v0) / 16;
-
-                DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u0, v0, u0+du, v0+dv, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u0 += (du * 2), v0 += (dv * 2), f += (df * 2);
-                DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u0, v0, u0+du, v0+dv, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u0 += (du * 2), v0 += (dv * 2), f += (df * 2);
-                DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u0, v0, u0+du, v0+dv, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u0 += (du * 2), v0 += (dv * 2), f += (df * 2);
-                DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u0, v0, u0+du, v0+dv, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u0 += (du * 2), v0 += (dv * 2), f += (df * 2);
-                DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u0, v0, u0+du, v0+dv, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u0 += (du * 2), v0 += (dv * 2), f += (df * 2);
-                DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u0, v0, u0+du, v0+dv, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u0 += (du * 2), v0 += (dv * 2), f += (df * 2);
-                DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u0, v0, u0+du, v0+dv, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u0 += (du * 2), v0 += (dv * 2), f += (df * 2);
-                DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u0, v0, u0+du, v0+dv, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u0 += (du * 2), v0 += (dv * 2), f += (df * 2);
-            }
-
-            unsigned int r = ((count & 15) >> 1);
-
-            fp u0 = u / w;
-            fp v0 = v / w;
-
-            w += (idw * 16);
-
-            const fp w15 = w;
-
-            u += (idu * 16);
-            v += (idv * 16);
-
-            const fp u15 = u / w15;
-            const fp v15 = v / w15;
-
-            const fp du = (u15 - u0) / 16;
-            const fp dv = (v15 - v0) / 16;
-
-            switch(r)
-            {
-                case 7: DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u0, v0, u0+du, v0+dv, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u0 += (du * 2), v0 += (dv * 2), f += (df * 2);
-                case 6: DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u0, v0, u0+du, v0+dv, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u0 += (du * 2), v0 += (dv * 2), f += (df * 2);
-                case 5: DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u0, v0, u0+du, v0+dv, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u0 += (du * 2), v0 += (dv * 2), f += (df * 2);
-                case 4: DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u0, v0, u0+du, v0+dv, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u0 += (du * 2), v0 += (dv * 2), f += (df * 2);
-                case 3: DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u0, v0, u0+du, v0+dv, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u0 += (du * 2), v0 += (dv * 2), f += (df * 2);
-                case 2: DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u0, v0, u0+du, v0+dv, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u0 += (du * 2), v0 += (dv * 2), f += (df * 2);
-                case 1: DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u0, v0, u0+du, v0+dv, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u0 += (du * 2), v0 += (dv * 2), f += (df * 2);
-            }
-
-            if(count & 1)
-                DrawScanlinePixel(fb, zb, z, texture, u0, v0, f, fog_color);
-        }
-
         static void DrawTriangleScanlinePerspectiveCorrect(const Internal::TriEdgeTrace& pos, const Internal::TriDrawXDeltaZWUV& delta, const pixel* texture)
         {
             const int x_start = (int)pos.x_left;
@@ -343,6 +254,11 @@ namespace P3D
         {
             if constexpr (render_flags & Fog)
             {
+                if(f == 0)
+                    return src_color;
+                else if(f == 1)
+                    return dst_color;
+
                 const pixelType src(src_color);
                 const pixelType dst(dst_color);
 

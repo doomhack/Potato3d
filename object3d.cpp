@@ -38,13 +38,17 @@ namespace P3D
         render_device->SetPerspective(hFov, aspectRatio, zNear, zFar);
 
         //render_device->SetRenderFlags<P3D::NoFlags>();
-        render_device->SetRenderFlags<P3D::Fog>();
+        render_device->SetRenderFlags<P3D::HalfPerspectiveMapping>();
 
+#if 1
         render_device->SetFogMode(FogLinear);
         render_device->SetFogColor(0);
         render_device->SetFogDepth(1000, 2000);
-
-
+#else
+        render_device->SetFogMode(FogExponential2);
+        render_device->SetFogColor(0);
+        render_device->SetFogDensity(0.001);
+#endif
 
         //render_device->SetRenderFlags<P3D::ZWrite | P3D::ZTest, PixelShaderGBA8<P3D::ZWrite | P3D::ZTest>>();
 
