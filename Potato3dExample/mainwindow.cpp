@@ -9,6 +9,9 @@
 
 #include "../rtypes.h"
 
+const QImage::Format format = QImage::Format::Format_RGB32;
+
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
@@ -18,7 +21,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     fpsTimer.start();
 
-    frameBufferImage = QImage(screenWidth, screenHeight, QImage::Format::Format_Indexed8);
+    frameBufferImage = QImage(screenWidth, screenHeight, format);
 
     object3d = new P3D::Object3d();
 
@@ -303,6 +306,7 @@ P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
     //QImage* allTex256 = new QImage("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\allTex-WUquant128.png");
     //QImage* allTex256 = new QImage("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\allTex.png");
 
+    allTex256->convertTo(format);
 
     for(int i =0; i < numTextures; i++)
     {

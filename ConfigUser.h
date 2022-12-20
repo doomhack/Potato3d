@@ -12,11 +12,8 @@ namespace P3D
 
     //Type of a texture and framebuffer pixel.
     //typedef unsigned char pixel;
-    //typedef unsigned int pixel;
-    //typedef Pixel<8,8,8, pixel> pixelType;
-
-typedef unsigned char pixel;
-typedef Pixel<2,3,2, pixel> pixelType;
+    typedef unsigned int pixel;
+    typedef Pixel<8,8,8, pixel> pixelType;
 
     //Width & height of a texture in pixels.
     inline constexpr int TEX_SIZE = 64;
@@ -26,7 +23,7 @@ typedef Pixel<2,3,2, pixel> pixelType;
 
 
 
-    #define USE_FLOAT
+    //#define USE_FLOAT
     #ifdef USE_FLOAT
         typedef double fp;
     #else

@@ -104,6 +104,7 @@ namespace P3D
         {
         public:
 
+            RenderDeviceFogParameters() {}
             union
             {
                 struct
