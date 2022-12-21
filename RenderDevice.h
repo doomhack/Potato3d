@@ -64,7 +64,6 @@ namespace P3D
         void ClearViewportColor(const pixel color);
         void ClearViewportDepth(const z_val depth);
 
-        void SetFogTable(const pixel* fog_table, unsigned int table_count);
         void SetFogColor(const pixel color);
         void SetFogMode(FogMode mode);
         void SetFogDepth(fp fog_start, fp fog_end);

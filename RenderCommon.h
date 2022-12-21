@@ -105,6 +105,7 @@ namespace P3D
         public:
 
             RenderDeviceFogParameters() {}
+
             union
             {
                 struct
@@ -118,29 +119,8 @@ namespace P3D
                 };
             };
 
-
-
-            enum FogType
-            {
-                BlendFog = 0,
-                TableFog = 1
-            };
-
-            FogType type = BlendFog;
             FogMode mode = FogLinear;
-
-            union
-            {
-                struct
-                {
-                    pixel fog_color;
-                };
-                struct
-                {
-                    const pixel* fog_table;
-                    unsigned int fog_table_count;
-                };
-            };
+            pixel fog_color = 0;
         };
 
         typedef enum ClipPlane

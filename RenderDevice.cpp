@@ -234,18 +234,8 @@ namespace P3D
 
 
     //Fog modes.
-    void RenderDevice::SetFogTable(const pixel* fog_table, unsigned int table_count)
-    {
-        fog_params.type = Internal::RenderDeviceFogParameters::TableFog;
-
-        fog_params.fog_table = fog_table;
-        fog_params.fog_table_count = table_count;
-    }
-
     void RenderDevice::SetFogColor(const pixel color)
     {
-        fog_params.type = Internal::RenderDeviceFogParameters::BlendFog;
-
         fog_params.fog_color = color;
     }
 

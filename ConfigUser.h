@@ -32,8 +32,8 @@ namespace P3D
 
     typedef fp z_val;
 
-    inline constexpr int MIN_SPLIT_SPAN_LEN = 16;
-    inline constexpr fp MAX_SPAN_W_DELTA = 0.001;
+    inline constexpr int MIN_SPLIT_SPAN_LEN = 32;
+    inline constexpr fp MIN_SPLIT_SPAN_Z_DELTA = 0.01;
 
 }
 
