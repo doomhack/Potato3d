@@ -154,7 +154,7 @@ namespace P3D
                         }
                     }
 
-                    //Now outBuffer and outCount contain the final result.
+                    //Now inBuffer and countA contain the final result.
                     TriangulatePolygon(inBuffer, countA);
                 }
             }
@@ -995,12 +995,6 @@ namespace P3D
 
                     right.f_left = left.f_right;
                     right.f_right = pos.f_right;
-
-                    //left.f_left = fp(0.5);
-                    //left.f_right = fp(0.5);
-
-                    //right.f_left = fp(0.5);
-                    //right.f_right = fp(0.5);
                 }
             }
 

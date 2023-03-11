@@ -106,18 +106,9 @@ namespace P3D
 
             RenderDeviceFogParameters() {}
 
-            union
-            {
-                struct
-                {
-                    fp fog_start;
-                    fp fog_end;
-                };
-                struct
-                {
-                    fp fog_density;
-                };
-            };
+            fp fog_start;
+            fp fog_end;
+            fp fog_density;
 
             FogMode mode = FogLinear;
             pixel fog_color = 0;

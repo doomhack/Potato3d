@@ -164,7 +164,7 @@ namespace P3D
 
         constexpr FP& operator/=(const FP& r)
         {
-            n = FixedDiv(n, r.n);
+            n = FixedDiv(n, r.n, fracbits);
             return *this;
         }
 

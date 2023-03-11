@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cmath>
 #include <cstring>
+#include <cwchar>
 
 #include "fp.h"
 #include "recip.h"
@@ -11,6 +12,9 @@
 #ifdef __arm__
     #include <gba_dma.h>
 #endif
+
+#define M_PI       3.14159265358979323846   // pi
+
 
 namespace P3D
 {
@@ -147,7 +151,7 @@ namespace P3D
     #endif
     }
 
-    inline void FastFill32(unsigned int* dest, volatile const unsigned int value, unsigned int words)
+    inline void FastFill32(unsigned int* dest, const unsigned int value, unsigned int words)
     {
 #ifndef __arm__
         while(words--)
@@ -155,19 +159,20 @@ namespace P3D
             *dest++ = value;
         }
 #else
-        DMA3COPY(&value, dest, DMA_SRC_FIXED | DMA_DST_INC | DMA32 | DMA_IMMEDIATE | words)
+        volatile unsigned int v = value;
+
+        DMA3COPY(&v, dest, DMA_SRC_FIXED | DMA_DST_INC | DMA32 | DMA_IMMEDIATE | words)
 #endif
     }
 
-    inline void FastFill16(unsigned short* dest, volatile const unsigned short value, unsigned int words)
+    inline void FastFill16(unsigned short* dest, const unsigned short value, unsigned int words)
     {
 #ifndef __arm__
-        while(words--)
-        {
-            *dest++ = value;
-        }
+        std::wmemset((wchar_t*)dest, value, words);
 #else
-        DMA3COPY(&value, dest, DMA_SRC_FIXED | DMA_DST_INC | DMA16 | DMA_IMMEDIATE | words)
+        volatile unsigned short v = value;
+
+        DMA3COPY(&v, dest, DMA_SRC_FIXED | DMA_DST_INC | DMA16 | DMA_IMMEDIATE | words)
 #endif
     }
 
@@ -214,13 +219,13 @@ namespace P3D
 
     template <class T> struct t { using type = T; };
 
-    template <> struct double_width<uint_least8_t>  : t<uint_least16_t> {};
-    template <> struct double_width<uint_least16_t> : t<uint_least32_t> {};
-    template <> struct double_width<uint_least32_t> : t<uint_least64_t> {};
+    template <> struct double_width<uint8_t>        : t<uint16_t> {};
+    template <> struct double_width<uint16_t>       : t<uint32_t> {};
+    template <> struct double_width<uint32_t>       : t<uint64_t> {};
 
-    template <> struct double_width<int_least8_t>  : t<int_least16_t> {};
-    template <> struct double_width<int_least16_t> : t<int_least32_t> {};
-    template <> struct double_width<int_least32_t> : t<int_least64_t> {};
+    template <> struct double_width<int8_t>         : t<int16_t> {};
+    template <> struct double_width<int16_t>        : t<int32_t> {};
+    template <> struct double_width<int32_t>        : t<int64_t> {};
 
 
     //Fast types. fast_int<uint16> -> uint32 on ARM.

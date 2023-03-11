@@ -7,7 +7,7 @@
 #include "../RenderDevice.h"
 #include "../RenderTarget.h"
 
-const QImage::Format format = QImage::Format::Format_RGB32;
+const QImage::Format format = QImage::Format::Format_Indexed8;
 
 MainWindow2::MainWindow2(QWidget *parent)
     : QMainWindow(parent)
@@ -17,7 +17,6 @@ MainWindow2::MainWindow2(QWidget *parent)
 
     fpsTimer.start();
 
-    //frameBufferImage = QImage(screenWidth, screenHeight, QImage::Format::Format_Indexed8);
     frameBufferImage = QImage(screenWidth, screenHeight, format);
 
     QVector<QRgb> color_table;
@@ -42,7 +41,7 @@ MainWindow2::MainWindow2(QWidget *parent)
 
     //render_device->SetRenderFlags(RENDER_FLAGS(P3D::ZTest | P3D::ZWrite));
     //render_device->SetRenderFlags<P3D::NoFlags>();
-    render_device->SetRenderFlags<P3D::Fog | P3D::HalfPerspectiveMapping>();
+    render_device->SetRenderFlags<P3D::NoFlags>();
 
     render_device->SetFogColor(0);
 
@@ -77,9 +76,8 @@ void MainWindow2::paintEvent(QPaintEvent *event)
 
 
     QImage texture = QImage(":/models/test_text.png");
-    //texture.convertTo(QImage::Format_Indexed8);
     texture.convertTo(format);
-    //frameBufferImage.setColorTable(texture.colorTable());
+    frameBufferImage.setColorTable(texture.colorTable());
 
     P3D::Material mat1;
     mat1.type = P3D::Material::Texture;
