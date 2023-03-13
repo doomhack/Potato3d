@@ -16,6 +16,7 @@ namespace P3D
             fp v_left, v_right;
             fp w_left, w_right;
             fp z_left, z_right;
+            fp f_left, f_right;
             pixel* fb_ypos;
             z_val* zb_ypos;
         } TriEdgeTrace;
@@ -26,6 +27,7 @@ namespace P3D
             fp v;
             fp w;
             fp z;
+            fp f;
         } TriDrawXDeltaZWUV;
 
         typedef struct TriDrawYDeltaZWUV
@@ -35,6 +37,7 @@ namespace P3D
             fp v;
             fp w;
             fp z;
+            fp f;
         } TriDrawYDeltaZWUV;
 
 
@@ -46,6 +49,7 @@ namespace P3D
             virtual void DrawTriangle(TransformedTriangle& tri, const Material& material) = 0;
             virtual void SetRenderStateViewport(const RenderTargetViewport& viewport, const RenderDeviceNearFarPlanes& planes) = 0;
             virtual void SetTextureCache(const TextureCacheBase* texture_cache) = 0;
+            virtual void SetFogParams(const RenderDeviceFogParameters& fog_params) = 0;
 
 #ifdef RENDER_STATS
             virtual void SetRenderStats(RenderStats& render_stats) = 0;
@@ -75,12 +79,14 @@ namespace P3D
                 {
                     if constexpr(!std::is_floating_point<fp>::value)
                     {
-                        max_w_tex_scale = fp((fp::max() * (int)planes.z_near) / (TEX_SIZE * TEX_MAX_TILE));
+                        max_w_tex_scale = fp((32767 * (int)planes.z_near) / (TEX_SIZE * TEX_MAX_TILE));
                     }
                     else
                     {
                         max_w_tex_scale = 1;
                     }
+
+                    max_w_delta_norm = ((fp(MIN_SPLIT_SPAN_Z_DELTA) * max_w_tex_scale) / planes.z_near);
                 }
             }
 
@@ -88,6 +94,12 @@ namespace P3D
             {
                 tex_cache = texture_cache;
             }
+
+            void SetFogParams(const RenderDeviceFogParameters& fog) override
+            {
+                this->fog_params = &fog;
+            }
+
 
 #ifdef RENDER_STATS
             void SetRenderStats(RenderStats& stats) override
@@ -142,7 +154,7 @@ namespace P3D
                         }
                     }
 
-                    //Now outBuffer and outCount contain the final result.
+                    //Now inBuffer and countA contain the final result.
                     TriangulatePolygon(inBuffer, countA);
                 }
             }
@@ -254,6 +266,11 @@ namespace P3D
 
                     clipSpacePoints[i].pos.x = fracToX(clipSpacePoints[i].pos.x);
                     clipSpacePoints[i].pos.y = fracToY(clipSpacePoints[i].pos.y);
+
+                    if constexpr (render_flags & (Fog))
+                    {
+                        clipSpacePoints[i].fog_factor = GetFogFactor(clipSpacePoints[i].pos);
+                    }
                 }
 
                 CullTriangle(clipSpacePoints);
@@ -400,6 +417,11 @@ namespace P3D
                 {
                     pos.z_left = left.pos.z + (stepY * y_delta_left.z);
                 }
+
+                if constexpr (render_flags & Fog)
+                {
+                    pos.f_left = left.fog_factor + (stepY * y_delta_left.f);
+                }
             }
 
             void PreStepYTriangleRight(const fp stepY, const Vertex4d& right, TriEdgeTrace& pos, const TriDrawYDeltaZWUV& y_delta_right)
@@ -422,6 +444,11 @@ namespace P3D
                 {
                     pos.z_right = right.pos.z + (stepY * y_delta_right.z);
                 }
+
+                if constexpr (render_flags & Fog)
+                {
+                    pos.f_right = right.fog_factor + (stepY * y_delta_right.f);
+                }
             }
 
             void DrawTriangleSpans(const int yStart, const int yEnd, TriEdgeTrace& pos, const TriDrawYDeltaZWUV& y_delta_left, const TriDrawYDeltaZWUV& y_delta_right)
@@ -435,7 +462,7 @@ namespace P3D
 
                 for (int y = yStart; y < yEnd; y++)
                 {
-                    DrawSpan(pos);
+                    SubdivideSpan(pos);
 
                     pos.x_left += y_delta_left.x;
                     pos.x_right += y_delta_right.x;
@@ -462,7 +489,48 @@ namespace P3D
                             pos.w_right += y_delta_right.w;
                         }
                     }
+
+                    if constexpr (render_flags & Fog)
+                    {
+                        pos.f_left += y_delta_left.f;
+                        pos.f_right += y_delta_right.f;
+                    }
                 }
+            }
+
+            void SubdivideSpan(const TriEdgeTrace& pos)
+            {
+                if constexpr (render_flags & (HalfPerspectiveMapping))
+                {
+                    if(current_material->type == Material::Texture)
+                    {
+                        if(((pos.x_right - pos.x_left) > MIN_SPLIT_SPAN_LEN) && (pAbs(pos.w_left - pos.w_right) > max_w_delta_norm))
+                        {
+                            TriEdgeTrace l,r;
+
+                            SplitSpan(pos, l, r);
+
+                            SubdivideSpan(l);
+                            SubdivideSpan(r);
+                        }
+                        else
+                        {
+                            TriEdgeTrace s = pos;
+
+                            s.u_left = s.u_left / s.w_left;
+                            s.u_right = s.u_right / s.w_right;
+
+                            s.v_left = s.v_left / s.w_left;
+                            s.v_right = s.v_right / s.w_right;
+
+                            DrawSpan(s);
+                        }
+
+                        return;
+                    }
+                }
+
+                DrawSpan(pos);
             }
 
             void DrawSpan(const TriEdgeTrace& pos)
@@ -488,11 +556,6 @@ namespace P3D
                 span_pos.x_right = x_end;
                 span_pos.fb_ypos = pos.fb_ypos;
 
-                if constexpr (render_flags & (ZTest | ZWrite))
-                {
-                    span_pos.zb_ypos = pos.zb_ypos;
-                }
-
                 GetTriangleLerpXDeltas(delta, pos);
 
                 if constexpr (render_flags & (ZTest | ZWrite))
@@ -501,12 +564,17 @@ namespace P3D
                     span_pos.z_left = pos.z_left + (delta.z * stepX);
                 }
 
+                if constexpr (render_flags & Fog)
+                {
+                    span_pos.f_left = pos.f_left + (delta.f * stepX);
+                }
+
                 if(current_material->type == Material::Texture)
                 {
                     span_pos.u_left = pos.u_left + (delta.u * stepX);
                     span_pos.v_left = pos.v_left + (delta.v * stepX);
 
-                    if constexpr (render_flags & (FullPerspectiveMapping | HalfPerspectiveMapping))
+                    if constexpr (render_flags & FullPerspectiveMapping)
                     {
                         span_pos.w_left = pos.w_left + (delta.w * stepX);
                     }
@@ -515,25 +583,200 @@ namespace P3D
 
                     if constexpr (render_flags & FullPerspectiveMapping)
                     {
-                        TPixelShader::DrawTriangleScanlinePerspectiveCorrect(span_pos, delta, texture);
-                    }
-                    else if constexpr (render_flags & HalfPerspectiveMapping)
-                    {
-                        TPixelShader::DrawTriangleScanlineHalfPerspectiveCorrect(span_pos, delta, texture);
+                        DrawTriangleScanlinePerspectiveCorrect(span_pos, delta, texture);
                     }
                     else
                     {
-                        TPixelShader::DrawTriangleScanlineAffine(span_pos, delta, texture);
+                        DrawTriangleScanlineAffine(span_pos, delta, texture);
                     }
                 }
                 else
                 {
-                    TPixelShader::DrawTriangleScanlineFlat(span_pos, delta, current_material->color);
+                    DrawTriangleScanlineFlat(span_pos, delta, current_material->color);
                 }
 
 #ifdef RENDER_STATS
                 render_stats->scanlines_drawn++;
 #endif
+            }
+
+            void DrawTriangleScanlineAffine(const Internal::TriEdgeTrace& pos, const Internal::TriDrawXDeltaZWUV& delta, const pixel* texture)
+            {
+                const int x_start = (int)pos.x_left;
+                const int x_end = (int)pos.x_right;
+
+                unsigned int count = (x_end - x_start);
+
+                pixel* fb = pos.fb_ypos + x_start;
+                z_val* zb = pos.zb_ypos + x_start;
+
+                fp z = pos.z_left;
+                const fp dz = delta.z;
+
+                fp f = pos.f_left;
+                const fp df = delta.f;
+                const pixel fog_color = fog_params->fog_color;
+
+                fp u = pos.u_left;
+                fp v = pos.v_left;
+
+                const fp du = delta.u;
+                const fp dv = delta.v;
+
+
+                if((size_t)fb & 1)
+                {
+                    TPixelShader::DrawScanlinePixelHigh(fb, zb, z, texture, u, v, f, fog_color); fb++, zb++, z += dz, u += du, v += dv, f += df, count--;
+                }
+
+                unsigned int l = count >> 4;
+
+                while(l--)
+                {
+                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
+                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
+                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
+                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
+                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
+                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
+                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
+                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
+                }
+
+                const unsigned int r = ((count & 15) >> 1);
+
+                switch(r)
+                {
+                    case 7: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv, f, f+df, fog_color); fb+=2; zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
+                    case 6: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv, f, f+df, fog_color); fb+=2; zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
+                    case 5: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv, f, f+df, fog_color); fb+=2; zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
+                    case 4: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv, f, f+df, fog_color); fb+=2; zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
+                    case 3: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv, f, f+df, fog_color); fb+=2; zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
+                    case 2: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv, f, f+df, fog_color); fb+=2; zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
+                    case 1: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv, f, f+df, fog_color); fb+=2; zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
+                }
+
+                if(count & 1)
+                    TPixelShader::DrawScanlinePixelLow(fb, zb, z, texture, u, v, f, fog_color);
+            }
+
+            void DrawTriangleScanlinePerspectiveCorrect(const Internal::TriEdgeTrace& pos, const Internal::TriDrawXDeltaZWUV& delta, const pixel* texture)
+            {
+                const int x_start = (int)pos.x_left;
+                const int x_end = (int)pos.x_right;
+
+                unsigned int count = (x_end - x_start);
+
+                fp u = pos.u_left, v = pos.v_left, w = pos.w_left;
+                const fp du = delta.u, dv = delta.v, dw = delta.w;
+
+                pixel* fb = pos.fb_ypos + x_start;
+                z_val* zb = pos.zb_ypos + x_start;
+
+                fp z = pos.z_left;
+                const fp dz = delta.z;
+
+                fp f = pos.f_left;
+                const fp df = delta.f;
+                const pixel fog_color = fog_params->fog_color;
+
+                if((size_t)fb & 1)
+                {
+                    TPixelShader::DrawScanlinePixelHigh(fb, zb, z, texture, u/w, v/w, f, fog_color); fb++, zb++, z += dz, u += du, v += dv, w += dw, f += df, count--;
+                }
+
+                unsigned int l = count >> 4;
+
+                while(l--)
+                {
+                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw), f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2);
+                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw), f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2);
+                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw), f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2);
+                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw), f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2);
+                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw), f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2);
+                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw), f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2);
+                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw), f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2);
+                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw), f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2);
+                }
+
+                unsigned int r = ((count & 15) >> 1);
+
+                switch(r)
+                {
+                    case 7: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw), f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2);
+                    case 6: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw), f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2);
+                    case 5: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw), f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2);
+                    case 4: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw), f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2);
+                    case 3: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw), f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2);
+                    case 2: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw), f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2);
+                    case 1: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u/w, v/w, (u+du)/(w+dw), (v+dv)/(w+dw), f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2);
+                }
+
+                if(count & 1)
+                    TPixelShader::DrawScanlinePixelLow(fb, zb, z, texture, u/w, v/w, f, fog_color);
+            }
+
+            void DrawTriangleScanlineFlat(const Internal::TriEdgeTrace& pos, const Internal::TriDrawXDeltaZWUV& delta,  const pixel color)
+            {
+                const int x_start = (int)pos.x_left;
+                const int x_end = (int)pos.x_right;
+
+                unsigned int count = (x_end - x_start);
+
+                pixel* fb = pos.fb_ypos + x_start;
+                z_val* zb = pos.zb_ypos + x_start;
+
+                fp z = pos.z_left;
+                const fp dz = delta.z;
+
+                fp f = pos.f_left;
+                const fp df = delta.f;
+                const pixel fog_color = fog_params->fog_color;
+
+                if((size_t)fb & 1)
+                {
+                    TPixelShader::DrawScanlinePixelHigh(fb, zb, z, &color, 0, 0, f, fog_color); fb++, zb++, z += dz, f += df, count--;
+                }
+
+                if constexpr (render_flags & (ZTest | ZWrite | Fog))
+                {
+                    unsigned int l = count >> 4;
+
+                    while(l--)
+                    {
+                        TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), f += (df * 2);
+                        TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), f += (df * 2);
+                        TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), f += (df * 2);
+                        TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), f += (df * 2);
+                        TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), f += (df * 2);
+                        TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), f += (df * 2);
+                        TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), f += (df * 2);
+                        TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), f += (df * 2);
+                    }
+
+                    const unsigned int r = ((count & 15) >> 1);
+
+                    switch(r)
+                    {
+                        case 7: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0, f, f+df, fog_color); fb+=2; zb+=2, z += (dz * 2), f += (df * 2);
+                        case 6: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0, f, f+df, fog_color); fb+=2; zb+=2, z += (dz * 2), f += (df * 2);
+                        case 5: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0, f, f+df, fog_color); fb+=2; zb+=2, z += (dz * 2), f += (df * 2);
+                        case 4: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0, f, f+df, fog_color); fb+=2; zb+=2, z += (dz * 2), f += (df * 2);
+                        case 3: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0, f, f+df, fog_color); fb+=2; zb+=2, z += (dz * 2), f += (df * 2);
+                        case 2: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0, f, f+df, fog_color); fb+=2; zb+=2, z += (dz * 2), f += (df * 2);
+                        case 1: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0, f, f+df, fog_color); fb+=2; zb+=2, z += (dz * 2), f += (df * 2);
+                    }
+                }
+                else
+                {
+                    if(count >> 1)
+                    {
+                        FastFill16((unsigned short*)fb, color | color << 8, count >> 1); fb+=count-1;
+                    }
+                }
+
+                if(count & 1)
+                    TPixelShader::DrawScanlinePixelLow(fb, zb, z, &color, 0, 0, f, fog_color);
             }
 
             constexpr bool IsTriangleFrontface(const Vertex4d screenSpacePoints[]) const
@@ -599,7 +842,7 @@ namespace P3D
                 }
             }
 
-            void GetTriangleLerpYDeltas(const Vertex4d& a, const Vertex4d& b, TriDrawYDeltaZWUV &y_delta)
+            constexpr void GetTriangleLerpYDeltas(const Vertex4d& a, const Vertex4d& b, TriDrawYDeltaZWUV &y_delta)
             {
                 if(current_material->type == Material::Texture)
                     GetTriangleLerpYDeltasZWUV(a, b, y_delta);
@@ -607,7 +850,7 @@ namespace P3D
                     GetTriangleLerpYDeltasZ(a, b, y_delta);
             }
 
-            void GetTriangleLerpXDeltas(TriDrawXDeltaZWUV& x_delta, const TriEdgeTrace& pos)
+            constexpr void GetTriangleLerpXDeltas(TriDrawXDeltaZWUV& x_delta, const TriEdgeTrace& pos)
             {
                 if(current_material->type == Material::Texture)
                     GetTriangleLerpXDeltasZWUV(x_delta, pos);
@@ -622,7 +865,7 @@ namespace P3D
                 x_delta.u = (pos.u_right - pos.u_left) / d_x;
                 x_delta.v = (pos.v_right - pos.v_left) / d_x;
 
-                if constexpr (render_flags & (FullPerspectiveMapping | HalfPerspectiveMapping))
+                if constexpr (render_flags & FullPerspectiveMapping)
                 {
                     x_delta.w = (pos.w_right - pos.w_left) / d_x;
                 }
@@ -630,6 +873,11 @@ namespace P3D
                 if constexpr (render_flags & (ZTest | ZWrite))
                 {
                     x_delta.z = (pos.z_right - pos.z_left) / d_x;
+                }
+
+                if constexpr (render_flags & Fog)
+                {
+                    x_delta.f = (pos.f_right - pos.f_left) / d_x;
                 }
             }
 
@@ -651,15 +899,25 @@ namespace P3D
                 {
                     y_delta.z = (a.pos.z - b.pos.z) / d_y;
                 }
+
+                if constexpr (render_flags & Fog)
+                {
+                    y_delta.f = (a.fog_factor - b.fog_factor) / d_y;
+                }
             }
 
             constexpr void GetTriangleLerpXDeltasZ(TriDrawXDeltaZWUV& x_delta, const TriEdgeTrace& pos)
             {
+                const fp d_x = (pos.x_right - pos.x_left) != 0 ? (pos.x_right - pos.x_left) : fp(1);
+
                 if constexpr (render_flags & (ZTest | ZWrite))
                 {
-                    const fp d_x = (pos.x_right - pos.x_left) != 0 ? (pos.x_right - pos.x_left) : fp(1);
-
                     x_delta.z = (pos.z_right - pos.z_left) / d_x;
+                }
+
+                if constexpr (render_flags & Fog)
+                {
+                    x_delta.f = (pos.f_right - pos.f_left) / d_x;
                 }
             }
 
@@ -673,6 +931,11 @@ namespace P3D
                 {
                     y_delta.z = (a.pos.z - b.pos.z) / d_y;
                 }
+
+                if constexpr (render_flags & Fog)
+                {
+                    y_delta.f = (a.fog_factor - b.fog_factor) / d_y;
+                }
             }
 
             constexpr void LerpVertexXYZWUV(Vertex4d& out, const Vertex4d& left, const Vertex4d& right, const fp frac)
@@ -684,6 +947,55 @@ namespace P3D
 
                 out.uv.x = pLerp(left.uv.x, right.uv.x, frac);
                 out.uv.y = pLerp(left.uv.y, right.uv.y, frac);
+            }
+
+            constexpr void SplitSpan(const TriEdgeTrace& pos, TriEdgeTrace& left, TriEdgeTrace& right)
+            {
+                left.fb_ypos = right.fb_ypos = pos.fb_ypos;
+
+                left.x_left = pos.x_left;
+                left.x_right = pos.x_left + ((pos.x_right - pos.x_left) / 2);
+
+                right.x_left = left.x_right;
+                right.x_right = pos.x_right;
+
+                left.u_left = pos.u_left;
+                left.u_right = pos.u_left + ((pos.u_right - pos.u_left) / 2);
+
+                right.u_left = left.u_right;
+                right.u_right = pos.u_right;
+
+                left.v_left = pos.v_left;
+                left.v_right = pos.v_left + ((pos.v_right - pos.v_left) / 2);
+
+                right.v_left = left.v_right;
+                right.v_right = pos.v_right;
+
+                left.w_left = pos.w_left;
+                left.w_right = pos.w_left + ((pos.w_right - pos.w_left) / 2);
+
+                right.w_left = left.w_right;
+                right.w_right = pos.w_right;
+
+                if constexpr (render_flags & (ZTest | ZWrite))
+                {
+                    left.z_left = pos.z_left;
+                    left.z_right = pos.z_left + ((pos.z_right - pos.z_left) / 2);
+
+                    right.z_left = left.z_right;
+                    right.z_right = pos.z_right;
+
+                    left.zb_ypos = right.zb_ypos = pos.zb_ypos;
+                }
+
+                if constexpr (render_flags & Fog)
+                {
+                    left.f_left = pos.f_left;
+                    left.f_right = pos.f_left + ((pos.f_right - pos.f_left) / 2);
+
+                    right.f_left = left.f_right;
+                    right.f_right = pos.f_right;
+                }
             }
 
             fp fracToY(const fp frac) const
@@ -720,12 +1032,66 @@ namespace P3D
                 return (dy*cx) - (dx*cy);
             }
 
+            fp GetFogFactor(const V4<fp>& pos)
+            {
+                switch(fog_params->mode)
+                {
+                    case P3D::FogMode::FogLinear:
+                        return GetLinearFogFactor(pos.w);
+
+                    case P3D::FogMode::FogExponential:
+                        return GetExponentialFogFactor(pos.w * pos.z);
+
+                    case P3D::FogMode::FogExponential2:
+                        return GetExponential2FogFactor(pos.w * pos.z);
+
+                    default:
+                        return 0;
+                }
+            }
+
+            fp GetLinearFogFactor(const fp w)
+            {
+                if(w >= fog_params->fog_end)
+                    return 1;
+                else if(w <= fog_params->fog_start)
+                    return 0;
+
+                const fp x = fog_params->fog_end - w;
+                const fp y = fog_params->fog_end - fog_params->fog_start;
+
+                return pClamp(fp(0), fp(1)-(x/y), fp(1));
+            }
+
+            fp GetExponentialFogFactor(const fp w)
+            {
+                const fp d = (w * fog_params->fog_density);
+
+                const fp r = exp(-d);
+
+                return pClamp(fp(0), fp(1)-r, fp(1));
+            }
+
+            fp GetExponential2FogFactor(const fp w)
+            {
+                fp d = (w * fog_params->fog_density);
+
+                d = (d * d);
+
+                const fp r = exp(-d);
+
+                return pClamp(fp(0), fp(1)-r, fp(1));
+            }
+
+
         private:
             const TextureCacheBase* tex_cache = nullptr;
             const Material* current_material = nullptr;
             const RenderTargetViewport* current_viewport = nullptr;
             const RenderDeviceNearFarPlanes* z_planes = nullptr;
+            const RenderDeviceFogParameters* fog_params = nullptr;
             fp max_w_tex_scale = 0;
+            fp max_w_delta_norm = 0;
 
 
 #ifdef RENDER_STATS

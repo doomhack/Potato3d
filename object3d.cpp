@@ -38,7 +38,17 @@ namespace P3D
         render_device->SetPerspective(hFov, aspectRatio, zNear, zFar);
 
         //render_device->SetRenderFlags<P3D::NoFlags>();
-        render_device->SetRenderFlags<P3D::ZWrite | P3D::ZTest>();
+        render_device->SetRenderFlags<P3D::HalfPerspectiveMapping | P3D::Fog>();
+
+#if 0
+        render_device->SetFogMode(FogLinear);
+        render_device->SetFogColor(0);
+        render_device->SetFogDepth(1000, 2000);
+#else
+        render_device->SetFogMode(FogExponential2);
+        render_device->SetFogColor(0);
+        render_device->SetFogDensity(0.0005);
+#endif
 
         //render_device->SetRenderFlags<P3D::ZWrite | P3D::ZTest, PixelShaderGBA8<P3D::ZWrite | P3D::ZTest>>();
 
@@ -122,7 +132,7 @@ namespace P3D
         static std::vector<const BspModelTriangle*> tris;
 
         //model->SortBackToFront(cameraPos, viewFrustrumBB, tris, true);
-        model->SortFrontToBack(cameraPos, viewFrustrumBB, tris, true);
+        model->SortBackToFront(cameraPos, viewFrustrumBB, tris, true);
 
         for(unsigned int i = 0; i < tris.size(); i++)
         {            

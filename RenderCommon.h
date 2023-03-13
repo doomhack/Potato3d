@@ -16,8 +16,16 @@ namespace P3D
         HalfPerspectiveMapping = 32ul,
         BackFaceCulling = 64ul,
         FrontFaceCulling = 128ul,
-        WireFrame = 256ul
+        WireFrame = 256ul,
+        Fog = 512ul
     };
+
+    typedef enum FogMode
+    {
+        FogLinear = 0u, //Linear fog
+        FogExponential = 1u, //Exponential Fog
+        FogExponential2 = 2u, //Exponential Squared Fog
+    } FogMode;
 
     class Material
     {
@@ -92,6 +100,20 @@ namespace P3D
             fp z_far = 0;
         };
 
+        class RenderDeviceFogParameters
+        {
+        public:
+
+            RenderDeviceFogParameters() {}
+
+            fp fog_start;
+            fp fog_end;
+            fp fog_density;
+
+            FogMode mode = FogLinear;
+            pixel fog_color = 0;
+        };
+
         typedef enum ClipPlane
         {
             NoClip = 0u,
@@ -115,6 +137,7 @@ namespace P3D
         public:
             V4<fp> pos;
             V2<fp> uv;
+            fp fog_factor;
 
             void toPerspectiveCorrect(const fp scale = fp(1))
             {

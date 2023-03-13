@@ -26,6 +26,7 @@ namespace P3D
 
 
         constexpr operator int() const                      {return i();}
+        constexpr operator unsigned int() const             {return i();}
         constexpr operator float() const                    {return f();}
 
         constexpr int i() const                             {return n >> fracbits;}
@@ -163,7 +164,7 @@ namespace P3D
 
         constexpr FP& operator/=(const FP& r)
         {
-            n = FixedDiv(n, r.n);
+            n = FixedDiv(n, r.n, fracbits);
             return *this;
         }
 

@@ -17,7 +17,7 @@ constexpr inline int FixedDiv(int a, int b, int fracbits)
 {
 #ifndef __arm__
 
-    const long long int tmp = ((const long long int)a << fracbits) / b;
+    long long int tmp = ((long long int)a << fracbits) / b;
 
     return (int)tmp;
 #else

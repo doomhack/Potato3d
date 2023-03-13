@@ -32,6 +32,7 @@ namespace P3D
 
             triangle_render->SetRenderStateViewport(viewport, z_planes);
             triangle_render->SetTextureCache(texture_cache);
+            triangle_render->SetFogParams(fog_params);
 
     #ifdef RENDER_STATS
             triangle_render->SetRenderStats(render_stats);
@@ -63,6 +64,11 @@ namespace P3D
         void ClearViewportColor(const pixel color);
         void ClearViewportDepth(const z_val depth);
 
+        void SetFogColor(const pixel color);
+        void SetFogMode(FogMode mode);
+        void SetFogDepth(fp fog_start, fp fog_end);
+        void SetFogDensity(fp density);
+
         //Begin/End Frame.
         void BeginFrame();
         void EndFrame();
@@ -92,6 +98,7 @@ namespace P3D
         const RenderTarget* render_target = nullptr;
         P3D::Internal::RenderTargetViewport viewport;
         P3D::Internal::RenderDeviceNearFarPlanes z_planes;
+        P3D::Internal::RenderDeviceFogParameters fog_params;
 
         //Matrixes.
         M4<fp> projection_matrix;

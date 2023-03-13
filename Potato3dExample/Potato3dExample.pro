@@ -2,7 +2,7 @@ QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-CONFIG += c++17
+CONFIG += c++20
 CONFIG += force_debug_info
 
 
@@ -49,6 +49,7 @@ HEADERS += \
     ../RenderTarget.h \
     ../RenderTriangle.h \
     ../TextureCache.h \
+    ../Pixel.h \
     ../bspmodel.h \
     ../object3d.h \
     ../potato3d.h \
@@ -70,7 +71,7 @@ RESOURCES += \
 #QMAKE_CXXFLAGS += /GH /Gh
 #QMAKE_CFLAGS += /GH /Gh
 
-QMAKE_CXXFLAGS += /GL
-QMAKE_CFLAGS += /GL
+#QMAKE_CXXFLAGS += /GL
+#QMAKE_CFLAGS += /GL
 
-QMAKE_LFLAGS += /LTCG
+#QMAKE_LFLAGS += /LTCG

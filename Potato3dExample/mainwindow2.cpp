@@ -6,6 +6,9 @@
 
 #include "../RenderDevice.h"
 #include "../RenderTarget.h"
+#include "../PixelShaderGBA8.h"
+
+const QImage::Format format = QImage::Format::Format_Indexed8;
 
 MainWindow2::MainWindow2(QWidget *parent)
     : QMainWindow(parent)
@@ -15,7 +18,7 @@ MainWindow2::MainWindow2(QWidget *parent)
 
     fpsTimer.start();
 
-    frameBufferImage = QImage(screenWidth, screenHeight, QImage::Format::Format_Indexed8);
+    frameBufferImage = QImage(screenWidth, screenHeight, format);
 
     QVector<QRgb> color_table;
 
@@ -26,7 +29,7 @@ MainWindow2::MainWindow2(QWidget *parent)
 
     frameBufferImage.setColorTable(color_table);
 
-    render_target = new P3D::RenderTarget(screenWidth, screenHeight, frameBufferImage.scanLine(0));
+    render_target = new P3D::RenderTarget(screenWidth, screenHeight, (P3D::pixel*)frameBufferImage.scanLine(0));
     render_target->AttachZBuffer();
 
     render_device = new P3D::RenderDevice();
@@ -39,7 +42,17 @@ MainWindow2::MainWindow2(QWidget *parent)
 
     //render_device->SetRenderFlags(RENDER_FLAGS(P3D::ZTest | P3D::ZWrite));
     //render_device->SetRenderFlags<P3D::NoFlags>();
-    render_device->SetRenderFlags<P3D::ZTest | P3D::ZWrite>();
+    render_device->SetRenderFlags<P3D::NoFlags, P3D::PixelShaderGBA8<P3D::NoFlags>>();
+
+    render_device->SetFogColor(0);
+
+#if 1
+    render_device->SetFogMode(P3D::FogLinear);
+    render_device->SetFogDepth(200, 400);
+#else
+    render_device->SetFogMode(P3D::FogExponential2);
+    render_device->SetFogDensity(0.0025);
+#endif
 }
 
 MainWindow2::~MainWindow2()
@@ -64,13 +77,12 @@ void MainWindow2::paintEvent(QPaintEvent *event)
 
 
     QImage texture = QImage(":/models/test_text.png");
-    texture.convertTo(QImage::Format_Indexed8);
+    texture.convertTo(format);
     frameBufferImage.setColorTable(texture.colorTable());
 
     P3D::Material mat1;
     mat1.type = P3D::Material::Texture;
-    mat1.pixels = texture.constBits();
-
+    mat1.pixels = (P3D::pixel*)texture.constBits();
 
     render_device->SetMaterial(mat1);
 

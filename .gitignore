@@ -47,3 +47,25 @@ build-Potato3dExample-Desktop_Qt_6_4_0_MSVC2019_64bit-Debug/
 build-Potato3dExample-Desktop_Qt_6_4_0_MSVC2019_64bit-Release/
 
 Potato3dGBAExample/.qtc_clangd/
+
+build-P3DBenchmark-Desktop_Qt_6_4_2_MinGW_64_bit-Debug/
+
+build-P3DBenchmark-Desktop_Qt_6_4_2_MSVC2019_64bit-Debug/
+
+build-Potato3dGBAExample-Desktop_Qt_6_4_2_MinGW_64_bit-Debug/
+
+build-Potato3dGBAExample-Desktop_Qt_6_4_2_MinGW_64_bit-GBA/
+
+build-Potato3dGBAExample-Desktop_Qt_6_4_2_MSVC2019_64bit-Debug/
+
+P3DBenchmark/.qtc_clangd/
+
+P3DBenchmark/build/
+
+build-P3DBenchmark-Desktop_Qt_6_4_2_MinGW_64_bit-GBA/
+
+build-P3DBenchmark-Desktop_Qt_6_4_2_MinGW_64_bit-Release/
+
+build-P3DBenchmark-Desktop_Qt_6_4_2_MSVC2019_64bit-Release/
+
+build-Potato3dExample-Desktop_Qt_6_4_2_MinGW_64_bit-Debug/
