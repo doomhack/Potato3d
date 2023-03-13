@@ -626,7 +626,7 @@ namespace P3D
 
                 if((size_t)fb & 1)
                 {
-                    TPixelShader::DrawScanlinePixel(fb, zb, z, texture, u, v, f, fog_color); fb++, zb++, z += dz, u += du, v += dv, f += df, count--;
+                    TPixelShader::DrawScanlinePixelHigh(fb, zb, z, texture, u, v, f, fog_color); fb++, zb++, z += dz, u += du, v += dv, f += df, count--;
                 }
 
                 unsigned int l = count >> 4;
@@ -657,7 +657,7 @@ namespace P3D
                 }
 
                 if(count & 1)
-                    TPixelShader::DrawScanlinePixel(fb, zb, z, texture, u, v, f, fog_color);
+                    TPixelShader::DrawScanlinePixelLow(fb, zb, z, texture, u, v, f, fog_color);
             }
 
             void DrawTriangleScanlinePerspectiveCorrect(const Internal::TriEdgeTrace& pos, const Internal::TriDrawXDeltaZWUV& delta, const pixel* texture)
@@ -682,7 +682,7 @@ namespace P3D
 
                 if((size_t)fb & 1)
                 {
-                    TPixelShader::DrawScanlinePixel(fb, zb, z, texture, u/w, v/w, f, fog_color); fb++, zb++, z += dz, u += du, v += dv, w += dw, f += df, count--;
+                    TPixelShader::DrawScanlinePixelHigh(fb, zb, z, texture, u/w, v/w, f, fog_color); fb++, zb++, z += dz, u += du, v += dv, w += dw, f += df, count--;
                 }
 
                 unsigned int l = count >> 4;
@@ -713,7 +713,7 @@ namespace P3D
                 }
 
                 if(count & 1)
-                    TPixelShader::DrawScanlinePixel(fb, zb, z, texture, u/w, v/w, f, fog_color);
+                    TPixelShader::DrawScanlinePixelLow(fb, zb, z, texture, u/w, v/w, f, fog_color);
             }
 
             void DrawTriangleScanlineFlat(const Internal::TriEdgeTrace& pos, const Internal::TriDrawXDeltaZWUV& delta,  const pixel color)
@@ -735,7 +735,7 @@ namespace P3D
 
                 if((size_t)fb & 1)
                 {
-                    TPixelShader::DrawScanlinePixel(fb, zb, z, &color, 0, 0, f, fog_color); fb++, zb++, z += dz, f += df, count--;
+                    TPixelShader::DrawScanlinePixelHigh(fb, zb, z, &color, 0, 0, f, fog_color); fb++, zb++, z += dz, f += df, count--;
                 }
 
                 if constexpr (render_flags & (ZTest | ZWrite | Fog))
@@ -776,7 +776,7 @@ namespace P3D
                 }
 
                 if(count & 1)
-                    TPixelShader::DrawScanlinePixel(fb, zb, z, &color, 0, 0, f, fog_color);
+                    TPixelShader::DrawScanlinePixelLow(fb, zb, z, &color, 0, 0, f, fog_color);
             }
 
             constexpr bool IsTriangleFrontface(const Vertex4d screenSpacePoints[]) const

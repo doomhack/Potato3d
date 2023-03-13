@@ -71,6 +71,17 @@ namespace P3D
             *fb = BlendPixel(texels[(ty + tx)], fog_color, f);
         }
 
+        static void DrawScanlinePixelHigh(pixel *fb, z_val *zb, const z_val zv, const pixel* texels, const fp u, const fp v, const fp f, const pixel fog_color)
+        {
+            DrawScanlinePixel(fb, zb, zv, texels, u, v, f, fog_color);
+        }
+
+        static void DrawScanlinePixelLow(pixel *fb, z_val *zb, const z_val zv, const pixel* texels, const fp u, const fp v, const fp f, const pixel fog_color)
+        {
+            DrawScanlinePixel(fb, zb, zv, texels, u, v, f, fog_color);
+        }
+
+
         static pixel BlendPixel(const pixel src_color, const pixel dst_color, const fp f)
         {
             if constexpr (render_flags & Fog)

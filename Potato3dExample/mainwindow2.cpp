@@ -6,6 +6,7 @@
 
 #include "../RenderDevice.h"
 #include "../RenderTarget.h"
+#include "../PixelShaderGBA8.h"
 
 const QImage::Format format = QImage::Format::Format_Indexed8;
 
@@ -41,7 +42,7 @@ MainWindow2::MainWindow2(QWidget *parent)
 
     //render_device->SetRenderFlags(RENDER_FLAGS(P3D::ZTest | P3D::ZWrite));
     //render_device->SetRenderFlags<P3D::NoFlags>();
-    render_device->SetRenderFlags<P3D::NoFlags>();
+    render_device->SetRenderFlags<P3D::NoFlags, P3D::PixelShaderGBA8<P3D::NoFlags>>();
 
     render_device->SetFogColor(0);
 

@@ -14,6 +14,7 @@
 
 #include "../../RenderDevice.h"
 #include "../../RenderTarget.h"
+#include "../../PixelShaderGBA8.h"
 
 #define DCNT_PAGE 0x0010
 
@@ -54,6 +55,18 @@ void I_FinishUpdate_e32()
 #endif
 }
 
+inline uint32_t rng32()
+{
+    static uint32_t seed = 12345;
+
+    return seed = (seed*1664525U + 1013904223U);
+}
+
+inline int8_t r8()
+{
+    return (int8_t)rng32();
+}
+
 int main()
 {
 #ifdef __arm__
@@ -77,7 +90,7 @@ int main()
     render_target->AttachZBuffer();
 
     P3D::RenderDevice* render_device = new P3D::RenderDevice();
-    render_device->SetRenderFlags<P3D::NoFlags>();
+    render_device->SetRenderFlags<P3D::NoFlags, P3D::PixelShaderGBA8<P3D::NoFlags>>();
 
     render_device->SetRenderTarget(render_target);
 
@@ -131,19 +144,22 @@ int main()
     REG_TM3CNT_H = TM_CASCADE | TM_ENABLE;
 #endif
 
-    const int runs = 1000000;
+#ifdef __arm__
+    const int runs = 1000;
+#else
+    const int runs = 100000;
+#endif
 
     I_FinishUpdate_e32();
 
     for(int i = 0; i < runs; i++)
     {        
-        P3D::V3<P3D::fp> v[4];
-        v[0] = P3D::V3<P3D::fp>(-100,100,0);
-        v[1] = P3D::V3<P3D::fp>(100,100,0);
-        v[2] = P3D::V3<P3D::fp>(100,-100,0);
-        v[3] = P3D::V3<P3D::fp>(-100,-100,0);
+        P3D::V3<P3D::fp> v[3];
+        v[0] = P3D::V3<P3D::fp>(-100 + r8(),100+ r8(),0+ r8());
+        v[1] = P3D::V3<P3D::fp>(100+ r8(),100+ r8(),0+ r8());
+        v[2] = P3D::V3<P3D::fp>(100+ r8(),-100+ r8(),0+ r8());
 
-        render_device->TransformVertexes(v, 4);
+        render_device->TransformVertexes(v, 3);
 
         render_device->DrawTriangle(vi, uv);
     }
