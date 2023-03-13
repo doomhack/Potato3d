@@ -102,7 +102,7 @@ int main()
     }
 
     P3D::Material m;
-#if 1
+#if 0
     m.type = P3D::Material::Texture;
     m.pixels = tex;
 #else
@@ -147,7 +147,7 @@ int main()
 #ifdef __arm__
     const int runs = 1000;
 #else
-    const int runs = 100000;
+    const int runs = 1000000;
 #endif
 
     I_FinishUpdate_e32();

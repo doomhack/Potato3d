@@ -453,6 +453,9 @@ namespace P3D
 
             void DrawTriangleSpans(const int yStart, const int yEnd, TriEdgeTrace& pos, const TriDrawYDeltaZWUV& y_delta_left, const TriDrawYDeltaZWUV& y_delta_right)
             {
+                TriDrawXDeltaZWUV x_delta;
+                GetTriangleLerpXDeltas(x_delta, pos);
+
                 pos.fb_ypos = &current_viewport->start[yStart * current_viewport->y_pitch];
 
                 if constexpr (render_flags & (ZTest | ZWrite))
@@ -462,7 +465,7 @@ namespace P3D
 
                 for (int y = yStart; y < yEnd; y++)
                 {
-                    SubdivideSpan(pos);
+                    SubdivideSpan(pos, x_delta);
 
                     pos.x_left += y_delta_left.x;
                     pos.x_right += y_delta_right.x;
@@ -498,7 +501,7 @@ namespace P3D
                 }
             }
 
-            void SubdivideSpan(const TriEdgeTrace& pos)
+            void SubdivideSpan(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta)
             {
                 if constexpr (render_flags & (HalfPerspectiveMapping))
                 {
@@ -510,8 +513,8 @@ namespace P3D
 
                             SplitSpan(pos, l, r);
 
-                            SubdivideSpan(l);
-                            SubdivideSpan(r);
+                            SubdivideSpan(l, delta);
+                            SubdivideSpan(r, delta);
                         }
                         else
                         {
@@ -523,20 +526,19 @@ namespace P3D
                             s.v_left = s.v_left / s.w_left;
                             s.v_right = s.v_right / s.w_right;
 
-                            DrawSpan(s);
+                            DrawSpan(s, delta);
                         }
 
                         return;
                     }
                 }
 
-                DrawSpan(pos);
+                DrawSpan(pos, delta);
             }
 
-            void DrawSpan(const TriEdgeTrace& pos)
+            void DrawSpan(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta)
             {
                 TriEdgeTrace span_pos;
-                TriDrawXDeltaZWUV delta;
 
                 const int fb_width = current_viewport->width;
 
@@ -555,8 +557,6 @@ namespace P3D
                 span_pos.x_left = x_start;
                 span_pos.x_right = x_end;
                 span_pos.fb_ypos = pos.fb_ypos;
-
-                GetTriangleLerpXDeltas(delta, pos);
 
                 if constexpr (render_flags & (ZTest | ZWrite))
                 {

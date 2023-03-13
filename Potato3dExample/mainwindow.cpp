@@ -9,7 +9,7 @@
 
 #include "../rtypes.h"
 
-const QImage::Format format = QImage::Format::Format_RGB32;
+const QImage::Format format = QImage::Format_Indexed8;
 
 
 MainWindow::MainWindow(QWidget *parent)
