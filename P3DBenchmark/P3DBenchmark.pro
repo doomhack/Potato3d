@@ -13,7 +13,8 @@ INCLUDEPATH += "C:\devkitPro\libgba\include"
 SOURCES += \
     source/RenderDevice.iwram.cpp \
     source/RenderTarget.cpp \
-    source/main.iwram.cpp
+    source/main.iwram.cpp \
+    source/recip.cpp
 
 
 
@@ -25,3 +26,6 @@ HEADERS += \
 #QMAKE_CFLAGS += /GL
 
 #QMAKE_LFLAGS += /LTCG
+
+DISTFILES += \
+    Makefile

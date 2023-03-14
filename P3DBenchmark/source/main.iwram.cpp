@@ -102,7 +102,7 @@ int main()
     }
 
     P3D::Material m;
-#if 0
+#if 1
     m.type = P3D::Material::Texture;
     m.pixels = tex;
 #else

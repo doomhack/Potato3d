@@ -56,7 +56,7 @@ namespace P3D
 #endif
         };
 
-        template<const unsigned int render_flags, class TPixelShader> class RenderTriangle : public RenderTriangleBase
+        template<const unsigned int render_flags, class TPixelShader> class RenderTriangle final : public RenderTriangleBase
         {
         public:
             void DrawTriangle(TransformedTriangle& tri, const Material& material) override
@@ -183,7 +183,7 @@ namespace P3D
 
                     if(frac >= 0)
                     {
-                        LerpVertexXYZWUV(clipSpacePointsOut[vxCountOut], clipSpacePointsIn[i], clipSpacePointsIn[i2], frac);
+                        LerpVertex(clipSpacePointsOut[vxCountOut], clipSpacePointsIn[i], clipSpacePointsIn[i2], frac);
 
                         vxCountOut++;
                     }
@@ -346,12 +346,38 @@ namespace P3D
             {
                 TriEdgeTrace pos;
                 TriDrawYDeltaZWUV y_delta_left, y_delta_right;
+                TriDrawXDeltaZWUV x_delta;
 
                 const Vertex4d& top     = points[0];
                 const Vertex4d& middle  = points[1];
                 const Vertex4d& bottom  = points[2];
 
                 const bool left_is_long = PointOnLineSide2d(top.pos, bottom.pos, middle.pos) > 0;
+
+                if(top.pos.y == middle.pos.y)
+                {
+                    GetTriangleLerpXDeltas(top, middle, x_delta);
+                }
+                else if(middle.pos.y == bottom.pos.y)
+                {
+                    GetTriangleLerpXDeltas(middle, bottom, x_delta);
+                }
+                else
+                {
+                    fp frac = ((middle.pos.y - top.pos.y) / (bottom.pos.y - top.pos.y));
+                    Vertex4d m;
+                    LerpVertex(m, top, bottom, frac);
+
+                    if(left_is_long)
+                    {
+                        GetTriangleLerpXDeltas(m, middle, x_delta);
+                    }
+                    else
+                    {
+                        GetTriangleLerpXDeltas(middle, m, x_delta);
+                    }
+                }
+
 
                 TriDrawYDeltaZWUV& short_y_delta = left_is_long ? y_delta_right : y_delta_left;
                 TriDrawYDeltaZWUV& long_y_delta = left_is_long ? y_delta_left : y_delta_right;
@@ -371,7 +397,7 @@ namespace P3D
                 PreStepYTriangleLeft(stepY, top, pos, y_delta_left);
                 PreStepYTriangleRight(stepY, top, pos, y_delta_right);
 
-                DrawTriangleSpans(yStart, yEnd, pos, y_delta_left, y_delta_right);
+                DrawTriangleSpans(yStart, yEnd, pos, y_delta_left, y_delta_right, x_delta);
 
                 //Draw bottom half.
                 pixelCentreTopY = PixelCentre(pMax(middle.pos.y, fp(0)));
@@ -394,7 +420,7 @@ namespace P3D
                     PreStepYTriangleLeft(stepY, middle, pos, y_delta_left);
                 }
 
-                DrawTriangleSpans(yStart, yEnd, pos, y_delta_left, y_delta_right);
+                DrawTriangleSpans(yStart, yEnd, pos, y_delta_left, y_delta_right, x_delta);
             }
 
             void PreStepYTriangleLeft(const fp stepY, const Vertex4d& left, TriEdgeTrace& pos, const TriDrawYDeltaZWUV& y_delta_left)
@@ -451,11 +477,8 @@ namespace P3D
                 }
             }
 
-            void DrawTriangleSpans(const int yStart, const int yEnd, TriEdgeTrace& pos, const TriDrawYDeltaZWUV& y_delta_left, const TriDrawYDeltaZWUV& y_delta_right)
+            void DrawTriangleSpans(const int yStart, const int yEnd, TriEdgeTrace& pos, const TriDrawYDeltaZWUV& y_delta_left, const TriDrawYDeltaZWUV& y_delta_right, const TriDrawXDeltaZWUV x_delta)
             {
-                TriDrawXDeltaZWUV x_delta;
-                GetTriangleLerpXDeltas(x_delta, pos);
-
                 pos.fb_ypos = &current_viewport->start[yStart * current_viewport->y_pitch];
 
                 if constexpr (render_flags & (ZTest | ZWrite))
@@ -842,57 +865,47 @@ namespace P3D
                 }
             }
 
+            constexpr void GetTriangleLerpXDeltas(const Vertex4d& left, const Vertex4d& right, TriDrawXDeltaZWUV& x_delta)
+            {
+                const fp d_x = (right.pos.x - left.pos.x) != 0 ? (right.pos.x - left.pos.x) : fp(1);
+
+                if(current_material->type == Material::Texture)
+                {
+                    x_delta.u = (right.uv.x - left.uv.x) / d_x;
+                    x_delta.v = (right.uv.y - left.uv.y) / d_x;
+
+                    if constexpr (render_flags & FullPerspectiveMapping)
+                    {
+                        x_delta.w = (right.pos.w - left.pos.w) / d_x;
+                    }
+                }
+
+                if constexpr (render_flags & (ZTest | ZWrite))
+                {
+                    x_delta.z = (right.pos.z - left.pos.z) / d_x;
+                }
+
+                if constexpr (render_flags & Fog)
+                {
+                    x_delta.f = (right.fog_factor - left.fog_factor) / d_x;
+                }
+            }
+
             constexpr void GetTriangleLerpYDeltas(const Vertex4d& a, const Vertex4d& b, TriDrawYDeltaZWUV &y_delta)
             {
-                if(current_material->type == Material::Texture)
-                    GetTriangleLerpYDeltasZWUV(a, b, y_delta);
-                else
-                    GetTriangleLerpYDeltasZ(a, b, y_delta);
-            }
-
-            constexpr void GetTriangleLerpXDeltas(TriDrawXDeltaZWUV& x_delta, const TriEdgeTrace& pos)
-            {
-                if(current_material->type == Material::Texture)
-                    GetTriangleLerpXDeltasZWUV(x_delta, pos);
-                else
-                    GetTriangleLerpXDeltasZ(x_delta, pos);
-            }
-
-            constexpr void GetTriangleLerpXDeltasZWUV(TriDrawXDeltaZWUV& x_delta, const TriEdgeTrace& pos)
-            {
-                const fp d_x = (pos.x_right - pos.x_left) != 0 ? (pos.x_right - pos.x_left) : fp(1);
-
-                x_delta.u = (pos.u_right - pos.u_left) / d_x;
-                x_delta.v = (pos.v_right - pos.v_left) / d_x;
-
-                if constexpr (render_flags & FullPerspectiveMapping)
-                {
-                    x_delta.w = (pos.w_right - pos.w_left) / d_x;
-                }
-
-                if constexpr (render_flags & (ZTest | ZWrite))
-                {
-                    x_delta.z = (pos.z_right - pos.z_left) / d_x;
-                }
-
-                if constexpr (render_flags & Fog)
-                {
-                    x_delta.f = (pos.f_right - pos.f_left) / d_x;
-                }
-            }
-
-            constexpr void GetTriangleLerpYDeltasZWUV(const Vertex4d& a, const Vertex4d& b, TriDrawYDeltaZWUV &y_delta)
-            {
                 const fp d_y = (a.pos.y - b.pos.y) != 0 ? (a.pos.y - b.pos.y) : fp(1);
 
                 y_delta.x = (a.pos.x - b.pos.x) / d_y;
 
-                y_delta.u = (a.uv.x - b.uv.x) / d_y;
-                y_delta.v = (a.uv.y - b.uv.y) / d_y;
-
-                if constexpr (render_flags & (FullPerspectiveMapping | HalfPerspectiveMapping))
+                if(current_material->type == Material::Texture)
                 {
-                    y_delta.w = (a.pos.w - b.pos.w) / d_y;
+                    y_delta.u = (a.uv.x - b.uv.x) / d_y;
+                    y_delta.v = (a.uv.y - b.uv.y) / d_y;
+
+                    if constexpr (render_flags & (FullPerspectiveMapping | HalfPerspectiveMapping))
+                    {
+                        y_delta.w = (a.pos.w - b.pos.w) / d_y;
+                    }
                 }
 
                 if constexpr (render_flags & (ZTest | ZWrite))
@@ -906,47 +919,27 @@ namespace P3D
                 }
             }
 
-            constexpr void GetTriangleLerpXDeltasZ(TriDrawXDeltaZWUV& x_delta, const TriEdgeTrace& pos)
-            {
-                const fp d_x = (pos.x_right - pos.x_left) != 0 ? (pos.x_right - pos.x_left) : fp(1);
-
-                if constexpr (render_flags & (ZTest | ZWrite))
-                {
-                    x_delta.z = (pos.z_right - pos.z_left) / d_x;
-                }
-
-                if constexpr (render_flags & Fog)
-                {
-                    x_delta.f = (pos.f_right - pos.f_left) / d_x;
-                }
-            }
-
-            constexpr void GetTriangleLerpYDeltasZ(const Vertex4d& a, const Vertex4d& b, TriDrawYDeltaZWUV &y_delta)
-            {
-                const fp d_y = (a.pos.y - b.pos.y) != 0 ? (a.pos.y - b.pos.y) : fp(1);
-
-                y_delta.x = (a.pos.x - b.pos.x) / d_y;
-
-                if constexpr (render_flags & (ZTest | ZWrite))
-                {
-                    y_delta.z = (a.pos.z - b.pos.z) / d_y;
-                }
-
-                if constexpr (render_flags & Fog)
-                {
-                    y_delta.f = (a.fog_factor - b.fog_factor) / d_y;
-                }
-            }
-
-            constexpr void LerpVertexXYZWUV(Vertex4d& out, const Vertex4d& left, const Vertex4d& right, const fp frac)
+            constexpr void LerpVertex(Vertex4d& out, const Vertex4d& left, const Vertex4d& right, const fp frac)
             {
                 out.pos.x = pLerp(left.pos.x, right.pos.x, frac);
                 out.pos.y = pLerp(left.pos.y, right.pos.y, frac);
-                out.pos.z = pLerp(left.pos.z, right.pos.z, frac);
                 out.pos.w = pLerp(left.pos.w, right.pos.w, frac);
 
-                out.uv.x = pLerp(left.uv.x, right.uv.x, frac);
-                out.uv.y = pLerp(left.uv.y, right.uv.y, frac);
+                if constexpr (render_flags & (ZTest | ZWrite))
+                {
+                    out.pos.z = pLerp(left.pos.z, right.pos.z, frac);
+                }
+
+                if(current_material->type == Material::Texture)
+                {
+                    out.uv.x = pLerp(left.uv.x, right.uv.x, frac);
+                    out.uv.y = pLerp(left.uv.y, right.uv.y, frac);
+                }
+
+                if constexpr (render_flags & Fog)
+                {
+                    out.fog_factor = pLerp(left.fog_factor, right.fog_factor, frac);
+                }
             }
 
             constexpr void SplitSpan(const TriEdgeTrace& pos, TriEdgeTrace& left, TriEdgeTrace& right)
