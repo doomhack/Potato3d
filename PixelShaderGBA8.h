@@ -41,6 +41,7 @@ namespace P3D
 
             *(unsigned short*)fb = ((texels[ty + tx]) | (texels[(ty2 + tx2)] << 8));
 
+
             if constexpr (render_flags & ZWrite)
             {
                 zb[0] = zv1, zb[1] = zv2;
