@@ -39,8 +39,7 @@ namespace P3D
             const unsigned int tx2 = (int)u2 & TEX_MASK;
             const unsigned int ty2 = ((int)v2 & TEX_MASK) << TEX_SHIFT;
 
-            *(unsigned short*)fb = ((texels[ty + tx]) | (texels[(ty2 + tx2)] << 8));
-
+            *(unsigned short*)fb = ((texels[ty | tx]) | (texels[(ty2 | tx2)] << 8));
 
             if constexpr (render_flags & ZWrite)
             {
@@ -67,7 +66,7 @@ namespace P3D
             unsigned short* p16 = (unsigned short*)(fb-1);
             const pixel* p8 = (pixel*)p16;
 
-            const unsigned short texel = (texels[(ty + tx)] << 8) | *p8;
+            const unsigned short texel = (texels[(ty | tx)] << 8) | *p8;
 
             *p16 = texel;
         }
@@ -91,7 +90,7 @@ namespace P3D
             unsigned short* p16 = (unsigned short*)(fb);
             const pixel* p8 = (pixel*)p16;
 
-            const unsigned short texel = texels[(ty + tx)] | (p8[1] << 8);
+            const unsigned short texel = texels[(ty | tx)] | (p8[1] << 8);
 
             *p16 = texel;
         }

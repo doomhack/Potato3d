@@ -44,6 +44,8 @@ MainWindow2::MainWindow2(QWidget *parent)
     //render_device->SetRenderFlags<P3D::NoFlags>();
     render_device->SetRenderFlags<P3D::NoFlags, P3D::PixelShaderGBA8<P3D::NoFlags>>();
 
+    //render_device->SetRenderFlags<P3D::HalfPerspectiveMapping, P3D::PixelShaderGBA8<P3D::HalfPerspectiveMapping>>();
+
     render_device->SetFogColor(0);
 
 #if 1

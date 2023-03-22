@@ -11,7 +11,6 @@ namespace P3D
     #endif
 
     //Type of a texture and framebuffer pixel.
-    //typedef unsigned char pixel;
     typedef uint8_t pixel;
     typedef Pixel<3,2,3, pixel> pixelType;
 
@@ -31,9 +30,6 @@ namespace P3D
     #endif
 
     typedef fp z_val;
-
-    inline constexpr int MIN_SPLIT_SPAN_LEN = 32;
-    inline constexpr fp MIN_SPLIT_SPAN_Z_DELTA = 0.01;
 
 }
 

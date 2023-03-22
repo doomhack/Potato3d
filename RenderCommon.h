@@ -13,7 +13,7 @@ namespace P3D
         AlphaTest = 4ul,
         CBuffer = 8ul,
         FullPerspectiveMapping = 16ul,
-        HalfPerspectiveMapping = 32ul,
+        //HalfPerspectiveMapping = 32ul,
         BackFaceCulling = 64ul,
         FrontFaceCulling = 128ul,
         WireFrame = 256ul,

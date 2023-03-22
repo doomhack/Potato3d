@@ -12,11 +12,11 @@ namespace P3D
         typedef struct TriEdgeTrace
         {
             fp x_left, x_right;
-            fp u_left, u_right;
-            fp v_left, v_right;
-            fp w_left, w_right;
-            fp z_left, z_right;
-            fp f_left, f_right;
+            fp u_left;
+            fp v_left;
+            fp w_left;
+            fp z_left;
+            fp f_left;
             pixel* fb_ypos;
             z_val* zb_ypos;
         } TriEdgeTrace;
@@ -39,7 +39,6 @@ namespace P3D
             fp z;
             fp f;
         } TriDrawYDeltaZWUV;
-
 
         class RenderTriangleBase
         {
@@ -75,7 +74,7 @@ namespace P3D
                 current_viewport = &viewport;
                 z_planes = &planes;
 
-                if constexpr (render_flags & (FullPerspectiveMapping | HalfPerspectiveMapping))
+                if constexpr (render_flags & FullPerspectiveMapping)
                 {
                     if constexpr(!std::is_floating_point<fp>::value)
                     {
@@ -85,8 +84,6 @@ namespace P3D
                     {
                         max_w_tex_scale = 1;
                     }
-
-                    max_w_delta_norm = ((fp(MIN_SPLIT_SPAN_Z_DELTA) * max_w_tex_scale) / planes.z_near);
                 }
             }
 
@@ -325,7 +322,7 @@ namespace P3D
 
                 SortPointsByY(screenSpacePoints, points);
 
-                if constexpr (render_flags & (FullPerspectiveMapping | HalfPerspectiveMapping))
+                if constexpr (render_flags & FullPerspectiveMapping)
                 {
                     if(current_material->type == Material::Texture)
                     {
@@ -431,7 +428,7 @@ namespace P3D
 
                     pos.v_left = left.uv.y + (stepY * y_delta_left.v);
 
-                    if constexpr (render_flags & (FullPerspectiveMapping | HalfPerspectiveMapping))
+                    if constexpr (render_flags & FullPerspectiveMapping)
                     {
                         pos.w_left = left.pos.w + (stepY * y_delta_left.w);
                     }
@@ -452,32 +449,10 @@ namespace P3D
 
             void PreStepYTriangleRight(const fp stepY, const Vertex4d& right, TriEdgeTrace& pos, const TriDrawYDeltaZWUV& y_delta_right)
             {
-                if(current_material->type == Material::Texture)
-                {
-                    pos.u_right = right.uv.x + (stepY * y_delta_right.u);
-
-                    pos.v_right = right.uv.y + (stepY * y_delta_right.v);
-
-                    if constexpr (render_flags & (FullPerspectiveMapping | HalfPerspectiveMapping))
-                    {
-                        pos.w_right = right.pos.w + (stepY * y_delta_right.w);
-                    }
-                }
-
                 pos.x_right = right.pos.x + (stepY * y_delta_right.x);
-
-                if constexpr (render_flags & (ZTest | ZWrite))
-                {
-                    pos.z_right = right.pos.z + (stepY * y_delta_right.z);
-                }
-
-                if constexpr (render_flags & Fog)
-                {
-                    pos.f_right = right.fog_factor + (stepY * y_delta_right.f);
-                }
             }
 
-            void DrawTriangleSpans(const int yStart, const int yEnd, TriEdgeTrace& pos, const TriDrawYDeltaZWUV& y_delta_left, const TriDrawYDeltaZWUV& y_delta_right, const TriDrawXDeltaZWUV x_delta)
+            void DrawTriangleSpans(const int yStart, const int yEnd, TriEdgeTrace& pos, const TriDrawYDeltaZWUV& y_delta_left, const TriDrawYDeltaZWUV& y_delta_right, TriDrawXDeltaZWUV x_delta)
             {
                 pos.fb_ypos = &current_viewport->start[yStart * current_viewport->y_pitch];
 
@@ -488,7 +463,7 @@ namespace P3D
 
                 for (int y = yStart; y < yEnd; y++)
                 {
-                    SubdivideSpan(pos, x_delta);
+                    DrawSpan(pos, x_delta);
 
                     pos.x_left += y_delta_left.x;
                     pos.x_right += y_delta_right.x;
@@ -498,65 +473,25 @@ namespace P3D
                     {
                         pos.zb_ypos += current_viewport->z_y_pitch;
                         pos.z_left += y_delta_left.z;
-                        pos.z_right += y_delta_right.z;
                     }
 
                     if(current_material->type == Material::Texture)
                     {
                         pos.u_left += y_delta_left.u;
-                        pos.u_right += y_delta_right.u;
 
                         pos.v_left += y_delta_left.v;
-                        pos.v_right += y_delta_right.v;
 
-                        if constexpr (render_flags & (FullPerspectiveMapping | HalfPerspectiveMapping))
+                        if constexpr (render_flags & FullPerspectiveMapping)
                         {
                             pos.w_left += y_delta_left.w;
-                            pos.w_right += y_delta_right.w;
                         }
                     }
 
                     if constexpr (render_flags & Fog)
                     {
                         pos.f_left += y_delta_left.f;
-                        pos.f_right += y_delta_right.f;
                     }
                 }
-            }
-
-            void SubdivideSpan(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta)
-            {
-                if constexpr (render_flags & (HalfPerspectiveMapping))
-                {
-                    if(current_material->type == Material::Texture)
-                    {
-                        if(((pos.x_right - pos.x_left) > MIN_SPLIT_SPAN_LEN) && (pAbs(pos.w_left - pos.w_right) > max_w_delta_norm))
-                        {
-                            TriEdgeTrace l,r;
-
-                            SplitSpan(pos, l, r);
-
-                            SubdivideSpan(l, delta);
-                            SubdivideSpan(r, delta);
-                        }
-                        else
-                        {
-                            TriEdgeTrace s = pos;
-
-                            s.u_left = s.u_left / s.w_left;
-                            s.u_right = s.u_right / s.w_right;
-
-                            s.v_left = s.v_left / s.w_left;
-                            s.v_right = s.v_right / s.w_right;
-
-                            DrawSpan(s, delta);
-                        }
-
-                        return;
-                    }
-                }
-
-                DrawSpan(pos, delta);
             }
 
             void DrawSpan(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta)
@@ -568,10 +503,10 @@ namespace P3D
                 const fp pixelCentreLeftX = PixelCentre(pMax(pos.x_left, fp(0)));
                 const fp stepX = pixelCentreLeftX - pos.x_left;
 
-                int x_start = pixelCentreLeftX;
-                int x_end = PixelCentre(pMin(pos.x_right, fp(fb_width)));
+                const int x_start = pixelCentreLeftX;
+                const int x_end = PixelCentre(pMin(pos.x_right, fp(fb_width)));
 
-                if(x_start > (x_end-1))
+                if(x_start >= x_end)
                     return;
 
                 if(x_start >= fb_width)
@@ -628,10 +563,10 @@ namespace P3D
                 const int x_start = (int)pos.x_left;
                 const int x_end = (int)pos.x_right;
 
-                unsigned int count = (x_end - x_start);
-
                 pixel* fb = pos.fb_ypos + x_start;
                 z_val* zb = pos.zb_ypos + x_start;
+
+                unsigned int count = (x_end - x_start);
 
                 fp z = pos.z_left;
                 const fp dz = delta.z;
@@ -640,40 +575,41 @@ namespace P3D
                 const fp df = delta.f;
                 const pixel fog_color = fog_params->fog_color;
 
-                fp u = pos.u_left;
-                fp v = pos.v_left;
+                constexpr int uv_shift = 16-TEX_SHIFT;
 
-                const fp du = delta.u;
-                const fp dv = delta.v;
-
+                fp u = pos.u_left << uv_shift;
+                fp v = pos.v_left << uv_shift;
+                const fp du = delta.u << uv_shift;
+                const fp dv = delta.v << uv_shift;
 
                 if((size_t)fb & 1)
                 {
-                    TPixelShader::DrawScanlinePixelHigh(fb, zb, z, texture, u, v, f, fog_color); fb++, zb++, z += dz, u += du, v += dv, f += df, count--;
+                    TPixelShader::DrawScanlinePixelHigh(fb, zb, z, texture, u >> uv_shift, v >> uv_shift, f, fog_color); fb++, zb++, z += dz, u += du, v+= dv, f += df, count--;
                 }
 
                 unsigned int l = count >> 3;
 
                 while(l--)
                 {
-                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv, f, f+df, fog_color); fb+=2, zb+=2, z += (dz << 1), u += (du << 1), v += (dv << 1), f += (df << 1);
-                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv, f, f+df, fog_color); fb+=2, zb+=2, z += (dz << 1), u += (du << 1), v += (dv << 1), f += (df << 1);
-                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv, f, f+df, fog_color); fb+=2, zb+=2, z += (dz << 1), u += (du << 1), v += (dv << 1), f += (df << 1);
-                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv, f, f+df, fog_color); fb+=2, zb+=2, z += (dz << 1), u += (du << 1), v += (dv << 1), f += (df << 1);
+                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u >> uv_shift, v >> uv_shift, (u+du) >> uv_shift, (v+dv) >> uv_shift, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
+                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u >> uv_shift, v >> uv_shift, (u+du) >> uv_shift, (v+dv) >> uv_shift, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
+                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u >> uv_shift, v >> uv_shift, (u+du) >> uv_shift, (v+dv) >> uv_shift, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
+                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u >> uv_shift, v >> uv_shift, (u+du) >> uv_shift, (v+dv) >> uv_shift, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
                 }
 
                 const unsigned int r = ((count & 7) >> 1);
 
                 switch(r)
                 {
-                    case 3: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv, f, f+df, fog_color); fb+=2; zb+=2, z += (dz << 1), u += (du << 1), v += (dv << 1), f += (df << 1);
-                    case 2: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv, f, f+df, fog_color); fb+=2; zb+=2, z += (dz << 1), u += (du << 1), v += (dv << 1), f += (df << 1);
-                    case 1: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u, v, u+du, v+dv, f, f+df, fog_color); fb+=2; zb+=2, z += (dz << 1), u += (du << 1), v += (dv << 1), f += (df << 1);
+                    case 3: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u >> uv_shift, v >> uv_shift, (u+du) >> uv_shift, (v+dv) >> uv_shift, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
+                    case 2: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u >> uv_shift, v >> uv_shift, (u+du) >> uv_shift, (v+dv) >> uv_shift, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
+                    case 1: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u >> uv_shift, v >> uv_shift, (u+du) >> uv_shift, (v+dv) >> uv_shift, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
                 }
 
                 if(count & 1)
-                    TPixelShader::DrawScanlinePixelLow(fb, zb, z, texture, u, v, f, fog_color);
+                    TPixelShader::DrawScanlinePixelLow(fb, zb, z, texture, u >> uv_shift, v >> uv_shift, f, fog_color);
             }
+
 
             void DrawTriangleScanlinePerspectiveCorrect(const Internal::TriEdgeTrace& pos, const Internal::TriDrawXDeltaZWUV& delta, const pixel* texture)
             {
@@ -878,7 +814,7 @@ namespace P3D
                     y_delta.u = (a.uv.x - b.uv.x) / d_y;
                     y_delta.v = (a.uv.y - b.uv.y) / d_y;
 
-                    if constexpr (render_flags & (FullPerspectiveMapping | HalfPerspectiveMapping))
+                    if constexpr (render_flags & FullPerspectiveMapping)
                     {
                         y_delta.w = (a.pos.w - b.pos.w) / d_y;
                     }
@@ -915,55 +851,6 @@ namespace P3D
                 if constexpr (render_flags & Fog)
                 {
                     out.fog_factor = pLerp(left.fog_factor, right.fog_factor, frac);
-                }
-            }
-
-            constexpr void SplitSpan(const TriEdgeTrace& pos, TriEdgeTrace& left, TriEdgeTrace& right)
-            {
-                left.fb_ypos = right.fb_ypos = pos.fb_ypos;
-
-                left.x_left = pos.x_left;
-                left.x_right = pos.x_left + ((pos.x_right - pos.x_left) / 2);
-
-                right.x_left = left.x_right;
-                right.x_right = pos.x_right;
-
-                left.u_left = pos.u_left;
-                left.u_right = pos.u_left + ((pos.u_right - pos.u_left) / 2);
-
-                right.u_left = left.u_right;
-                right.u_right = pos.u_right;
-
-                left.v_left = pos.v_left;
-                left.v_right = pos.v_left + ((pos.v_right - pos.v_left) / 2);
-
-                right.v_left = left.v_right;
-                right.v_right = pos.v_right;
-
-                left.w_left = pos.w_left;
-                left.w_right = pos.w_left + ((pos.w_right - pos.w_left) / 2);
-
-                right.w_left = left.w_right;
-                right.w_right = pos.w_right;
-
-                if constexpr (render_flags & (ZTest | ZWrite))
-                {
-                    left.z_left = pos.z_left;
-                    left.z_right = pos.z_left + ((pos.z_right - pos.z_left) / 2);
-
-                    right.z_left = left.z_right;
-                    right.z_right = pos.z_right;
-
-                    left.zb_ypos = right.zb_ypos = pos.zb_ypos;
-                }
-
-                if constexpr (render_flags & Fog)
-                {
-                    left.f_left = pos.f_left;
-                    left.f_right = pos.f_left + ((pos.f_right - pos.f_left) / 2);
-
-                    right.f_left = left.f_right;
-                    right.f_right = pos.f_right;
                 }
             }
 

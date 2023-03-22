@@ -90,7 +90,7 @@ int main()
     render_target->AttachZBuffer();
 
     P3D::RenderDevice* render_device = new P3D::RenderDevice();
-    render_device->SetRenderFlags<P3D::NoFlags, P3D::PixelShaderGBA8<P3D::NoFlags>>();
+    render_device->SetRenderFlags<P3D::RenderFlags::NoFlags, P3D::PixelShaderGBA8<P3D::RenderFlags::NoFlags>>();
 
     render_device->SetRenderTarget(render_target);
 
