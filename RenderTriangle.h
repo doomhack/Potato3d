@@ -287,7 +287,7 @@ namespace P3D
                 }
             }
 
-            void CullTriangle(const Vertex4d screenSpacePoints[3])
+            void CullTriangle(Vertex4d screenSpacePoints[3])
             {
                 if constexpr (render_flags & (BackFaceCulling | FrontFaceCulling))
                 {
@@ -322,38 +322,38 @@ namespace P3D
                 SortTrianglePoints(screenSpacePoints);
             }
 
-            void SortTrianglePoints(const Vertex4d screenSpacePoints[3])
+            void SortTrianglePoints(Vertex4d screenSpacePoints[3])
             {
-                Vertex4d points[3];
+                unsigned int order[3];
 
-                SortPointsByY(screenSpacePoints, points);
+                GetPointYOrder(screenSpacePoints, order);
 
                 if constexpr (render_flags & FullPerspectiveMapping)
                 {
                     if(current_texture)
                     {
-                        points[0].toPerspectiveCorrect(max_w_tex_scale);
-                        points[1].toPerspectiveCorrect(max_w_tex_scale);
-                        points[2].toPerspectiveCorrect(max_w_tex_scale);
+                        screenSpacePoints[0].toPerspectiveCorrect(max_w_tex_scale);
+                        screenSpacePoints[1].toPerspectiveCorrect(max_w_tex_scale);
+                        screenSpacePoints[2].toPerspectiveCorrect(max_w_tex_scale);
                     }
                 }
 
-                DrawTriangleEdge(points);
+                DrawTriangleEdge(screenSpacePoints, order);
 
 #ifdef RENDER_STATS
                 render_stats->triangles_drawn++;
 #endif
             }
 
-            void DrawTriangleEdge(const Vertex4d points[3])
+            void DrawTriangleEdge(const Vertex4d points[3], const unsigned int order[3])
             {
                 TriEdgeTrace pos;
                 TriDrawYDeltaZWUV y_delta_left, y_delta_right;
                 TriDrawXDeltaZWUV x_delta;
 
-                const Vertex4d& top     = points[0];
-                const Vertex4d& middle  = points[1];
-                const Vertex4d& bottom  = points[2];
+                const Vertex4d& top     = points[order[0]];
+                const Vertex4d& middle  = points[order[1]];
+                const Vertex4d& bottom  = points[order[2]];
 
                 const bool left_is_long = PointOnLineSide2d(top.pos, bottom.pos, middle.pos) > 0;
 
@@ -731,29 +731,29 @@ namespace P3D
                 return ((x1 * y2) < (y1 * x2));
             }
 
-            void SortPointsByY(const Vertex4d pointsIn[3], Vertex4d pointsOut[3])
+            void GetPointYOrder(const Vertex4d pointsIn[3], unsigned int order[3])
             {
                 if(pointsIn[0].pos.y < pointsIn[1].pos.y)
                 {
                     if(pointsIn[1].pos.y < pointsIn[2].pos.y)
                     {
-                        pointsOut[0] = pointsIn[0];
-                        pointsOut[1] = pointsIn[1];
-                        pointsOut[2] = pointsIn[2];
+                        order[0] = 0;
+                        order[1] = 1;
+                        order[2] = 2;
                     }
                     else
                     {
-                        pointsOut[2] = pointsIn[1];
+                        order[2] = 1;
 
                         if(pointsIn[0].pos.y < pointsIn[2].pos.y)
                         {
-                            pointsOut[0] = pointsIn[0];
-                            pointsOut[1] = pointsIn[2];
+                            order[0] = 0;
+                            order[1] = 2;
                         }
                         else
                         {
-                            pointsOut[0] = pointsIn[2];
-                            pointsOut[1] = pointsIn[0];
+                            order[0] = 2;
+                            order[1] = 0;
                         }
                     }
                 }
@@ -761,24 +761,24 @@ namespace P3D
                 {
                     if(pointsIn[1].pos.y < pointsIn[2].pos.y)
                     {
-                        pointsOut[0] = pointsIn[1];
+                        order[0] = 1;
 
                         if(pointsIn[0].pos.y < pointsIn[2].pos.y)
                         {
-                            pointsOut[1] = pointsIn[0];
-                            pointsOut[2] = pointsIn[2];
+                            order[1] = 0;
+                            order[2] = 2;
                         }
                         else
                         {
-                            pointsOut[1] = pointsIn[2];
-                            pointsOut[2] = pointsIn[0];
+                            order[1] = 2;
+                            order[2] = 0;
                         }
                     }
                     else
                     {
-                        pointsOut[0] = pointsIn[2];
-                        pointsOut[1] = pointsIn[1];
-                        pointsOut[2] = pointsIn[0];
+                        order[0] = 2;
+                        order[1] = 1;
+                        order[2] = 0;
                     }
                 }
             }
