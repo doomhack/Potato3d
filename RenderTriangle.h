@@ -62,6 +62,11 @@ namespace P3D
             {
                 current_material = &material;
 
+                if(current_material->type == Material::Texture)
+                    current_texture = tex_cache->GetTexture(current_material->pixels);
+                else
+                    current_texture = nullptr;
+
                 ClipTriangle(tri);
 
 #ifdef RENDER_STATS
@@ -324,7 +329,7 @@ namespace P3D
 
                 if constexpr (render_flags & FullPerspectiveMapping)
                 {
-                    if(current_material->type == Material::Texture)
+                    if(current_texture)
                     {
                         points[0].toPerspectiveCorrect(max_w_tex_scale);
                         points[1].toPerspectiveCorrect(max_w_tex_scale);
@@ -422,7 +427,7 @@ namespace P3D
 
             void PreStepYTriangleLeft(const fp stepY, const Vertex4d& left, TriEdgeTrace& pos, const TriDrawYDeltaZWUV& y_delta_left)
             {
-                if(current_material->type == Material::Texture)
+                if(current_texture)
                 {
                     pos.u_left = left.uv.x + (stepY * y_delta_left.u);
 
@@ -475,7 +480,7 @@ namespace P3D
                         pos.z_left += y_delta_left.z;
                     }
 
-                    if(current_material->type == Material::Texture)
+                    if(current_texture)
                     {
                         pos.u_left += y_delta_left.u;
 
@@ -527,7 +532,7 @@ namespace P3D
                     span_pos.f_left = pos.f_left + (delta.f * stepX);
                 }
 
-                if(current_material->type == Material::Texture)
+                if(current_texture)
                 {
                     span_pos.u_left = pos.u_left + (delta.u * stepX);
                     span_pos.v_left = pos.v_left + (delta.v * stepX);
@@ -537,7 +542,7 @@ namespace P3D
                         span_pos.w_left = pos.w_left + (delta.w * stepX);
                     }
 
-                    const pixel* texture = tex_cache->GetTexture(current_material->pixels);
+                    const pixel* texture = current_texture;
 
                     if constexpr (render_flags & FullPerspectiveMapping)
                     {
@@ -781,7 +786,7 @@ namespace P3D
             {
                 const fp d_x = (right.pos.x - left.pos.x) != 0 ? (right.pos.x - left.pos.x) : fp(1);
 
-                if(current_material->type == Material::Texture)
+                if(current_texture)
                 {
                     x_delta.u = (right.uv.x - left.uv.x) / d_x;
                     x_delta.v = (right.uv.y - left.uv.y) / d_x;
@@ -809,7 +814,7 @@ namespace P3D
 
                 y_delta.x = (a.pos.x - b.pos.x) / d_y;
 
-                if(current_material->type == Material::Texture)
+                if(current_texture)
                 {
                     y_delta.u = (a.uv.x - b.uv.x) / d_y;
                     y_delta.v = (a.uv.y - b.uv.y) / d_y;
@@ -842,7 +847,7 @@ namespace P3D
                     out.pos.z = pLerp(left.pos.z, right.pos.z, frac);
                 }
 
-                if(current_material->type == Material::Texture)
+                if(current_texture)
                 {
                     out.uv.x = pLerp(left.uv.x, right.uv.x, frac);
                     out.uv.y = pLerp(left.uv.y, right.uv.y, frac);
@@ -947,8 +952,8 @@ namespace P3D
             const RenderDeviceNearFarPlanes* z_planes = nullptr;
             const RenderDeviceFogParameters* fog_params = nullptr;
             fp max_w_tex_scale = 0;
-            fp max_w_delta_norm = 0;
 
+            const pixel* current_texture = nullptr;
 
 #ifdef RENDER_STATS
             RenderStats* render_stats = nullptr;

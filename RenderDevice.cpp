@@ -4,7 +4,7 @@ namespace P3D
 {
     RenderDevice::RenderDevice()
     {
-        texture_cache = new TextureCacheBase();
+        texture_cache = new TextureCacheDefault();
 
         current_material = new Material();
 
