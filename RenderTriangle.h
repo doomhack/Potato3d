@@ -60,12 +60,13 @@ namespace P3D
         public:
             void DrawTriangle(TransformedTriangle& tri, const Material& material) override
             {
-                current_material = &material;
-
-                if(current_material->type == Material::Texture)
-                    current_texture = tex_cache->GetTexture(current_material->pixels);
+                if(material.type == Material::Texture)
+                    current_texture = tex_cache->GetTexture(material.pixels);
                 else
+                {
                     current_texture = nullptr;
+                    current_color = material.color;
+                }
 
                 ClipTriangle(tri);
 
@@ -555,7 +556,7 @@ namespace P3D
                 }
                 else
                 {
-                    DrawTriangleScanlineFlat(span_pos, delta, current_material->color);
+                    DrawTriangleScanlineFlat(span_pos, delta, current_color);
                 }
 
 #ifdef RENDER_STATS
@@ -947,13 +948,13 @@ namespace P3D
 
         private:
             const TextureCacheBase* tex_cache = nullptr;
-            const Material* current_material = nullptr;
             const RenderTargetViewport* current_viewport = nullptr;
             const RenderDeviceNearFarPlanes* z_planes = nullptr;
             const RenderDeviceFogParameters* fog_params = nullptr;
             fp max_w_tex_scale = 0;
 
             const pixel* current_texture = nullptr;
+            pixel current_color = 0;
 
 #ifdef RENDER_STATS
             RenderStats* render_stats = nullptr;
