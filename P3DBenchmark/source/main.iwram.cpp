@@ -90,8 +90,8 @@ int main()
     render_target->AttachZBuffer();
 
     P3D::RenderDevice* render_device = new P3D::RenderDevice();
-    render_device->SetRenderFlags<P3D::RenderFlags::NoFlags, P3D::PixelShaderGBA8<P3D::RenderFlags::NoFlags>>();
-
+    //render_device->SetRenderFlags<P3D::RenderFlags::NoFlags, P3D::PixelShaderGBA8<P3D::RenderFlags::NoFlags>>();
+    render_device->SetRenderFlags<P3D::RenderFlags::SubdividePerspectiveMapping, P3D::PixelShaderGBA8<P3D::RenderFlags::SubdividePerspectiveMapping>>();
     render_device->SetRenderTarget(render_target);
 
 
@@ -102,7 +102,7 @@ int main()
     }
 
     P3D::Material m;
-#if 0
+#if 1
     m.type = P3D::Material::Texture;
     m.pixels = tex;
 #else

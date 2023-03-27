@@ -80,7 +80,7 @@ namespace P3D
                 current_viewport = &viewport;
                 z_planes = &planes;
 
-                if constexpr (render_flags & FullPerspectiveMapping)
+                if constexpr (render_flags & (FullPerspectiveMapping | SubdividePerspectiveMapping))
                 {
                     if constexpr(!std::is_floating_point<fp>::value)
                     {
@@ -328,7 +328,7 @@ namespace P3D
 
                 GetPointYOrder(screenSpacePoints, order);
 
-                if constexpr (render_flags & FullPerspectiveMapping)
+                if constexpr (render_flags & (FullPerspectiveMapping | SubdividePerspectiveMapping))
                 {
                     if(current_texture)
                     {
@@ -434,7 +434,7 @@ namespace P3D
 
                     pos.v_left = left.uv.y + (stepY * y_delta_left.v);
 
-                    if constexpr (render_flags & FullPerspectiveMapping)
+                    if constexpr (render_flags & (FullPerspectiveMapping | SubdividePerspectiveMapping))
                     {
                         pos.w_left = left.pos.w + (stepY * y_delta_left.w);
                     }
@@ -487,7 +487,7 @@ namespace P3D
 
                         pos.v_left += y_delta_left.v;
 
-                        if constexpr (render_flags & FullPerspectiveMapping)
+                        if constexpr (render_flags & (FullPerspectiveMapping | SubdividePerspectiveMapping))
                         {
                             pos.w_left += y_delta_left.w;
                         }
@@ -538,7 +538,7 @@ namespace P3D
                     span_pos.u_left = pos.u_left + (delta.u * stepX);
                     span_pos.v_left = pos.v_left + (delta.v * stepX);
 
-                    if constexpr (render_flags & FullPerspectiveMapping)
+                    if constexpr (render_flags & (FullPerspectiveMapping | SubdividePerspectiveMapping))
                     {
                         span_pos.w_left = pos.w_left + (delta.w * stepX);
                     }
@@ -551,7 +551,14 @@ namespace P3D
                     }
                     else
                     {
-                        DrawTriangleScanlineAffine(span_pos, delta, texture);
+                        if constexpr (render_flags & SubdividePerspectiveMapping)
+                        {
+                            SubdivideSpan(span_pos, delta, texture);
+                        }
+                        else
+                        {
+                            DrawTriangleScanlineAffine(span_pos, delta, texture);
+                        }
                     }
                 }
                 else
@@ -564,7 +571,58 @@ namespace P3D
 #endif
             }
 
-            void DrawTriangleScanlineAffine(const Internal::TriEdgeTrace& pos, const Internal::TriDrawXDeltaZWUV& delta, const pixel* texture)
+            void SubdivideSpan(TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const pixel* texture)
+            {
+                TriDrawXDeltaZWUV delta2;
+
+                fp x_right = pos.x_right;
+
+                fp u = pos.u_left, v = pos.v_left, w = pos.w_left;
+
+                fp invw_0 = pReciprocal(w);
+                fp invw_15 = pReciprocal(w += pASL(delta.w, SUBDIVIDE_SPAN_SHIFT));
+
+                fp u0 = u * invw_0;
+                fp u15 = (u += pASL(delta.u, SUBDIVIDE_SPAN_SHIFT)) * invw_15;
+
+                fp v0 = v * invw_0;
+                fp v15 = (v += pASL(delta.v, SUBDIVIDE_SPAN_SHIFT)) * invw_15;
+
+                fp du = pASR(u15-u0, SUBDIVIDE_SPAN_SHIFT);
+                fp dv = pASR(v15-v0, SUBDIVIDE_SPAN_SHIFT);
+
+                while(true)
+                {
+                    pos.x_right = pMin(x_right, pos.x_left + SUBDIVIDE_SPAN_LEN);
+
+                    delta2.u = du;
+                    delta2.v = dv;
+
+                    pos.u_left = u0;
+                    pos.v_left = v0;
+
+                    DrawTriangleScanlineAffine(pos, delta2, texture);
+
+                    pos.x_left += SUBDIVIDE_SPAN_LEN;
+
+                    if(pos.x_left >= x_right)
+                        return;
+
+                    invw_0 = pReciprocal(w);
+                    invw_15 = pReciprocal(w += pASL(delta.w, SUBDIVIDE_SPAN_SHIFT));
+
+                    u0 = u * invw_0;
+                    u15 = (u += pASL(delta.u, SUBDIVIDE_SPAN_SHIFT)) * invw_15;
+
+                    v0 = v * invw_0;
+                    v15 = (v += pASL(delta.v, SUBDIVIDE_SPAN_SHIFT)) * invw_15;
+
+                    du = pASR(u15-u0, SUBDIVIDE_SPAN_SHIFT);
+                    dv = pASR(v15-v0, SUBDIVIDE_SPAN_SHIFT);
+                }
+            }
+
+            void DrawTriangleScanlineAffine(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const pixel* texture)
             {
                 const int x_start = (int)pos.x_left;
                 const int x_end = (int)pos.x_right;
@@ -583,37 +641,37 @@ namespace P3D
 
                 constexpr int uv_shift = 16-TEX_SHIFT;
 
-                fp u = pos.u_left << uv_shift;
-                fp v = pos.v_left << uv_shift;
-                const fp du = delta.u << uv_shift;
-                const fp dv = delta.v << uv_shift;
+                fp u = pASL(pos.u_left, uv_shift);
+                fp v = pASL(pos.v_left, uv_shift);
+                const fp du = pASL(delta.u, uv_shift);
+                const fp dv = pASL(delta.v, uv_shift);
 
                 if((size_t)fb & 1)
                 {
-                    TPixelShader::DrawScanlinePixelHigh(fb, zb, z, texture, u >> uv_shift, v >> uv_shift, f, fog_color); fb++, zb++, z += dz, u += du, v+= dv, f += df, count--;
+                    TPixelShader::DrawScanlinePixelHigh(fb, zb, z, texture, pASR(u, uv_shift), pASR(v, uv_shift), f, fog_color); fb++, zb++, z += dz, u += du, v+= dv, f += df, count--;
                 }
 
                 unsigned int l = count >> 3;
 
                 while(l--)
                 {
-                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u >> uv_shift, v >> uv_shift, (u+du) >> uv_shift, (v+dv) >> uv_shift, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
-                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u >> uv_shift, v >> uv_shift, (u+du) >> uv_shift, (v+dv) >> uv_shift, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
-                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u >> uv_shift, v >> uv_shift, (u+du) >> uv_shift, (v+dv) >> uv_shift, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
-                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u >> uv_shift, v >> uv_shift, (u+du) >> uv_shift, (v+dv) >> uv_shift, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
+                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
+                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
+                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
+                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
                 }
 
                 const unsigned int r = ((count & 7) >> 1);
 
                 switch(r)
                 {
-                    case 3: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u >> uv_shift, v >> uv_shift, (u+du) >> uv_shift, (v+dv) >> uv_shift, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
-                    case 2: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u >> uv_shift, v >> uv_shift, (u+du) >> uv_shift, (v+dv) >> uv_shift, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
-                    case 1: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u >> uv_shift, v >> uv_shift, (u+du) >> uv_shift, (v+dv) >> uv_shift, f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
+                    case 3: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
+                    case 2: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
+                    case 1: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
                 }
 
                 if(count & 1)
-                    TPixelShader::DrawScanlinePixelLow(fb, zb, z, texture, u >> uv_shift, v >> uv_shift, f, fog_color);
+                    TPixelShader::DrawScanlinePixelLow(fb, zb, z, texture, pASR(u, uv_shift), pASR(v, uv_shift), f, fog_color);
             }
 
 
@@ -792,7 +850,7 @@ namespace P3D
                     x_delta.u = (right.uv.x - left.uv.x) / d_x;
                     x_delta.v = (right.uv.y - left.uv.y) / d_x;
 
-                    if constexpr (render_flags & FullPerspectiveMapping)
+                    if constexpr (render_flags & (FullPerspectiveMapping | SubdividePerspectiveMapping))
                     {
                         x_delta.w = (right.pos.w - left.pos.w) / d_x;
                     }
@@ -820,7 +878,7 @@ namespace P3D
                     y_delta.u = (a.uv.x - b.uv.x) / d_y;
                     y_delta.v = (a.uv.y - b.uv.y) / d_y;
 
-                    if constexpr (render_flags & FullPerspectiveMapping)
+                    if constexpr (render_flags & (FullPerspectiveMapping | SubdividePerspectiveMapping))
                     {
                         y_delta.w = (a.pos.w - b.pos.w) / d_y;
                     }

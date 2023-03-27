@@ -31,6 +31,8 @@ namespace P3D
 
     typedef fp z_val;
 
+    inline constexpr int SUBDIVIDE_SPAN_LEN = 16;
+
 }
 
 #endif // CONFIGUSER_H
