@@ -7,7 +7,7 @@
 namespace P3D
 {
 
-    typedef enum MatrixFlags
+    typedef enum MatrixFlags : unsigned int
     {
         Updated = 1u
     } MatrixFlags;

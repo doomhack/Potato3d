@@ -5,7 +5,7 @@
 
 namespace P3D
 {
-    enum RenderFlags
+    enum RenderFlags : unsigned int
     {
         NoFlags = 0ul,
         ZTest = 1ul,
@@ -16,11 +16,10 @@ namespace P3D
         SubdividePerspectiveMapping = 32ul,
         BackFaceCulling = 64ul,
         FrontFaceCulling = 128ul,
-        WireFrame = 256ul,
-        Fog = 512ul
+        Fog = 512ul,
     };
 
-    typedef enum FogMode
+    typedef enum FogMode : unsigned int
     {
         FogLinear = 0u, //Linear fog
         FogExponential = 1u, //Exponential Fog
@@ -33,10 +32,10 @@ namespace P3D
 
         Material() {color = 0;};
 
-        enum MaterialType
+        enum MaterialType : unsigned int
         {
-            Color = 0,
-            Texture = 1
+            Color = 0u,
+            Texture = 1u
         };
 
         MaterialType type = Color;
@@ -114,7 +113,7 @@ namespace P3D
             pixel fog_color = 0;
         };
 
-        typedef enum ClipPlane
+        typedef enum ClipPlane : unsigned int
         {
             NoClip = 0u,
             W_Near = 1u,
@@ -123,9 +122,10 @@ namespace P3D
             Y_W_Top = 8u,
             Y_W_Bottom = 16u,
             W_Far = 32u,
+
         } ClipPlane;
 
-        typedef enum ClipOperation
+        typedef enum ClipOperation : unsigned int
         {
             Accept = 0u, //No clip required.
             Clip = 1u, //Clip required.
