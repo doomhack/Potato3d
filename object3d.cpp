@@ -37,8 +37,8 @@ namespace P3D
 
         render_device->SetPerspective(hFov, aspectRatio, zNear, zFar);
 
-        //render_device->SetRenderFlags<P3D::NoFlags>();
-        render_device->SetRenderFlags<P3D::SubdividePerspectiveMapping>();
+        render_device->SetRenderFlags<P3D::NoFlags>();
+        //render_device->SetRenderFlags<P3D::SubdividePerspectiveMapping>();
 /*
 #if 0
         render_device->SetFogMode(FogLinear);
@@ -132,7 +132,7 @@ namespace P3D
         static std::vector<const BspModelTriangle*> tris;
 
         //model->SortBackToFront(cameraPos, viewFrustrumBB, tris, true);
-        model->SortBackToFront(cameraPos, viewFrustrumBB, tris, true);
+        model->SortBackToFront(cameraPos, viewFrustrumBB, tris, false);
 
         for(unsigned int i = 0; i < tris.size(); i++)
         {            

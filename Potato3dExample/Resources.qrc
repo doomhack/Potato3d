@@ -360,5 +360,7 @@
         <file>models/gymclass/tree_wall_2.png</file>
         <file>models/gymclass/yellow_buildings_windows.png</file>
         <file>models/gymclass/yellow_window_half.png</file>
+        <file>models/Streets/Streets2.mtl</file>
+        <file>models/Streets/Streets2.obj</file>
     </qresource>
 </RCC>

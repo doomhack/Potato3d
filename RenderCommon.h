@@ -11,7 +11,6 @@ namespace P3D
         ZTest = 1ul,
         ZWrite = 2ul,
         AlphaTest = 4ul,
-        CBuffer = 8ul,
         FullPerspectiveMapping = 16ul,
         SubdividePerspectiveMapping = 32ul,
         BackFaceCulling = 64ul,
