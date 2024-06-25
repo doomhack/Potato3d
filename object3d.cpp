@@ -15,7 +15,7 @@ namespace P3D
     {
         //fp halfVFov = (aspect * hFov) / 2;
 
-        fp halfVFov = 41;
+        fp halfVFov = 45;
 
         fp halfFrustrumWidth = zFar * std::tan((float)pD2R(halfVFov));
         fp halfFrustrumHeight = zFar * std::tan((float)pD2R(pASR(hFov, 1)));
@@ -38,18 +38,18 @@ namespace P3D
         render_device->SetPerspective(hFov, aspectRatio, zNear, zFar);
 
         render_device->SetRenderFlags<P3D::NoFlags>();
-        //render_device->SetRenderFlags<P3D::SubdividePerspectiveMapping>();
-/*
+        //render_device->SetRenderFlags<P3D::RenderFlags::SubdividePerspectiveMapping>();
+
 #if 0
         render_device->SetFogMode(FogLinear);
-        render_device->SetFogColor(0);
-        render_device->SetFogDepth(1000, 2000);
+        render_device->SetFogColor(0x799ED7);
+        render_device->SetFogDepth(100, 5000);
 #else
         render_device->SetFogMode(FogExponential2);
-        render_device->SetFogColor(0);
-        render_device->SetFogDensity(0.0005);
+        render_device->SetFogColor(0x799ED7);
+        render_device->SetFogDensity(0.0002);
 #endif
-*/
+
         //render_device->SetRenderFlags<P3D::ZWrite | P3D::ZTest, PixelShaderGBA8<P3D::ZWrite | P3D::ZTest>>();
 
         return true;
@@ -83,15 +83,15 @@ namespace P3D
         viewFrustrumBB.AddPoint(V3<fp>(t3.x, t3.y, t3.z));
         viewFrustrumBB.AddPoint(V3<fp>(t4.x, t4.y, t4.z));
 
-/*
-        Triangle3d t;
 
-        t.verts[0].pos = V3<fp>(t1.x, t1.y, t1.z);
-        t.verts[1].pos = V3<fp>(t2.x, t2.y, t2.z);
-        t.verts[2].pos = V3<fp>(t3.x, t3.y, t3.z);
+        V3<fp> t[3];
 
-        render->DrawTriangle(&t, nullptr, 12345, NoFlags);
-*/
+        t[0] = V3<fp>(t1.x, t1.y, t1.z);
+        t[1] = V3<fp>(t2.x, t2.y, t2.z);
+        t[2] = V3<fp>(t3.x, t3.y, t3.z);
+
+        //render_device->DrawTriangle(t, nullptr);
+
 
     }
 

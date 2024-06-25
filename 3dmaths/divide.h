@@ -1,7 +1,6 @@
 #ifndef DIVIDE_H
 #define DIVIDE_H
 
-
 #ifdef __arm__
     extern "C" constexpr unsigned int udiv64_arm (unsigned int a, unsigned int b, unsigned int c);
 #endif
@@ -16,7 +15,6 @@ template<>
 constexpr inline int FixedDiv(int a, int b, int fracbits)
 {
 #ifndef __arm__
-
     long long int tmp = ((long long int)a << fracbits) / b;
 
     return (int)tmp;

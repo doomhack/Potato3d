@@ -90,10 +90,10 @@ int main()
     render_target->AttachZBuffer();
 
     P3D::RenderDevice* render_device = new P3D::RenderDevice();
-    //render_device->SetRenderFlags<P3D::RenderFlags::NoFlags, P3D::PixelShaderGBA8<P3D::RenderFlags::NoFlags>>();
+    render_device->SetRenderFlags<P3D::RenderFlags::NoFlags, P3D::PixelShaderGBA8<P3D::RenderFlags::NoFlags>>();
     //render_device->SetRenderFlags<P3D::RenderFlags::SubdividePerspectiveMapping, P3D::PixelShaderGBA8<P3D::RenderFlags::SubdividePerspectiveMapping>>();
     //render_device->SetRenderFlags<P3D::RenderFlags::FullPerspectiveMapping, P3D::PixelShaderGBA8<P3D::RenderFlags::FullPerspectiveMapping>>();
-    render_device->SetRenderFlags<P3D::RenderFlags::ZTest | P3D::RenderFlags::ZWrite, P3D::PixelShaderGBA8<P3D::RenderFlags::ZTest | P3D::RenderFlags::ZWrite>>();
+    //render_device->SetRenderFlags<P3D::RenderFlags::ZTest | P3D::RenderFlags::ZWrite, P3D::PixelShaderGBA8<P3D::RenderFlags::ZTest | P3D::RenderFlags::ZWrite>>();
     render_device->SetRenderTarget(render_target);
 
 

@@ -33,6 +33,9 @@ private:
 
     QImage frameBufferImage;
 
+    //static const int screenWidth = 1920;
+    //static const int screenHeight = 1080;
+
     //static const int screenWidth = 1280;
     //static const int screenHeight = 1024;
 

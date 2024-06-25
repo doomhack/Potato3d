@@ -116,9 +116,10 @@ namespace P3D
 
             void ClipTriangle(TransformedTriangle& clipSpacePoints)
             {
+                fp z_far = z_planes->z_far;
 
-                if(GetClipOperation(clipSpacePoints.verts, W_Far) == Accept)
-                    return; //All > means outside plane.
+                if((clipSpacePoints.verts[0].pos.w > z_far) || (clipSpacePoints.verts[1].pos.w > z_far) || (clipSpacePoints.verts[2].pos.w > z_far))
+                    return; //One or more outside far plane. Reject
 
                 unsigned int clip = 0;
 
@@ -133,13 +134,15 @@ namespace P3D
                         clip |= i;
                 }
 
-
                 if (clip == NoClip)
                 {
                     TriangulatePolygon(clipSpacePoints.verts, 3);
                 }
                 else
                 {
+#ifdef RENDER_STATS
+                    render_stats->triangles_clipped++;
+#endif
                     Vertex4d outputVxB[8];
                     unsigned int countA = 3;
 
@@ -176,13 +179,13 @@ namespace P3D
                     const fp b1 = GetClipPointForVertex(clipSpacePointsIn[i], clipPlane);
                     const fp b2 = GetClipPointForVertex(clipSpacePointsIn[i2], clipPlane);
 
-                    if(clipSpacePointsIn[i].pos.w >= b1)
+                    if(ClipW(clipSpacePointsIn[i].pos.w) >= b1)
                     {
                         clipSpacePointsOut[vxCountOut] = clipSpacePointsIn[i];
                         vxCountOut++;
                     }
 
-                    fp frac = GetLineIntersectionFrac(clipSpacePointsIn[i].pos.w, clipSpacePointsIn[i2].pos.w, b1, b2);
+                    fp frac = GetLineIntersectionFrac(ClipW(clipSpacePointsIn[i].pos.w), ClipW(clipSpacePointsIn[i2].pos.w), b1, b2);
 
                     if(frac >= 0)
                     {
@@ -214,9 +217,6 @@ namespace P3D
                     case Y_W_Bottom:
                         return -vertex.pos.y;
 
-                    case W_Far:
-                        return z_planes->z_far;
-
                     default:
                         return 0;
                 }
@@ -236,9 +236,12 @@ namespace P3D
                 fp d1 = w1 - p1;
                 fp d2 = w2 - p2;
 
-
                 if(pAllLTZ3(d0, d1, d2))
                     return Reject;
+
+                d0 = ClipW(w0) - p0;
+                d1 = ClipW(w1) - p1;
+                d2 = ClipW(w2) - p2;
 
                 if(pAllGTEqZ3(d0, d1, d2))
                     return Accept;
@@ -256,6 +259,11 @@ namespace P3D
                 fp cp = (l1 - a2 + b2);
 
                 return (l1 / cp);
+            }
+
+            inline constexpr fp ClipW(const fp w) const
+            {
+                return pASL(w, CLIP_GUARD_BAND_SHIFT);
             }
 
             void TriangulatePolygon(Vertex4d clipSpacePoints[], const int vxCount)
@@ -544,21 +552,19 @@ namespace P3D
                         span_pos.w_left = pos.w_left + (delta.w * stepX);
                     }
 
-                    const pixel* texture = current_texture;
-
                     if constexpr (render_flags & FullPerspectiveMapping)
                     {
-                        DrawTriangleScanlinePerspectiveCorrect(span_pos, delta, texture);
+                        DrawTriangleScanlinePerspectiveCorrect(span_pos, delta, current_texture);
                     }
                     else
                     {
                         if constexpr (render_flags & SubdividePerspectiveMapping)
                         {
-                            SubdivideSpan(span_pos, delta, texture);
+                            SubdivideSpan(span_pos, delta, current_texture);
                         }
                         else
                         {
-                            DrawTriangleScanlineAffine(span_pos, delta, texture);
+                            DrawTriangleScanlineAffine(span_pos, delta, current_texture);
                         }
                     }
                 }
@@ -667,9 +673,9 @@ namespace P3D
 
                 switch(r)
                 {
-                    case 3: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
-                    case 2: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
-                    case 1: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
+                case 3: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
+                case 2: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
+                case 1: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f+df, fog_color); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2);
                 }
 
                 if(count & 1)

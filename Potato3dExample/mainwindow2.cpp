@@ -202,6 +202,9 @@ void MainWindow2::paintEvent(QPaintEvent *event)
     p.drawText(32,112, QString("Scanlines drawn: %1").arg(rs.scanlines_drawn));
     p.drawText(32,128, QString("Spans checked: %1").arg(rs.span_checks));
     p.drawText(32,144, QString("Spans generated: %1").arg(rs.span_count));
+    p.drawText(32,160, QString("Triangles clipped: %1").arg(rs.triangles_clipped));
+    p.drawText(32,176, QString("Stack size: %1").arg(rs.stack_bottom - rs.stack_top));
+
 
     this->update();
 }

@@ -9,7 +9,7 @@
 
 #include "../rtypes.h"
 
-const QImage::Format format = QImage::Format_Indexed8;
+const QImage::Format format = QImage::Format_RGB32;
 
 
 MainWindow::MainWindow(QWidget *parent)
@@ -26,14 +26,19 @@ MainWindow::MainWindow(QWidget *parent)
     object3d = new P3D::Object3d();
 
     //object3d->Setup(screenWidth, screenHeight, 54, 25, 1500, (P3D::pixel*)frameBufferImage.bits());
-    object3d->Setup(screenWidth, screenHeight, 60, 25, 5000, (P3D::pixel*)frameBufferImage.bits());
+    object3d->Setup(screenWidth, screenHeight, 60, 25, 3000, (P3D::pixel*)frameBufferImage.bits());
 
-    object3d->SetBackgroundColor(0);
+    object3d->SetBackgroundColor(0x799ED7);
 
     //P3D::Model3d* runway = LoadObjFile(":/models/temple.obj", ":/models/temple.mtl");
     //P3D::Model3d* runway = LoadObjFile(":/models/Mk64Beach/Mk64Kb.obj", ":/models/Mk64Beach/Mk64Kb.mtl");
     P3D::Model3d* runway = LoadObjFile(":/models/Streets/Streets.obj", ":/models/Streets/Streets.mtl");
     //P3D::Model3d* runway = LoadObjFile(":/models/gymclass/gymclass2.obj", ":/models/gymclass/gymclass2.mtl");
+
+    //P3D::Model3d* runway = LoadObjFile(":/models/hf/hf2.obj", ":/models/hf/hf2.mtl");
+    //P3D::Model3d* runway = LoadObjFile(":/models/PW_Island/world.obj", ":/models/PW_Island/world.mtl");
+
+
 
     P3D::Bsp3d* bsp = new P3D::Bsp3d;
 
@@ -91,7 +96,7 @@ void MainWindow::paintEvent(QPaintEvent *event)
         fpsTimer.restart();
     }
 
-    p.setPen(Qt::yellow);
+    p.setPen(Qt::red);
 
     p.drawText(32,32, QString("FPS: %1").arg(currentFps));
     p.drawText(32,48, QString("Ave Render Time: %1ms").arg(aveRtime));
@@ -102,6 +107,9 @@ void MainWindow::paintEvent(QPaintEvent *event)
     p.drawText(32,112, QString("Scanlines drawn: %1").arg(rs.scanlines_drawn));
     p.drawText(32,128, QString("Spans checked: %1").arg(rs.span_checks));
     p.drawText(32,144, QString("Spans generated: %1").arg(rs.span_count));
+    p.drawText(32,160, QString("Triangles clipped: %1").arg(rs.triangles_clipped));
+    p.drawText(32,176, QString("Stack size: %1").arg(rs.stack_top - rs.stack_bottom));
+
 
     this->update();
 }
@@ -302,9 +310,9 @@ P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
 
     qDebug() << p.readAll();
 
-    QImage* allTex256 = new QImage("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\allTex-WUquant256.png");
+    //QImage* allTex256 = new QImage("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\allTex-WUquant256.png");
     //QImage* allTex256 = new QImage("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\allTex-WUquant128.png");
-    //QImage* allTex256 = new QImage("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\allTex.png");
+    QImage* allTex256 = new QImage("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\allTex.png");
 
     allTex256->convertTo(format);
 
