@@ -129,7 +129,7 @@ namespace P3D
         return (a | b | c) >= 0;
     }
 
-    inline void FastCopy32(unsigned int* dest, const unsigned int* src, const unsigned int len)
+    inline void FastCopy32(void* dest, const void* src, const unsigned int len)
     {
     #ifdef __arm__
         const int words = len >> 2;
@@ -140,7 +140,7 @@ namespace P3D
     #endif
     }
 
-    inline void FastCopy16(unsigned int* dest, const unsigned int* src, const unsigned int len)
+    inline void FastCopy16(void* dest, const void* src, const unsigned int len)
     {
     #ifdef __arm__
         const int words = len >> 1;

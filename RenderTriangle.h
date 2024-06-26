@@ -60,6 +60,11 @@ namespace P3D
         public:
             void DrawTriangle(TransformedTriangle& tri, const Material& material) override
             {
+
+#ifdef RENDER_STATS
+                render_stats->triangles_submitted++;
+#endif
+
                 if(material.type == Material::Texture)
                     current_texture = tex_cache->GetTexture(material.pixels);
                 else
@@ -68,11 +73,39 @@ namespace P3D
                     current_color = material.color;
                 }
 
-                ClipTriangle(tri);
+                unsigned int vxCount = ClipTriangle(tri);
 
-#ifdef RENDER_STATS
-                render_stats->triangles_submitted++;
-#endif
+                if(!vxCount)
+                    return;
+
+                for(int i = 0; i < vxCount; i++)
+                {
+                    tri.verts[i].pos.ToScreenSpace();
+                }
+
+                if(!CullTriangle(tri.verts))
+                    return;
+
+                for(int i = 0; i < vxCount; i++)
+                {
+                    tri.verts[i].pos.x = fracToX(tri.verts[i].pos.x);
+                    tri.verts[i].pos.y = fracToY(tri.verts[i].pos.y);
+
+                    if constexpr (render_flags & (Fog))
+                    {
+                        tri.verts[i].fog_factor = GetFogFactor(tri.verts[i].pos);
+                    }
+
+                    if constexpr (render_flags & (FullPerspectiveMapping | SubdividePerspectiveMapping))
+                    {
+                        if(current_texture)
+                        {
+                            tri.verts[i].toPerspectiveCorrect(max_w_tex_scale);
+                        }
+                    }
+                }
+
+                TriangulatePolygon(tri.verts, vxCount);
             }
 
             void SetRenderStateViewport(const RenderTargetViewport& viewport, const RenderDeviceNearFarPlanes& planes) override
@@ -114,12 +147,12 @@ namespace P3D
 
         private:
 
-            void ClipTriangle(TransformedTriangle& clipSpacePoints)
+            unsigned int ClipTriangle(TransformedTriangle& clipSpacePoints)
             {
                 fp z_far = z_planes->z_far;
 
                 if((clipSpacePoints.verts[0].pos.w > z_far) || (clipSpacePoints.verts[1].pos.w > z_far) || (clipSpacePoints.verts[2].pos.w > z_far))
-                    return; //One or more outside far plane. Reject
+                    return 0; //One or more outside far plane. Reject
 
                 unsigned int clip = 0;
 
@@ -129,14 +162,14 @@ namespace P3D
                     ClipOperation op = GetClipOperation(clipSpacePoints.verts, ClipPlane(i));
 
                     if(op == Reject)
-                        return;
+                        return 0;
                     else if(op == Clip)
                         clip |= i;
                 }
 
                 if (clip == NoClip)
                 {
-                    TriangulatePolygon(clipSpacePoints.verts, 3);
+                    return 3;
                 }
                 else
                 {
@@ -161,7 +194,10 @@ namespace P3D
                     }
 
                     //Now inBuffer and countA contain the final result.
-                    TriangulatePolygon(inBuffer, countA);
+                    if(inBuffer != clipSpacePoints.verts)
+                        FastCopy32((unsigned int*)clipSpacePoints.verts, (unsigned int*)inBuffer, sizeof(Vertex4d) * countA);
+
+                    return countA;
                 }
             }
 
@@ -268,35 +304,18 @@ namespace P3D
 
             void TriangulatePolygon(Vertex4d clipSpacePoints[], const int vxCount)
             {
-                if(vxCount < 3)
-                    return;
-
-                for(int i = 0; i < vxCount; i++)
-                {
-                    clipSpacePoints[i].pos.ToScreenSpace();
-
-                    clipSpacePoints[i].pos.x = fracToX(clipSpacePoints[i].pos.x);
-                    clipSpacePoints[i].pos.y = fracToY(clipSpacePoints[i].pos.y);
-
-                    if constexpr (render_flags & (Fog))
-                    {
-                        clipSpacePoints[i].fog_factor = GetFogFactor(clipSpacePoints[i].pos);
-                    }
-                }
-
-
-                CullTriangle(clipSpacePoints);
+                SortTrianglePoints(clipSpacePoints);
 
                 int rounds = vxCount - 3;
 
                 for(int i = 0; i < rounds; i++)
                 {
                     clipSpacePoints[i+1] = clipSpacePoints[0];
-                    CullTriangle(&clipSpacePoints[i+1]);
+                    SortTrianglePoints(&clipSpacePoints[i+1]);
                 }
             }
 
-            void CullTriangle(const Vertex4d screenSpacePoints[3])
+            bool CullTriangle(const Vertex4d screenSpacePoints[3]) const
             {
                 if constexpr (render_flags & (BackFaceCulling | FrontFaceCulling))
                 {
@@ -305,12 +324,12 @@ namespace P3D
                     if constexpr(render_flags & BackFaceCulling)
                     {
                         if(!is_front)
-                            return;
+                            return false;
                     }
                     else if constexpr (render_flags & FrontFaceCulling)
                     {
                         if(is_front)
-                            return;
+                            return false;
                     }
                 }
                 else
@@ -319,16 +338,16 @@ namespace P3D
                             screenSpacePoints[0].pos.x == screenSpacePoints[1].pos.x &&
                             screenSpacePoints[0].pos.x == screenSpacePoints[2].pos.x
                         )
-                        return;
+                        return false;
 
                     if  (
                             screenSpacePoints[0].pos.y == screenSpacePoints[1].pos.y &&
                             screenSpacePoints[0].pos.y == screenSpacePoints[2].pos.y
                         )
-                        return;
+                        return false;
                 }
 
-                SortTrianglePoints(screenSpacePoints);
+                return true;
             }
 
             void SortTrianglePoints(const Vertex4d screenSpacePoints[3])
@@ -336,16 +355,6 @@ namespace P3D
                 Vertex4d points[3];
 
                 SortPointsByY(screenSpacePoints, points);
-
-                if constexpr (render_flags & (FullPerspectiveMapping | SubdividePerspectiveMapping))
-                {
-                    if(current_texture)
-                    {
-                        points[0].toPerspectiveCorrect(max_w_tex_scale);
-                        points[1].toPerspectiveCorrect(max_w_tex_scale);
-                        points[2].toPerspectiveCorrect(max_w_tex_scale);
-                    }
-                }
 
                 DrawTriangleEdge(points);
 
@@ -389,7 +398,6 @@ namespace P3D
                         GetTriangleLerpXDeltas(middle, m, x_delta);
                     }
                 }
-
 
                 TriDrawYDeltaZWUV& short_y_delta = left_is_long ? y_delta_right : y_delta_left;
                 TriDrawYDeltaZWUV& long_y_delta = left_is_long ? y_delta_left : y_delta_right;
@@ -440,7 +448,6 @@ namespace P3D
                 if(current_texture)
                 {
                     pos.u_left = left.uv.x + (stepY * y_delta_left.u);
-
                     pos.v_left = left.uv.y + (stepY * y_delta_left.v);
 
                     if constexpr (render_flags & (FullPerspectiveMapping | SubdividePerspectiveMapping))
