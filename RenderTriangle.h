@@ -75,7 +75,7 @@ namespace P3D
 
                 unsigned int vxCount = ClipTriangle(tri);
 
-                if(!vxCount)
+                if(vxCount < 3)
                     return;
 
                 for(int i = 0; i < vxCount; i++)
@@ -168,37 +168,33 @@ namespace P3D
                 }
 
                 if (clip == NoClip)
-                {
                     return 3;
-                }
-                else
-                {
+
 #ifdef RENDER_STATS
-                    render_stats->triangles_clipped++;
+                render_stats->triangles_clipped++;
 #endif
-                    Vertex4d outputVxB[8];
-                    unsigned int countA = 3;
+                Vertex4d outputVxB[8];
+                unsigned int countA = 3;
 
-                    //As we clip against each frustrum plane, we swap the buffers
-                    //so the output of the last clip is used as input to the next.
-                    Vertex4d* inBuffer = clipSpacePoints.verts;
-                    Vertex4d* outBuffer = outputVxB;
+                //As we clip against each frustrum plane, we swap the buffers
+                //so the output of the last clip is used as input to the next.
+                Vertex4d* inBuffer = clipSpacePoints.verts;
+                Vertex4d* outBuffer = outputVxB;
 
-                    for(unsigned int i = W_Near; i < W_Far; i <<= 1)
+                for(unsigned int i = W_Near; i < W_Far; i <<= 1)
+                {
+                    if(clip & i)
                     {
-                        if(clip & i)
-                        {
-                            countA = ClipPolygonToPlane(inBuffer, countA, outBuffer, ClipPlane(i));
-                            std::swap(inBuffer, outBuffer);
-                        }
+                        countA = ClipPolygonToPlane(inBuffer, countA, outBuffer, ClipPlane(i));
+                        std::swap(inBuffer, outBuffer);
                     }
-
-                    //Now inBuffer and countA contain the final result.
-                    if(inBuffer != clipSpacePoints.verts)
-                        FastCopy32((unsigned int*)clipSpacePoints.verts, (unsigned int*)inBuffer, sizeof(Vertex4d) * countA);
-
-                    return countA;
                 }
+
+                //Now inBuffer and countA contain the final result.
+                if(inBuffer != clipSpacePoints.verts)
+                    FastCopy32(clipSpacePoints.verts, inBuffer, sizeof(Vertex4d) * countA);
+
+                return countA;
             }
 
             unsigned int ClipPolygonToPlane(const Vertex4d clipSpacePointsIn[], const int vxCount, Vertex4d clipSpacePointsOut[], ClipPlane clipPlane)
