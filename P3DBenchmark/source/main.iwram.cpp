@@ -67,6 +67,11 @@ inline int8_t r8()
     return (int8_t)rng32();
 }
 
+inline int16_t r16()
+{
+    return (int16_t)rng32() & 511;
+}
+
 int main()
 {
 #ifdef __arm__

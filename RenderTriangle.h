@@ -78,7 +78,7 @@ namespace P3D
                 if(vxCount < 3)
                     return;
 
-                for(int i = 0; i < vxCount; i++)
+                for(unsigned int i = 0; i < vxCount; i++)
                 {
                     tri.verts[i].pos.ToScreenSpace();
                 }
@@ -86,7 +86,7 @@ namespace P3D
                 if(!CullTriangle(tri.verts))
                     return;
 
-                for(int i = 0; i < vxCount; i++)
+                for(unsigned int i = 0; i < vxCount; i++)
                 {
                     tri.verts[i].pos.x = fracToX(tri.verts[i].pos.x);
                     tri.verts[i].pos.y = fracToY(tri.verts[i].pos.y);
@@ -147,6 +147,41 @@ namespace P3D
 
         private:
 
+            bool CullTriangle(const Vertex4d screenSpacePoints[3]) const
+            {
+                if constexpr (render_flags & (BackFaceCulling | FrontFaceCulling))
+                {
+                    const bool is_front = IsTriangleFrontface(screenSpacePoints);
+
+                    if constexpr(render_flags & BackFaceCulling)
+                    {
+                        if(!is_front)
+                            return false;
+                    }
+                    else if constexpr (render_flags & FrontFaceCulling)
+                    {
+                        if(is_front)
+                            return false;
+                    }
+                }
+                else
+                {
+                    if  (
+                        screenSpacePoints[0].pos.x == screenSpacePoints[1].pos.x &&
+                        screenSpacePoints[0].pos.x == screenSpacePoints[2].pos.x
+                        )
+                        return false;
+
+                    if  (
+                        screenSpacePoints[0].pos.y == screenSpacePoints[1].pos.y &&
+                        screenSpacePoints[0].pos.y == screenSpacePoints[2].pos.y
+                        )
+                        return false;
+                }
+
+                return true;
+            }
+
             unsigned int ClipTriangle(TransformedTriangle& clipSpacePoints)
             {
                 fp z_far = z_planes->z_far;
@@ -169,6 +204,7 @@ namespace P3D
 
                 if (clip == NoClip)
                     return 3;
+
 
 #ifdef RENDER_STATS
                 render_stats->triangles_clipped++;
@@ -298,76 +334,50 @@ namespace P3D
                 return pASL(w, CLIP_GUARD_BAND_SHIFT);
             }
 
+            void GetVertexYOrder(const Vertex4d screenSpacePoints[3], unsigned int vxOrder[3])
+            {
+                if(screenSpacePoints[vxOrder[0]].pos.y > screenSpacePoints[vxOrder[2]].pos.y)
+                    std::swap(vxOrder[0], vxOrder[2]);
+
+                if(screenSpacePoints[vxOrder[0]].pos.y > screenSpacePoints[vxOrder[1]].pos.y)
+                    std::swap(vxOrder[0], vxOrder[1]);
+
+                if(screenSpacePoints[vxOrder[1]].pos.y > screenSpacePoints[vxOrder[2]].pos.y)
+                    std::swap(vxOrder[1], vxOrder[2]);
+            }
+
             void TriangulatePolygon(Vertex4d clipSpacePoints[], const int vxCount)
             {
-                SortTrianglePoints(clipSpacePoints);
+                DrawTriangleEdge(clipSpacePoints);
 
-                int rounds = vxCount - 3;
+                const int rounds = vxCount - 3;
 
                 for(int i = 0; i < rounds; i++)
                 {
                     clipSpacePoints[i+1] = clipSpacePoints[0];
-                    SortTrianglePoints(&clipSpacePoints[i+1]);
+
+                    DrawTriangleEdge(&clipSpacePoints[i+1]);
                 }
-            }
-
-            bool CullTriangle(const Vertex4d screenSpacePoints[3]) const
-            {
-                if constexpr (render_flags & (BackFaceCulling | FrontFaceCulling))
-                {
-                    const bool is_front = IsTriangleFrontface(screenSpacePoints);
-
-                    if constexpr(render_flags & BackFaceCulling)
-                    {
-                        if(!is_front)
-                            return false;
-                    }
-                    else if constexpr (render_flags & FrontFaceCulling)
-                    {
-                        if(is_front)
-                            return false;
-                    }
-                }
-                else
-                {
-                    if  (
-                            screenSpacePoints[0].pos.x == screenSpacePoints[1].pos.x &&
-                            screenSpacePoints[0].pos.x == screenSpacePoints[2].pos.x
-                        )
-                        return false;
-
-                    if  (
-                            screenSpacePoints[0].pos.y == screenSpacePoints[1].pos.y &&
-                            screenSpacePoints[0].pos.y == screenSpacePoints[2].pos.y
-                        )
-                        return false;
-                }
-
-                return true;
-            }
-
-            void SortTrianglePoints(const Vertex4d screenSpacePoints[3])
-            {
-                Vertex4d points[3];
-
-                SortPointsByY(screenSpacePoints, points);
-
-                DrawTriangleEdge(points);
-
-#ifdef RENDER_STATS
-                render_stats->triangles_drawn++;
-#endif
             }
 
             void DrawTriangleEdge(const Vertex4d points[3])
             {
+
+#ifdef RENDER_STATS
+                render_stats->triangles_drawn++;
+#endif
+
                 TriEdgeTrace pos;
                 TriDrawYDeltaZWUV y_delta_left, y_delta_right;
                 TriDrawXDeltaZWUV x_delta;
 
-                const Vertex4d& top     = points[0];
-                const Vertex4d& middle  = points[1];
-                const Vertex4d& bottom  = points[2];
+                unsigned int vxOrder[3] = {0,1,2};
+
+                GetVertexYOrder(points, vxOrder);
+
+                const Vertex4d& top     = points[vxOrder[0]];
+                const Vertex4d& middle  = points[vxOrder[1]];
+                const Vertex4d& bottom  = points[vxOrder[2]];
 
                 const bool left_is_long = PointOnLineSide2d(top.pos, bottom.pos, middle.pos) > 0;
 
@@ -800,58 +810,6 @@ namespace P3D
                 return ((x1 * y2) < (y1 * x2));
             }
 
-            void SortPointsByY(const Vertex4d pointsIn[3], Vertex4d pointsOut[3])
-            {
-                if(pointsIn[0].pos.y < pointsIn[1].pos.y)
-                {
-                    if(pointsIn[1].pos.y < pointsIn[2].pos.y)
-                    {
-                        pointsOut[0] = pointsIn[0];
-                        pointsOut[1] = pointsIn[1];
-                        pointsOut[2] = pointsIn[2];
-                    }
-                    else
-                    {
-                        pointsOut[2] = pointsIn[1];
-
-                        if(pointsIn[0].pos.y < pointsIn[2].pos.y)
-                        {
-                            pointsOut[0] = pointsIn[0];
-                            pointsOut[1] = pointsIn[2];
-                        }
-                        else
-                        {
-                            pointsOut[0] = pointsIn[2];
-                            pointsOut[1] = pointsIn[0];
-                        }
-                    }
-                }
-                else
-                {
-                    if(pointsIn[1].pos.y < pointsIn[2].pos.y)
-                    {
-                        pointsOut[0] = pointsIn[1];
-
-                        if(pointsIn[0].pos.y < pointsIn[2].pos.y)
-                        {
-                            pointsOut[1] = pointsIn[0];
-                            pointsOut[2] = pointsIn[2];
-                        }
-                        else
-                        {
-                            pointsOut[1] = pointsIn[2];
-                            pointsOut[2] = pointsIn[0];
-                        }
-                    }
-                    else
-                    {
-                        pointsOut[0] = pointsIn[2];
-                        pointsOut[1] = pointsIn[1];
-                        pointsOut[2] = pointsIn[0];
-                    }
-                }
-            }
-
             constexpr void GetTriangleLerpXDeltas(const Vertex4d& left, const Vertex4d& right, TriDrawXDeltaZWUV& x_delta)
             {
                 const fp d_x = (right.pos.x - left.pos.x) != 0 ? (right.pos.x - left.pos.x) : fp(1);
@@ -932,14 +890,12 @@ namespace P3D
             fp fracToY(const fp frac) const
             {
                 const fp halfFbY = pASR(current_viewport->height, 1);
-
                 return ((halfFbY * -frac) + halfFbY);
             }
 
             fp fracToX(const fp frac) const
             {
                 const fp halfFbX = pASR(current_viewport->width, 1);
-
                 return ((halfFbX * frac) + halfFbX);
             }
 

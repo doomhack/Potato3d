@@ -18,10 +18,6 @@ SOURCES += \
 
 
 
-HEADERS += \
-
-
-
 #QMAKE_CXXFLAGS += /GL
 #QMAKE_CFLAGS += /GL
 

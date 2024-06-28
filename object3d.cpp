@@ -37,8 +37,8 @@ namespace P3D
 
         render_device->SetPerspective(hFov, aspectRatio, zNear, zFar);
 
-        render_device->SetRenderFlags<P3D::NoFlags>();
-        //render_device->SetRenderFlags<P3D::RenderFlags::SubdividePerspectiveMapping>();
+        //render_device->SetRenderFlags<P3D::NoFlags>();
+        render_device->SetRenderFlags<P3D::RenderFlags::SubdividePerspectiveMapping>();
 
 #if 0
         render_device->SetFogMode(FogLinear);

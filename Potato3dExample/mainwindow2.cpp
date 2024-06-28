@@ -8,7 +8,7 @@
 #include "../RenderTarget.h"
 #include "../PixelShaderGBA8.h"
 
-const QImage::Format format = QImage::Format::Format_Indexed8;
+const QImage::Format format = QImage::Format::Format_RGB32;
 
 MainWindow2::MainWindow2(QWidget *parent)
     : QMainWindow(parent)
@@ -40,8 +40,8 @@ MainWindow2::MainWindow2(QWidget *parent)
 
     render_device->SetPerspective(60, aspectRatio, 10, 1000);
 
-    render_device->SetRenderFlags<P3D::RenderFlags::ZTest | P3D::RenderFlags::ZWrite, P3D::PixelShaderGBA8<P3D::RenderFlags::ZTest | P3D::RenderFlags::ZWrite>>();
-    //render_device->SetRenderFlags<P3D::NoFlags>();
+    //render_device->SetRenderFlags<P3D::RenderFlags::ZTest | P3D::RenderFlags::ZWrite, P3D::PixelShaderGBA8<P3D::RenderFlags::ZTest | P3D::RenderFlags::ZWrite>>();
+    render_device->SetRenderFlags<P3D::NoFlags>();
     //render_device->SetRenderFlags<P3D::NoFlags, P3D::PixelShaderGBA8<P3D::NoFlags>>();
 
     //render_device->SetRenderFlags<P3D::SubdividePerspectiveMapping, P3D::PixelShaderGBA8<P3D::SubdividePerspectiveMapping>>();
@@ -203,7 +203,6 @@ void MainWindow2::paintEvent(QPaintEvent *event)
     p.drawText(32,128, QString("Spans checked: %1").arg(rs.span_checks));
     p.drawText(32,144, QString("Spans generated: %1").arg(rs.span_count));
     p.drawText(32,160, QString("Triangles clipped: %1").arg(rs.triangles_clipped));
-    p.drawText(32,176, QString("Stack size: %1").arg(rs.stack_bottom - rs.stack_top));
 
 
     this->update();
