@@ -186,7 +186,7 @@ namespace P3D
             {
                 fp z_far = z_planes->z_far;
 
-                if((clipSpacePoints.verts[0].pos.w > z_far) || (clipSpacePoints.verts[1].pos.w > z_far) || (clipSpacePoints.verts[2].pos.w > z_far))
+                if(pAllGTEqZ3(clipSpacePoints.verts[0].pos.w - z_far, clipSpacePoints.verts[1].pos.w - z_far, clipSpacePoints.verts[2].pos.w - z_far))
                     return 0; //One or more outside far plane. Reject
 
                 unsigned int clip = 0;
@@ -235,9 +235,6 @@ namespace P3D
 
             unsigned int ClipPolygonToPlane(const Vertex4d clipSpacePointsIn[], const int vxCount, Vertex4d clipSpacePointsOut[], ClipPlane clipPlane)
             {
-                if(vxCount < 3)
-                    return 0;
-
                 unsigned int vxCountOut = 0;
 
                 for(int i = 0; i < vxCount; i++)
@@ -268,26 +265,16 @@ namespace P3D
 
             fp GetClipPointForVertex(const Vertex4d& vertex, const ClipPlane clipPlane) const
             {
-                switch(clipPlane)
-                {
-                    case W_Near:
-                        return z_planes->z_near;
+                if(clipPlane == W_Near)
+                    return z_planes->z_near;
+                else if(clipPlane == X_W_Left)
+                    return -vertex.pos.x;
+                else if(clipPlane == X_W_Right)
+                    return vertex.pos.x;
+                else if(clipPlane == Y_W_Top)
+                    return vertex.pos.y;
 
-                    case X_W_Left:
-                        return -vertex.pos.x;
-
-                    case X_W_Right:
-                        return vertex.pos.x;
-
-                    case Y_W_Top:
-                        return vertex.pos.y;
-
-                    case Y_W_Bottom:
-                        return -vertex.pos.y;
-
-                    default:
-                        return 0;
-                }
+                return -vertex.pos.y;
             }
 
             ClipOperation GetClipOperation(const Vertex4d vertexes[3], const ClipPlane plane) const
@@ -392,6 +379,7 @@ namespace P3D
                 else
                 {
                     fp frac = ((middle.pos.y - top.pos.y) / (bottom.pos.y - top.pos.y));
+
                     Vertex4d m;
                     LerpVertex(m, top, bottom, frac);
 
