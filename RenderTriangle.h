@@ -185,14 +185,24 @@ namespace P3D
             unsigned int ClipTriangle(TransformedTriangle& clipSpacePoints)
             {
                 fp z_far = z_planes->z_far;
-
-                if(pAllGTEqZ3(clipSpacePoints.verts[0].pos.w - z_far, clipSpacePoints.verts[1].pos.w - z_far, clipSpacePoints.verts[2].pos.w - z_far))
-                    return 0; //One or more outside far plane. Reject
-
+                fp z_near = z_planes->z_near;
                 unsigned int clip = 0;
 
+
+                fp w0 = clipSpacePoints.verts[0].pos.w;
+                fp w1 = clipSpacePoints.verts[1].pos.w;
+                fp w2 = clipSpacePoints.verts[2].pos.w;
+
+                if(pAllGTEqZ3(w0 - z_far, w1 - z_far, w2 - z_far))
+                    return 0; //One or more outside far plane. Reject
+
+                if(pAllLTZ3(w0 - z_near, w1 - z_near, w2 - z_near))
+                    return 0; //All outside near plane. Reject
+                else if (!pAllGTEqZ3(w0 - z_near, w1 - z_near, w2 - z_near))
+                    clip = W_Near; //Intersects near plane
+
                 //
-                for(unsigned int i = W_Near; i < W_Far; i <<= 1)
+                for(unsigned int i = X_W_Left; i < W_Far; i <<= 1)
                 {
                     ClipOperation op = GetClipOperation(clipSpacePoints.verts, ClipPlane(i));
 
@@ -205,32 +215,72 @@ namespace P3D
                 if (clip == NoClip)
                     return 3;
 
-
 #ifdef RENDER_STATS
                 render_stats->triangles_clipped++;
 #endif
+
+                unsigned int vxCount = 3;
+
+                if(clip & W_Near)
+                    vxCount = ClipWNear(clipSpacePoints.verts);
+
                 Vertex4d outputVxB[8];
-                unsigned int countA = 3;
 
                 //As we clip against each frustrum plane, we swap the buffers
                 //so the output of the last clip is used as input to the next.
                 Vertex4d* inBuffer = clipSpacePoints.verts;
                 Vertex4d* outBuffer = outputVxB;
 
-                for(unsigned int i = W_Near; i < W_Far; i <<= 1)
+                for(unsigned int i = X_W_Left; i < W_Far; i <<= 1)
                 {
                     if(clip & i)
                     {
-                        countA = ClipPolygonToPlane(inBuffer, countA, outBuffer, ClipPlane(i));
+                        vxCount = ClipPolygonToPlane(inBuffer, vxCount, outBuffer, ClipPlane(i));
                         std::swap(inBuffer, outBuffer);
                     }
                 }
 
                 //Now inBuffer and countA contain the final result.
                 if(inBuffer != clipSpacePoints.verts)
-                    FastCopy32(clipSpacePoints.verts, inBuffer, sizeof(Vertex4d) * countA);
+                    FastCopy32(clipSpacePoints.verts, inBuffer, sizeof(Vertex4d) * vxCount);
 
-                return countA;
+                return vxCount;
+            }
+
+            unsigned int ClipWNear(Vertex4d clipSpacePointsIn[3])
+            {
+                Vertex4d tmpVx[4];
+                unsigned int vxCountOut = 0;
+                fp z_near = z_planes->z_near;
+
+                for(int i = 0; i < 3; i++)
+                {
+                    int i2 = i < 2 ? i+1 : 0;
+
+                    fp w1 = clipSpacePointsIn[i].pos.w;
+                    fp w2 = clipSpacePointsIn[i2].pos.w;
+
+                    if(w1 >= z_near)
+                    {
+                        FastCopy32(&tmpVx[vxCountOut], &clipSpacePointsIn[i], sizeof(Vertex4d));
+                        vxCountOut++;
+                    }
+
+                    if(((w1 - z_near) ^ (w2 - z_near)) < 0)
+                    {
+                        fp l = (clipSpacePointsIn[i].pos.w - z_near);
+                        fp r = clipSpacePointsIn[i].pos.w - clipSpacePointsIn[i2].pos.w - (pASL(z_near, 1));
+
+                        fp frac = l / r;
+
+                        LerpVertex(tmpVx[vxCountOut], clipSpacePointsIn[i], clipSpacePointsIn[i2], frac);
+                        vxCountOut++;
+                    }
+                }
+
+                FastCopy32(clipSpacePointsIn, tmpVx, sizeof(Vertex4d) * vxCountOut);
+
+                return vxCountOut;
             }
 
             unsigned int ClipPolygonToPlane(const Vertex4d clipSpacePointsIn[], const int vxCount, Vertex4d clipSpacePointsOut[], ClipPlane clipPlane)
@@ -264,9 +314,7 @@ namespace P3D
 
             fp GetClipPointForVertex(const Vertex4d& vertex, const ClipPlane clipPlane) const
             {
-                if(clipPlane == W_Near)
-                    return z_planes->z_near;
-                else if(clipPlane == X_W_Left)
+                if(clipPlane == X_W_Left)
                     return -vertex.pos.x;
                 else if(clipPlane == X_W_Right)
                     return vertex.pos.x;
@@ -305,14 +353,16 @@ namespace P3D
 
             fp GetLineIntersectionFrac(const fp a1, const fp a2, const fp b1, const fp b2) const
             {
-                if((a1 <= b1 && a2 <= b2) || (a1 >= b1 && a2 >= b2))
-                    return -1;
+                if(((a1 - b1) ^ (a2 - b2)) < 0)
+                {
+                    fp l1 = (a1 - b1);
 
-                fp l1 = (a1 - b1);
+                    fp cp = (l1 - a2 + b2);
 
-                fp cp = (l1 - a2 + b2);
+                    return (l1 / cp);
+                }
 
-                return (l1 / cp);
+                return -1;
             }
 
             inline constexpr fp ClipW(const fp w) const
