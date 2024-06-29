@@ -246,7 +246,7 @@ namespace P3D
 
                     if(ClipW(clipSpacePointsIn[i].pos.w) >= b1)
                     {
-                        clipSpacePointsOut[vxCountOut] = clipSpacePointsIn[i];
+                        FastCopy32(&clipSpacePointsOut[vxCountOut], &clipSpacePointsIn[i], sizeof(Vertex4d));
                         vxCountOut++;
                     }
 
@@ -255,7 +255,6 @@ namespace P3D
                     if(frac >= 0)
                     {
                         LerpVertex(clipSpacePointsOut[vxCountOut], clipSpacePointsIn[i], clipSpacePointsIn[i2], frac);
-
                         vxCountOut++;
                     }
                 }
