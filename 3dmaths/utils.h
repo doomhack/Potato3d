@@ -11,6 +11,7 @@
 
 #ifdef __arm__
     #include <gba_dma.h>
+    #include <gba_systemcalls.h>
 #endif
 
 #define M_PI       3.14159265358979323846   // pi
@@ -189,7 +190,7 @@ namespace P3D
 
         unsigned int shift = 0;
 
-        while(val > 1)
+        while(val > 4)
         {
             val >>= 1;
             shift++;

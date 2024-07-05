@@ -55,7 +55,7 @@ namespace P3D
 
         if(triangle_render)
         {
-            triangle_render->SetRenderStateViewport(viewport, z_planes);
+            triangle_render->SetRenderStateViewport(viewport);
         }
     }
 
@@ -66,6 +66,11 @@ namespace P3D
 
         z_planes.z_near = z_near;
         z_planes.z_far = z_far;
+
+        if(triangle_render)
+        {
+            triangle_render->SetZPlanes(z_planes);
+        }
     }
 
     void RenderDevice::SetOrthographic(const fp left, const fp right, const fp bottom, const fp top, const fp z_near, const fp z_far)

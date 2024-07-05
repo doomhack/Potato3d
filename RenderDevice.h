@@ -30,7 +30,8 @@ namespace P3D
 
             triangle_render = new P3D::Internal::RenderTriangle<render_flags, TPixelShader>();
 
-            triangle_render->SetRenderStateViewport(viewport, z_planes);
+            triangle_render->SetRenderStateViewport(viewport);
+            triangle_render->SetZPlanes(z_planes);
             triangle_render->SetTextureCache(texture_cache);
             triangle_render->SetFogParams(fog_params);
 
@@ -85,7 +86,7 @@ namespace P3D
 
         void TransformVertexes(const V3<fp>* vertexes, const unsigned int count);
 
-        void DrawTriangle(const unsigned int vx_indexes[], const V2<fp> uvs[3] = nullptr) const;
+        void DrawTriangle(const unsigned int vx_indexes[3], const V2<fp> uvs[3] = nullptr) const;
 
 #ifdef RENDER_STATS
         const RenderStats& GetRenderStats() const;

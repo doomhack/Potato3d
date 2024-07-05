@@ -57,7 +57,7 @@ void I_FinishUpdate_e32()
 
 inline uint32_t rng32()
 {
-    static uint32_t seed = 12345;
+    static uint32_t seed = 1234;
 
     return seed = (seed*1664525U + 1013904223U);
 }
@@ -160,7 +160,7 @@ int main()
     I_FinishUpdate_e32();
 
     for(int i = 0; i < runs; i++)
-    {        
+    {
         P3D::V3<P3D::fp> v[3];
         v[0] = P3D::V3<P3D::fp>(-100 + r8(),100+ r8(),0+ r8());
         v[1] = P3D::V3<P3D::fp>(100+ r8(),100+ r8(),0+ r8());
@@ -194,7 +194,6 @@ int main()
 
     printf("%d polys rendered in %f s\n", runs, s);
     printf("Polys/second %d\n", (int)p);
-
 
     while(true)
     {

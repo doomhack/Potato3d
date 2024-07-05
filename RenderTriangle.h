@@ -46,7 +46,8 @@ namespace P3D
 
             virtual ~RenderTriangleBase() {};
             virtual void DrawTriangle(TransformedTriangle& tri, const Material& material) = 0;
-            virtual void SetRenderStateViewport(const RenderTargetViewport& viewport, const RenderDeviceNearFarPlanes& planes) = 0;
+            virtual void SetRenderStateViewport(const RenderTargetViewport& viewport) = 0;
+            virtual void SetZPlanes(const RenderDeviceNearFarPlanes& planes) = 0;
             virtual void SetTextureCache(const TextureCacheBase* texture_cache) = 0;
             virtual void SetFogParams(const RenderDeviceFogParameters& fog_params) = 0;
 
@@ -108,16 +109,21 @@ namespace P3D
                 TriangulatePolygon(tri.verts, vxCount);
             }
 
-            void SetRenderStateViewport(const RenderTargetViewport& viewport, const RenderDeviceNearFarPlanes& planes) override
+            void SetRenderStateViewport(const RenderTargetViewport& viewport) override
             {
                 current_viewport = &viewport;
+            }
+
+            void SetZPlanes(const RenderDeviceNearFarPlanes& planes) override
+            {
                 z_planes = &planes;
 
                 if constexpr (render_flags & (FullPerspectiveMapping | SubdividePerspectiveMapping))
                 {
                     if constexpr(!std::is_floating_point<fp>::value)
                     {
-                        max_w_tex_scale = fp((32767 * (int)planes.z_near) / (TEX_SIZE * TEX_MAX_TILE));
+                        int z_near = planes.z_near;
+                        max_w_tex_scale = fp((32767 * z_near) / (TEX_SIZE * TEX_MAX_TILE));
                     }
                     else
                     {
@@ -126,6 +132,7 @@ namespace P3D
                 }
             }
 
+
             void SetTextureCache(const TextureCacheBase* texture_cache) override
             {
                 tex_cache = texture_cache;
@@ -133,7 +140,7 @@ namespace P3D
 
             void SetFogParams(const RenderDeviceFogParameters& fog) override
             {
-                this->fog_params = &fog;
+                fog_params = &fog;
             }
 
 
@@ -390,7 +397,7 @@ namespace P3D
 
                 for(int i = 0; i < rounds; i++)
                 {
-                    clipSpacePoints[i+1] = clipSpacePoints[0];
+                    FastCopy32(&clipSpacePoints[i+1], &clipSpacePoints[0], sizeof(Vertex4d));
 
                     DrawTriangleEdge(&clipSpacePoints[i+1]);
                 }
@@ -499,7 +506,7 @@ namespace P3D
                     }
                 }
 
-                pos.x_left =  left.pos.x + (stepY * y_delta_left.x);
+                pos.x_left = left.pos.x + (stepY * y_delta_left.x);
 
                 if constexpr (render_flags & (ZTest | ZWrite))
                 {
@@ -647,7 +654,6 @@ namespace P3D
 
                 fp du = pASR(u15-u0, SUBDIVIDE_SPAN_SHIFT);
                 fp dv = pASR(v15-v0, SUBDIVIDE_SPAN_SHIFT);
-
 
                 while(true)
                 {
@@ -849,55 +855,63 @@ namespace P3D
 
             constexpr void GetTriangleLerpXDeltas(const Vertex4d& left, const Vertex4d& right, TriDrawXDeltaZWUV& x_delta)
             {
-                const fp d_x = (right.pos.x - left.pos.x) != 0 ? (right.pos.x - left.pos.x) : fp(1);
+                constexpr unsigned int shift = 8;
+
+                const fp dx = (right.pos.x != left.pos.x) ? (right.pos.x - left.pos.x) : fp(1);
+
+                const fp recip = fp(pASL(fp(1), shift) / dx);
 
                 if(current_texture)
                 {
-                    x_delta.u = (right.uv.x - left.uv.x) / d_x;
-                    x_delta.v = (right.uv.y - left.uv.y) / d_x;
+                    x_delta.u = pASR((right.uv.x - left.uv.x) * recip, shift);
+                    x_delta.v = pASR((right.uv.y - left.uv.y) * recip, shift);
 
                     if constexpr (render_flags & (FullPerspectiveMapping | SubdividePerspectiveMapping))
                     {
-                        x_delta.w = (right.pos.w - left.pos.w) / d_x;
+                        x_delta.w = pASR((right.pos.w - left.pos.w) * recip, shift);
                     }
                 }
 
                 if constexpr (render_flags & (ZTest | ZWrite))
                 {
-                    x_delta.z = (right.pos.z - left.pos.z) / d_x;
+                    x_delta.z = pASR((right.pos.z - left.pos.z) * recip, shift);
                 }
 
                 if constexpr (render_flags & Fog)
                 {
-                    x_delta.f = (right.fog_factor - left.fog_factor) / d_x;
+                    x_delta.f = pASR((right.fog_factor - left.fog_factor) * recip, shift);
                 }
             }
 
             constexpr void GetTriangleLerpYDeltas(const Vertex4d& a, const Vertex4d& b, TriDrawYDeltaZWUV &y_delta)
             {
-                const fp d_y = (a.pos.y - b.pos.y) != 0 ? (a.pos.y - b.pos.y) : fp(1);
+                constexpr unsigned int shift = 4;
 
-                y_delta.x = (a.pos.x - b.pos.x) / d_y;
+                const fp dy = (a.pos.y != b.pos.y) ? (a.pos.y - b.pos.y) : fp(1);
+
+                const fp recip = fp(pASL(fp(1), shift) / dy);
+
+                y_delta.x = pASR((a.pos.x - b.pos.x) * recip, shift);
 
                 if(current_texture)
                 {
-                    y_delta.u = (a.uv.x - b.uv.x) / d_y;
-                    y_delta.v = (a.uv.y - b.uv.y) / d_y;
+                    y_delta.u = pASR((a.uv.x - b.uv.x) * recip, shift);
+                    y_delta.v = pASR((a.uv.y - b.uv.y) * recip, shift);
 
                     if constexpr (render_flags & (FullPerspectiveMapping | SubdividePerspectiveMapping))
                     {
-                        y_delta.w = (a.pos.w - b.pos.w) / d_y;
+                        y_delta.w = pASR((a.pos.w - b.pos.w) * recip, shift);
                     }
                 }
 
                 if constexpr (render_flags & (ZTest | ZWrite))
                 {
-                    y_delta.z = (a.pos.z - b.pos.z) / d_y;
+                    y_delta.z = pASR((a.pos.z - b.pos.z) * recip, shift);
                 }
 
                 if constexpr (render_flags & Fog)
                 {
-                    y_delta.f = (a.fog_factor - b.fog_factor) / d_y;
+                    y_delta.f = pASR((a.fog_factor - b.fog_factor) * recip, shift);
                 }
             }
 
@@ -927,17 +941,17 @@ namespace P3D
             fp fracToY(const fp frac) const
             {
                 const fp halfFbY = pASR(current_viewport->height, 1);
-                return ((halfFbY * -frac) + halfFbY);
+                return (halfFbY * -frac) + halfFbY;
             }
 
             fp fracToX(const fp frac) const
             {
                 const fp halfFbX = pASR(current_viewport->width, 1);
-                return ((halfFbX * frac) + halfFbX);
+                return (halfFbX * frac) + halfFbX;
             }
 
             constexpr fp PixelCentre(const fp x) const
-            {
+            {                
                 return pCeil(x - fp(0.5)) + fp(0.5);
             }
 
@@ -954,6 +968,19 @@ namespace P3D
                 const fp cx = pASR(p.x - l1.x, 8);
 
                 return (dy*cx) - (dx*cy);
+            }
+
+            constexpr fp GetWDelta(const Vertex4d verts[3])
+            {
+                fp z0 = pReciprocal(verts[0].pos.w);
+                fp z1 = pReciprocal(verts[1].pos.w);
+                fp z2 = pReciprocal(verts[2].pos.w);
+
+                fp d1 = pAbs(z0 - z1);
+                fp d2 = pAbs(z0 - z2);
+                fp d3 = pAbs(z1 - z2);
+
+                return (d1 | d2 | d3);
             }
 
             fp GetFogFactor(const V4<fp>& pos)
