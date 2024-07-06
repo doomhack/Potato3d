@@ -76,7 +76,7 @@ namespace P3D
 
                 if constexpr (render_flags & (SubdividePerspectiveMapping))
                 {
-                    subdivide_span = GetWDelta(tri.verts) > fp(0.0077);
+                    subdivide_span = (GetZDelta(tri.verts) > fp(11));
                 }
 
                 unsigned int vxCount = ClipTriangle(tri);
@@ -97,12 +97,20 @@ namespace P3D
                     tri.verts[i].pos.x = fracToX(tri.verts[i].pos.x);
                     tri.verts[i].pos.y = fracToY(tri.verts[i].pos.y);
 
-                    if constexpr (render_flags & (Fog))
+                    if constexpr (render_flags & Fog)
                     {
                         tri.verts[i].fog_factor = GetFogFactor(tri.verts[i].pos);
                     }
 
-                    if constexpr (render_flags & (FullPerspectiveMapping | SubdividePerspectiveMapping))
+                    if constexpr (render_flags & FullPerspectiveMapping)
+                    {
+                        if(current_texture)
+                        {
+                            tri.verts[i].toPerspectiveCorrect(max_w_tex_scale);
+                        }
+                    }
+
+                    if constexpr (render_flags & SubdividePerspectiveMapping)
                     {
                         if(current_texture && subdivide_span)
                         {
@@ -213,6 +221,7 @@ namespace P3D
                 else if (!pAllGTEqZ3(w0 - z_near, w1 - z_near, w2 - z_near))
                     clip = W_Near; //Intersects near plane
 
+
                 //
                 for(unsigned int i = X_W_Left; i < W_Far; i <<= 1)
                 {
@@ -278,12 +287,9 @@ namespace P3D
                         vxCountOut++;
                     }
 
-                    if(((w1 - z_near) ^ (w2 - z_near)) < 0)
+                    if(!pSameSignBit(w1 - z_near, w2 - z_near))
                     {
-                        fp l = (clipSpacePointsIn[i].pos.w - z_near);
-                        fp r = clipSpacePointsIn[i].pos.w - clipSpacePointsIn[i2].pos.w - (pASL(z_near, 1));
-
-                        fp frac = l / r;
+                        fp frac = (w1 - z_near) / (w1 - w2);
 
                         LerpVertex(tmpVx[vxCountOut], clipSpacePointsIn[i], clipSpacePointsIn[i2], frac);
                         vxCountOut++;
@@ -365,7 +371,7 @@ namespace P3D
 
             fp GetLineIntersectionFrac(const fp a1, const fp a2, const fp b1, const fp b2) const
             {
-                if(((a1 - b1) ^ (a2 - b2)) < 0)
+                if(!pSameSignBit(a1 - b1, a2 - b2))
                 {
                     fp l1 = (a1 - b1);
 
@@ -861,6 +867,62 @@ namespace P3D
                 return ((x1 * y2) < (y1 * x2));
             }
 
+#if 0
+            constexpr void GetTriangleLerpXDeltas(const Vertex4d& left, const Vertex4d& right, TriDrawXDeltaZWUV& x_delta)
+            {
+                const fp dx = (right.pos.x != left.pos.x) ? (right.pos.x - left.pos.x) : fp(1);
+
+                if(current_texture)
+                {
+                    x_delta.u = (right.uv.x - left.uv.x) / dx;
+                    x_delta.v = (right.uv.y - left.uv.y) / dx;
+
+                    if constexpr (render_flags & (FullPerspectiveMapping | SubdividePerspectiveMapping))
+                    {
+                        x_delta.w = (right.pos.w - left.pos.w) / dx;
+                    }
+                }
+
+                if constexpr (render_flags & (ZTest | ZWrite))
+                {
+                    x_delta.z = (right.pos.z - left.pos.z) / dx;
+                }
+
+                if constexpr (render_flags & Fog)
+                {
+                    x_delta.f = (right.fog_factor - left.fog_factor) / dx;
+                }
+            }
+
+            constexpr void GetTriangleLerpYDeltas(const Vertex4d& a, const Vertex4d& b, TriDrawYDeltaZWUV &y_delta)
+            {
+                const fp dy = (a.pos.y != b.pos.y) ? (a.pos.y - b.pos.y) : fp(1);
+
+                y_delta.x = (a.pos.x - b.pos.x) / dy;
+
+                if(current_texture)
+                {
+                    y_delta.u = (a.uv.x - b.uv.x) / dy;
+                    y_delta.v = (a.uv.y - b.uv.y) / dy;
+
+                    if constexpr (render_flags & (FullPerspectiveMapping | SubdividePerspectiveMapping))
+                    {
+                        y_delta.w = (a.pos.w - b.pos.w) / dy;
+                    }
+                }
+
+                if constexpr (render_flags & (ZTest | ZWrite))
+                {
+                    y_delta.z = (a.pos.z - b.pos.z) / dy;
+                }
+
+                if constexpr (render_flags & Fog)
+                {
+                    y_delta.f = (a.fog_factor - b.fog_factor) / dy;
+                }
+            }
+
+#else
             constexpr void GetTriangleLerpXDeltas(const Vertex4d& left, const Vertex4d& right, TriDrawXDeltaZWUV& x_delta)
             {
                 constexpr unsigned int shift = 8;
@@ -922,7 +984,7 @@ namespace P3D
                     y_delta.f = pASR((a.fog_factor - b.fog_factor) * recip, shift);
                 }
             }
-
+#endif
             constexpr void LerpVertex(Vertex4d& out, const Vertex4d& left, const Vertex4d& right, const fp frac)
             {
                 out.pos.x = pLerp(left.pos.x, right.pos.x, frac);
@@ -978,17 +1040,20 @@ namespace P3D
                 return (dy*cx) - (dx*cy);
             }
 
-            constexpr fp GetWDelta(const Vertex4d verts[3])
+            constexpr fp GetZDelta(const Vertex4d verts[3])
             {
-                fp z0 = pReciprocal(verts[0].pos.w);
-                fp z1 = pReciprocal(verts[1].pos.w);
-                fp z2 = pReciprocal(verts[2].pos.w);
+                fp zr1 = z_planes->z_ratio_1;
+                fp zr2 = z_planes->z_ratio_2;
+
+                fp z0 = fp(1) - (zr1 + (pReciprocal(verts[0].pos.w) * zr2));
+                fp z1 = fp(1) - (zr1 + (pReciprocal(verts[1].pos.w) * zr2));
+                fp z2 = fp(1) - (zr1 + (pReciprocal(verts[2].pos.w) * zr2));
 
                 fp d1 = pAbs(z0 - z1);
                 fp d2 = pAbs(z0 - z2);
                 fp d3 = pAbs(z1 - z2);
 
-                return (d1 | d2 | d3);
+                return (d1 + d2 + d3) * fp(85); //Scale to 0..255 range.
             }
 
             fp GetFogFactor(const V4<fp>& pos)

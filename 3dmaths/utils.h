@@ -130,6 +130,18 @@ namespace P3D
         return (a | b | c) >= 0;
     }
 
+    template <class T>
+    constexpr inline bool pSameSignBit(const T a, const T b)
+    {
+        return (std::signbit(a) == std::signbit(b));
+    }
+
+    template <>
+    constexpr inline bool pSameSignBit(const FP16 a, const FP16 b)
+    {
+        return (a ^ b) >= 0;
+    }
+
     inline void FastCopy32(void* dest, const void* src, const unsigned int len)
     {
     #ifdef __arm__

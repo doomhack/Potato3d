@@ -67,6 +67,13 @@ namespace P3D
         z_planes.z_near = z_near;
         z_planes.z_far = z_far;
 
+        z_planes.z_ratio_1 = z_far / (z_far - z_near);
+
+        float zi = (-z_far * z_near);
+        float zj = (z_far - z_near);
+
+        z_planes.z_ratio_2 = fp(zi / zj);
+
         if(triangle_render)
         {
             triangle_render->SetZPlanes(z_planes);

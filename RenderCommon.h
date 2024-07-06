@@ -98,6 +98,9 @@ namespace P3D
         public:
             fp z_near = 0;
             fp z_far = 0;
+
+            fp z_ratio_1; // (far) / (far - near)
+            fp z_ratio_2; // (-far * near) / (far - near)
         };
 
         class RenderDeviceFogParameters
