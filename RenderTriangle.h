@@ -74,6 +74,11 @@ namespace P3D
                     current_color = material.color;
                 }
 
+                if constexpr (render_flags & (SubdividePerspectiveMapping))
+                {
+                    subdivide_span = GetWDelta(tri.verts) > fp(0.0077);
+                }
+
                 unsigned int vxCount = ClipTriangle(tri);
 
                 if(vxCount < 3)
@@ -99,7 +104,7 @@ namespace P3D
 
                     if constexpr (render_flags & (FullPerspectiveMapping | SubdividePerspectiveMapping))
                     {
-                        if(current_texture)
+                        if(current_texture && subdivide_span)
                         {
                             tri.verts[i].toPerspectiveCorrect(max_w_tex_scale);
                         }
@@ -617,7 +622,10 @@ namespace P3D
                     {
                         if constexpr (render_flags & SubdividePerspectiveMapping)
                         {
-                            SubdivideSpan(span_pos, delta, current_texture);
+                            if(subdivide_span)
+                                SubdivideSpan(span_pos, delta, current_texture);
+                            else
+                                DrawTriangleScanlineAffine(span_pos, delta, current_texture);
                         }
                         else
                         {
@@ -1044,6 +1052,7 @@ namespace P3D
 
             const pixel* current_texture = nullptr;
             pixel current_color = 0;
+            bool subdivide_span = false;
 
 #ifdef RENDER_STATS
             RenderStats* render_stats = nullptr;
