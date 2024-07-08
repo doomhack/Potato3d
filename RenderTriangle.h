@@ -1007,13 +1007,13 @@ namespace P3D
                 }
             }
 
-            fp fracToY(const fp frac) const
+            constexpr fp fracToY(const fp frac) const
             {
                 const fp halfFbY = pASR(current_viewport->height, 1);
                 return (halfFbY * -frac) + halfFbY;
             }
 
-            fp fracToX(const fp frac) const
+            constexpr fp fracToX(const fp frac) const
             {
                 const fp halfFbX = pASR(current_viewport->width, 1);
                 return (halfFbX * frac) + halfFbX;
@@ -1039,14 +1039,30 @@ namespace P3D
                 return (dy*cx) - (dx*cy);
             }
 
+            constexpr fp WtoZ(const fp w) const
+            {
+                const fp zr1 = z_planes->z_ratio_1;
+                const fp zr2 = z_planes->z_ratio_2;
+
+                return fp(1) - (zr1 + (pReciprocal(w) * zr2));
+            }
+
+            constexpr fp LinearW(const fp w) const
+            {
+                const fp near = z_planes->z_near;
+                const fp far = z_planes->z_far;
+
+                return fp(1) - ((w - near) * pReciprocal(far - near));
+            }
+
             constexpr fp GetZDelta(const Vertex4d verts[3]) const
             {
                 fp zr1 = z_planes->z_ratio_1;
                 fp zr2 = z_planes->z_ratio_2;
 
-                fp z0 = fp(1) - (zr1 + (pReciprocal(verts[0].pos.w) * zr2));
-                fp z1 = fp(1) - (zr1 + (pReciprocal(verts[1].pos.w) * zr2));
-                fp z2 = fp(1) - (zr1 + (pReciprocal(verts[2].pos.w) * zr2));
+                fp z0 = WtoZ(verts[0].pos.w);
+                fp z1 = WtoZ(verts[1].pos.w);
+                fp z2 = WtoZ(verts[2].pos.w);
 
                 fp d1 = pAbs(z0 - z1);
                 fp d2 = pAbs(z0 - z2);
@@ -1063,10 +1079,10 @@ namespace P3D
                         return GetLinearFogFactor(pos.w);
 
                     case P3D::FogMode::FogExponential:
-                        return GetExponentialFogFactor(pos.w * pos.z);
+                        return GetExponentialFogFactor(pos.w);
 
                     case P3D::FogMode::FogExponential2:
-                        return GetExponential2FogFactor(pos.w * pos.z);
+                        return GetExponential2FogFactor(pos.w);
 
                     default:
                         return 0;
@@ -1088,7 +1104,9 @@ namespace P3D
 
             constexpr fp GetExponentialFogFactor(const fp w) const
             {
-                const fp d = (w * fog_params->fog_density);
+                const fp z = fp(1) - LinearW(w);
+
+                const fp d = (z * fog_params->fog_density);
 
                 const fp r = exp(-d);
 
@@ -1097,7 +1115,9 @@ namespace P3D
 
             constexpr fp GetExponential2FogFactor(const fp w) const
             {
-                fp d = (w * fog_params->fog_density);
+                const fp z = fp(1) - LinearW(w);
+
+                fp d = (z * fog_params->fog_density);
 
                 d = (d * d);
 
