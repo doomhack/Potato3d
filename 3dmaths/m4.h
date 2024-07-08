@@ -335,8 +335,8 @@ namespace P3D
             else
             {
                 const T a = pD2R(angle);
-                c = T(std::cos((double)a));
-                s = T(std::sin((double)a));
+                c = T(std::cos((float)a));
+                s = T(std::sin((float)a));
             }
 
 
@@ -378,8 +378,8 @@ namespace P3D
             else
             {
                 const T a = pD2R(angle);
-                c = T(std::cos((double)a));
-                s = T(std::sin((double)a));
+                c = T(std::cos((float)a));
+                s = T(std::sin((float)a));
             }
 
             T tmp;
@@ -420,8 +420,8 @@ namespace P3D
             else
             {
                 const T a = pD2R(angle);
-                c = T(std::cos((double)a));
-                s = T(std::sin((double)a));
+                c = T(std::cos((float)a));
+                s = T(std::sin((float)a));
             }
 
             T tmp;
@@ -506,31 +506,31 @@ namespace P3D
             if (left == right || bottom == top || nearPlane == farPlane)
                 return;
 
-            const double fp = farPlane;
-            const double np = nearPlane;
-            const double l = left;
-            const double r = right;
-            const double t = top;
-            const double b = bottom;
+            const T fp = farPlane;
+            const T np = nearPlane;
+            const T l = left;
+            const T r = right;
+            const T t = top;
+            const T b = bottom;
 
-            const double width = (r - l);
-            const double height = (t - b);
-            const double depth = (fp - np);
+            const T width = (r - l);
+            const T height = (t - b);
+            const T depth = (fp - np);
 
-            m[0][0] = T(2.0 / width);
+            m[0][0] = T(2) / width;
             m[1][0] = 0;
             m[2][0] = 0;
-            m[3][0] = T(-(l + r) / width);
+            m[3][0] = -(l + r) / width;
 
             m[0][1] = 0;
-            m[1][1] = T(2.0 / height);
+            m[1][1] = T(2) / height;
             m[2][1] = 0;
-            m[3][1] = T(-(t + b) / height);
+            m[3][1] = -(t + b) / height;
 
             m[0][2] = 0;
             m[1][2] = 0;
-            m[2][2] = T(-2.0 / depth);
-            m[3][2] = T(-(np + fp) / depth);
+            m[2][2] = T(-2) / depth;
+            m[3][2] = -(np + fp) / depth;
 
             m[0][3] = 0;
             m[1][3] = 0;
