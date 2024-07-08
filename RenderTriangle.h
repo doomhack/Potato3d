@@ -76,7 +76,7 @@ namespace P3D
 
                 if constexpr (render_flags & (SubdividePerspectiveMapping))
                 {
-                    subdivide_span = (GetZDelta(tri.verts) > fp(11));
+                    subdivide_span = (GetZDelta(tri.verts) > SUBDIVIDE_Z_THREASHOLD);
                 }
 
                 unsigned int vxCount = ClipTriangle(tri);
@@ -202,7 +202,7 @@ namespace P3D
                 return true;
             }
 
-            unsigned int ClipTriangle(TransformedTriangle& clipSpacePoints)
+            unsigned int ClipTriangle(TransformedTriangle& clipSpacePoints) const
             {
                 fp z_far = z_planes->z_far;
                 fp z_near = z_planes->z_near;
@@ -220,7 +220,6 @@ namespace P3D
                     return 0; //All outside near plane. Reject
                 else if (!pAllGTEqZ3(w0 - z_near, w1 - z_near, w2 - z_near))
                     clip = W_Near; //Intersects near plane
-
 
                 //
                 for(unsigned int i = X_W_Left; i < W_Far; i <<= 1)
@@ -268,7 +267,7 @@ namespace P3D
                 return vxCount;
             }
 
-            unsigned int ClipWNear(Vertex4d clipSpacePointsIn[3])
+            unsigned int ClipWNear(Vertex4d clipSpacePointsIn[3]) const
             {
                 Vertex4d tmpVx[4];
                 unsigned int vxCountOut = 0;
@@ -301,7 +300,7 @@ namespace P3D
                 return vxCountOut;
             }
 
-            unsigned int ClipPolygonToPlane(const Vertex4d clipSpacePointsIn[], const int vxCount, Vertex4d clipSpacePointsOut[], ClipPlane clipPlane)
+            unsigned int ClipPolygonToPlane(const Vertex4d clipSpacePointsIn[], const int vxCount, Vertex4d clipSpacePointsOut[], ClipPlane clipPlane) const
             {
                 unsigned int vxCountOut = 0;
 
@@ -388,7 +387,7 @@ namespace P3D
                 return pASL(w, CLIP_GUARD_BAND_SHIFT);
             }
 
-            void GetVertexYOrder(const Vertex4d screenSpacePoints[3], unsigned int vxOrder[3])
+            void GetVertexYOrder(const Vertex4d screenSpacePoints[3], unsigned int vxOrder[3]) const
             {
                 if(screenSpacePoints[vxOrder[0]].pos.y > screenSpacePoints[vxOrder[2]].pos.y)
                     std::swap(vxOrder[0], vxOrder[2]);
@@ -400,7 +399,7 @@ namespace P3D
                     std::swap(vxOrder[1], vxOrder[2]);
             }
 
-            void TriangulatePolygon(Vertex4d clipSpacePoints[], const int vxCount)
+            void TriangulatePolygon(Vertex4d clipSpacePoints[], const int vxCount) const
             {
                 DrawTriangleEdge(clipSpacePoints);
 
@@ -414,7 +413,7 @@ namespace P3D
                 }
             }
 
-            void DrawTriangleEdge(const Vertex4d points[3])
+            void DrawTriangleEdge(const Vertex4d points[3]) const
             {
 
 #ifdef RENDER_STATS
@@ -504,7 +503,7 @@ namespace P3D
                 DrawTriangleSpans(yStart, yEnd, pos, y_delta_left, y_delta_right, x_delta);
             }
 
-            void PreStepYTriangleLeft(const fp stepY, const Vertex4d& left, TriEdgeTrace& pos, const TriDrawYDeltaZWUV& y_delta_left)
+            void PreStepYTriangleLeft(const fp stepY, const Vertex4d& left, TriEdgeTrace& pos, const TriDrawYDeltaZWUV& y_delta_left) const
             {
                 if(current_texture)
                 {
@@ -530,12 +529,12 @@ namespace P3D
                 }
             }
 
-            void PreStepYTriangleRight(const fp stepY, const Vertex4d& right, TriEdgeTrace& pos, const TriDrawYDeltaZWUV& y_delta_right)
+            void PreStepYTriangleRight(const fp stepY, const Vertex4d& right, TriEdgeTrace& pos, const TriDrawYDeltaZWUV& y_delta_right) const
             {
                 pos.x_right = right.pos.x + (stepY * y_delta_right.x);
             }
 
-            void DrawTriangleSpans(const int yStart, const int yEnd, TriEdgeTrace& pos, const TriDrawYDeltaZWUV& y_delta_left, const TriDrawYDeltaZWUV& y_delta_right, const TriDrawXDeltaZWUV x_delta)
+            void DrawTriangleSpans(const int yStart, const int yEnd, TriEdgeTrace& pos, const TriDrawYDeltaZWUV& y_delta_left, const TriDrawYDeltaZWUV& y_delta_right, const TriDrawXDeltaZWUV x_delta) const
             {
                 pos.fb_ypos = &current_viewport->start[yStart * current_viewport->y_pitch];
 
@@ -577,7 +576,7 @@ namespace P3D
                 }
             }
 
-            void DrawSpan(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta)
+            void DrawSpan(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta) const
             {
                 TriEdgeTrace span_pos;
 
@@ -649,7 +648,7 @@ namespace P3D
 #endif
             }
 
-            void SubdivideSpan(TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const pixel* texture)
+            void SubdivideSpan(TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const pixel* texture) const
             {
                 TriDrawXDeltaZWUV delta2;
 
@@ -700,7 +699,7 @@ namespace P3D
                 }
             }
 
-            void DrawTriangleScanlineAffine(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const pixel* texture)
+            void DrawTriangleScanlineAffine(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const pixel* texture) const
             {
                 const int x_start = (int)pos.x_left;
                 const int x_end = (int)pos.x_right;
@@ -753,7 +752,7 @@ namespace P3D
             }
 
 
-            void DrawTriangleScanlinePerspectiveCorrect(const Internal::TriEdgeTrace& pos, const Internal::TriDrawXDeltaZWUV& delta, const pixel* texture)
+            void DrawTriangleScanlinePerspectiveCorrect(const Internal::TriEdgeTrace& pos, const Internal::TriDrawXDeltaZWUV& delta, const pixel* texture) const
             {
                 const int x_start = (int)pos.x_left;
                 const int x_end = (int)pos.x_right;
@@ -801,7 +800,7 @@ namespace P3D
                     TPixelShader::DrawScanlinePixelLow(fb, zb, z, texture, u * pReciprocal(w), v * pReciprocal(w), f, fog_color);
             }
 
-            void DrawTriangleScanlineFlat(const Internal::TriEdgeTrace& pos, const Internal::TriDrawXDeltaZWUV& delta,  const pixel color)
+            void DrawTriangleScanlineFlat(const Internal::TriEdgeTrace& pos, const Internal::TriDrawXDeltaZWUV& delta,  const pixel color) const
             {
                 const int x_start = (int)pos.x_left;
                 const int x_end = (int)pos.x_right;
@@ -923,7 +922,7 @@ namespace P3D
             }
 
 #else
-            constexpr void GetTriangleLerpXDeltas(const Vertex4d& left, const Vertex4d& right, TriDrawXDeltaZWUV& x_delta)
+            constexpr void GetTriangleLerpXDeltas(const Vertex4d& left, const Vertex4d& right, TriDrawXDeltaZWUV& x_delta) const
             {
                 constexpr unsigned int shift = 8;
 
@@ -953,7 +952,7 @@ namespace P3D
                 }
             }
 
-            constexpr void GetTriangleLerpYDeltas(const Vertex4d& a, const Vertex4d& b, TriDrawYDeltaZWUV &y_delta)
+            constexpr void GetTriangleLerpYDeltas(const Vertex4d& a, const Vertex4d& b, TriDrawYDeltaZWUV &y_delta) const
             {
                 constexpr unsigned int shift = 4;
 
@@ -985,7 +984,7 @@ namespace P3D
                 }
             }
 #endif
-            constexpr void LerpVertex(Vertex4d& out, const Vertex4d& left, const Vertex4d& right, const fp frac)
+            constexpr void LerpVertex(Vertex4d& out, const Vertex4d& left, const Vertex4d& right, const fp frac) const
             {
                 out.pos.x = pLerp(left.pos.x, right.pos.x, frac);
                 out.pos.y = pLerp(left.pos.y, right.pos.y, frac);
@@ -1040,7 +1039,7 @@ namespace P3D
                 return (dy*cx) - (dx*cy);
             }
 
-            constexpr fp GetZDelta(const Vertex4d verts[3])
+            constexpr fp GetZDelta(const Vertex4d verts[3]) const
             {
                 fp zr1 = z_planes->z_ratio_1;
                 fp zr2 = z_planes->z_ratio_2;
@@ -1056,7 +1055,7 @@ namespace P3D
                 return (d1 + d2 + d3) * fp(85); //Scale to 0..255 range.
             }
 
-            fp GetFogFactor(const V4<fp>& pos)
+            constexpr fp GetFogFactor(const V4<fp>& pos) const
             {
                 switch(fog_params->mode)
                 {
@@ -1074,7 +1073,7 @@ namespace P3D
                 }
             }
 
-            fp GetLinearFogFactor(const fp w)
+            constexpr fp GetLinearFogFactor(const fp w) const
             {
                 if(w >= fog_params->fog_end)
                     return 1;
@@ -1087,7 +1086,7 @@ namespace P3D
                 return pClamp(fp(0), fp(1)-(x/y), fp(1));
             }
 
-            fp GetExponentialFogFactor(const fp w)
+            constexpr fp GetExponentialFogFactor(const fp w) const
             {
                 const fp d = (w * fog_params->fog_density);
 
@@ -1096,7 +1095,7 @@ namespace P3D
                 return pClamp(fp(0), fp(1)-r, fp(1));
             }
 
-            fp GetExponential2FogFactor(const fp w)
+            constexpr fp GetExponential2FogFactor(const fp w) const
             {
                 fp d = (w * fog_params->fog_density);
 

@@ -69,8 +69,11 @@ namespace P3D
 
         z_planes.z_ratio_1 = z_far / (z_far - z_near);
 
-        float zi = (-z_far * z_near);
-        float zj = (z_far - z_near);
+        float zn = z_near;
+        float zf = z_far;
+
+        float zi = (-zf * zn);
+        float zj = (zf - zn);
 
         z_planes.z_ratio_2 = fp(zi / zj);
 
