@@ -69,13 +69,13 @@ namespace P3D
 
         z_planes.z_ratio_1 = z_far / (z_far - z_near);
 
-        float zn = z_near;
-        float zf = z_far;
+        int zn = z_near;
+        int zf = z_far;
 
-        float zi = (-zf * zn);
-        float zj = (zf - zn);
+        int zi = (-zf * zn);
+        int zj = (zf - zn);
 
-        z_planes.z_ratio_2 = fp(zi / zj);
+        z_planes.z_ratio_2 = fp::fromFPInt(FixedDiv(zi, zj, 16));
 
         if(triangle_render)
         {

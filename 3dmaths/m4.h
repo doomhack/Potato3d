@@ -472,13 +472,13 @@ namespace P3D
             SetFlag(Updated);
 
 
-            const double va = verticalAngle;
-            const double ar = aspectRatio;
-            const double scale = 1.0 / std::tan(double(va) * 0.5 * M_PI / 180.0);
+            const T va = verticalAngle;
+            const T ar = aspectRatio;
+            const T scale = T(1.0) / std::tan((float)(va * T(0.5) * T(M_PI) / T(180.0)));
 
-            const double fp = farPlane;
-            const double np = nearPlane;
-            const double fd = (fp - np);
+            const T fp = farPlane;
+            const T np = nearPlane;
+            const T fd = (fp - np);
 
             m[0][0] = T(scale / ar);
             m[1][0] = 0;
