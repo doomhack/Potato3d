@@ -76,7 +76,7 @@ namespace P3D
 
                 if constexpr (render_flags & (SubdividePerspectiveMapping))
                 {
-                    subdivide_span = (GetZDelta(tri.verts) > SUBDIVIDE_Z_THREASHOLD);
+                    subdivide_spans = (GetZDelta(tri.verts) > SUBDIVIDE_Z_THREASHOLD);
                 }
 
                 unsigned int vxCount = ClipTriangle(tri);
@@ -112,7 +112,7 @@ namespace P3D
 
                     if constexpr (render_flags & SubdividePerspectiveMapping)
                     {
-                        if(current_texture && subdivide_span)
+                        if(current_texture && subdivide_spans)
                         {
                             tri.verts[i].toPerspectiveCorrect(max_w_tex_scale);
                         }
@@ -627,7 +627,7 @@ namespace P3D
                     {
                         if constexpr (render_flags & SubdividePerspectiveMapping)
                         {
-                            if(subdivide_span)
+                            if(subdivide_spans)
                                 SubdivideSpan(span_pos, delta, current_texture);
                             else
                                 DrawTriangleScanlineAffine(span_pos, delta, current_texture);
@@ -847,7 +847,7 @@ namespace P3D
                 {
                     if(count >> 1)
                     {
-                        FastFill16((unsigned short*)fb, color | color << 8, count >> 1); fb+=count-1;
+                        FastFill16((unsigned short*)fb, color | color << 8, count >> 1), fb+=count-1;
                     }
                 }
 
@@ -1108,7 +1108,7 @@ namespace P3D
 
                 const fp d = (z * fog_params->fog_density);
 
-                const fp r = exp(-d);
+                const fp r = expf(-d);
 
                 return pClamp(fp(0), fp(1)-r, fp(1));
             }
@@ -1121,7 +1121,7 @@ namespace P3D
 
                 d = (d * d);
 
-                const fp r = exp(-d);
+                const fp r = expf(-d);
 
                 return pClamp(fp(0), fp(1)-r, fp(1));
             }
@@ -1136,7 +1136,7 @@ namespace P3D
 
             const pixel* current_texture = nullptr;
             pixel current_color = 0;
-            bool subdivide_span = false;
+            bool subdivide_spans = false;
 
 #ifdef RENDER_STATS
             RenderStats* render_stats = nullptr;
