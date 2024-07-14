@@ -673,6 +673,11 @@ namespace P3D
                 fp du = pASR(u15-u0, SUBDIVIDE_SPAN_SHIFT);
                 fp dv = pASR(v15-v0, SUBDIVIDE_SPAN_SHIFT);
 
+                if constexpr(render_flags & Fog)
+                {
+                    delta2.f = delta.f;
+                }
+
                 while(true)
                 {
                     pos.x_right = pMin(x_right, pos.x_left + SUBDIVIDE_SPAN_LEN);
@@ -701,6 +706,12 @@ namespace P3D
 
                     du = pASR(u15-u0, SUBDIVIDE_SPAN_SHIFT);
                     dv = pASR(v15-v0, SUBDIVIDE_SPAN_SHIFT);
+
+                    if constexpr(render_flags & Fog)
+                    {
+                        pos.f_left += pASL(delta2.f, SUBDIVIDE_SPAN_SHIFT);
+                    }
+
                 }
             }
 
@@ -1042,14 +1053,15 @@ namespace P3D
             constexpr fp GetLinearFogFactor(const fp w) const
             {
                 if(w >= fog_params->fog_end)
-                    return 1;
+                    return fp(1.0) - std::numeric_limits<fp>().epsilon();
                 else if(w <= fog_params->fog_start)
                     return 0;
 
                 const fp x = fog_params->fog_end - w;
                 const fp y = fog_params->fog_end - fog_params->fog_start;
+                const fp z = x / y;
 
-                return pClamp(fp(0), fp(1)-(x/y), fp(1));
+                return pClamp(fp(0), fp(1)-z, fp(1.0) - std::numeric_limits<fp>().epsilon());
             }
 
             constexpr fp GetExponentialFogFactor(const fp w) const
@@ -1060,7 +1072,7 @@ namespace P3D
 
                 const fp r = expf(-d);
 
-                return pClamp(fp(0), fp(1)-r, fp(1));
+                return pClamp(fp(0), fp(1)-r, fp(1.0) - std::numeric_limits<fp>().epsilon());
             }
 
             constexpr fp GetExponential2FogFactor(const fp w) const
@@ -1073,7 +1085,7 @@ namespace P3D
 
                 const fp r = expf(-d);
 
-                return pClamp(fp(0), fp(1)-r, fp(1));
+                return pClamp(fp(0), fp(1)-r, fp(1.0) - std::numeric_limits<fp>().epsilon());
             }
 
 
