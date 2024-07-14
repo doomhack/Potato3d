@@ -5,7 +5,6 @@
 #include <map>
 
 #include "Config.h"
-#include "rtypes.h"
 #include "bspmodel.h"
 
 #include "RenderDevice.h"

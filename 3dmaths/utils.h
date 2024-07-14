@@ -37,10 +37,10 @@ namespace P3D
         return (int)(val + T(0.5));
     }
 
-    template <>
-    constexpr inline int pRound(const FP16 val)
+    template<unsigned int fracbits>
+    constexpr FP<fracbits> pRound(const FP<fracbits> val)
     {
-        return val + (FP16(1) >> 1);
+        return val + (FP<fracbits>(1) >> 1);
     }
 
     template <class T>
@@ -49,8 +49,8 @@ namespace P3D
         return val * (1 << shift);
     }
 
-    template <>
-    constexpr inline FP16 pASL(const FP16 val, const int shift)
+    template<unsigned int fracbits>
+    constexpr inline FP<fracbits> pASL(const FP<fracbits> val, const int shift)
     {
         return val << shift;
     }
@@ -61,8 +61,8 @@ namespace P3D
         return val / (1 << shift);
     }
 
-    template <>
-    constexpr inline FP16 pASR(const FP16 val, const int shift)
+    template<unsigned int fracbits>
+    constexpr inline FP<fracbits> pASR(const FP<fracbits> val, const int shift)
     {
         return val >> shift;
     }
@@ -73,10 +73,12 @@ namespace P3D
         return std::ceil(val);
     }
 
-    template <>
-    constexpr inline FP16 pCeil(const FP16 val)
+    template<unsigned int fracbits>
+    constexpr inline FP<fracbits> pCeil(const FP<fracbits> val)
     {
-        return (val.toFPInt() + 0xffff) >> 16;
+        constexpr unsigned int fpbits = (FP<fracbits>(1).toFPInt()) - 1;
+
+        return (val.toFPInt() + fpbits) >> fracbits;
     }
 
     template <class T>
@@ -112,8 +114,8 @@ namespace P3D
         return (a < 0) && (b < 0) && (c < 0);
     }
 
-    template <>
-    constexpr inline bool pAllLTZ3(const FP16 a, const FP16 b, const FP16 c)
+    template<unsigned int fracbits>
+    constexpr inline bool pAllLTZ3(const FP<fracbits> a, const FP<fracbits> b, const FP<fracbits> c)
     {
         return (a & b & c) < 0;
     }
@@ -124,8 +126,8 @@ namespace P3D
         return (a >= 0) && (b >= 0) && (c >= 0);
     }
 
-    template <>
-    constexpr inline bool pAllGTEqZ3(const FP16 a, const FP16 b, const FP16 c)
+    template<unsigned int fracbits>
+    constexpr inline bool pAllGTEqZ3(const FP<fracbits> a, const FP<fracbits> b, const FP<fracbits> c)
     {
         return (a | b | c) >= 0;
     }
@@ -136,8 +138,8 @@ namespace P3D
         return (std::signbit(a) == std::signbit(b));
     }
 
-    template <>
-    constexpr inline bool pSameSignBit(const FP16 a, const FP16 b)
+    template<unsigned int fracbits>
+    constexpr inline bool pSameSignBit(const FP<fracbits> a, const FP<fracbits> b)
     {
         return (a ^ b) >= 0;
     }
@@ -195,12 +197,17 @@ namespace P3D
         return T(1)/val;
     }
 
-    template <>
-    constexpr inline FP16 pReciprocal(const FP16 v)
+    template<unsigned int fracbits>
+    constexpr inline FP<fracbits> pReciprocal(const FP<fracbits> v)
     {
-        FP val = v < 0 ? -v : v;
+        FP<fracbits> val = v < 0 ? -v : v;
 
-        unsigned int shift = 0;
+        int shift = 0;
+
+        if constexpr(fracbits < 16)
+            shift = (16 - fracbits);
+        else if constexpr(fracbits > 16)
+            shift = (fracbits - 16);
 
         while(val > 4)
         {
@@ -208,7 +215,32 @@ namespace P3D
             shift++;
         }
 
-        FP result = FP16::fromFPInt(reciprocalTable[val.toFPInt()] >> shift);
+        unsigned int recip = reciprocalTable[val.toFPInt()];
+
+        if(shift < 0)
+            recip <<= -shift;
+        else if(shift > 0)
+            recip >>= shift;
+
+        FP<fracbits> result = FP<fracbits>::fromFPInt(recip);
+
+        return v < 0 ? -result : result;
+    }
+
+    template<>
+    constexpr inline FP16 pReciprocal(const FP16 v)
+    {
+        FP16 val = v < 0 ? -v : v;
+
+        int shift = 0;
+
+        while(val > 4)
+        {
+            val >>= 1;
+            shift++;
+        }
+
+        FP16 result = FP16::fromFPInt(reciprocalTable[val.toFPInt()] >> shift);
 
         return v < 0 ? -result : result;
     }

@@ -237,7 +237,17 @@ namespace P3D
     typedef FP<16>  FP16;   //s + 15 + 16 (-32768 to +32767) (0.000015)
     typedef FP<8>   FP8;    //s + 23 + 8  (-8,388,608 to +8,388,608) (0.039)
     typedef FP<24>  FP24;   //s + 7 + 24  (-128 to +127) (0.0000000596)
-
 }
+
+template<int fracbits>
+struct std::numeric_limits<P3D::FP<fracbits>> : public numeric_limits<int>
+{
+    static constexpr bool is_specialized = true;
+
+    static constexpr P3D::FP<fracbits> min() noexcept { return P3D::FP<fracbits>::fromFPInt(std::numeric_limits<int>::min()); }
+    static constexpr P3D::FP<fracbits> max() noexcept { return P3D::FP<fracbits>::fromFPInt(std::numeric_limits<int>::max()); }
+    static constexpr P3D::FP<fracbits> lowest() noexcept { return min(); }
+    static constexpr P3D::FP<fracbits> epsilon() noexcept { return P3D::FP<fracbits>::fromFPInt(1); }
+};
 
 #endif // FP_H

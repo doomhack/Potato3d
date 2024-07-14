@@ -24,7 +24,6 @@ SOURCES += \
     ../RenderTarget.cpp \
     ../bspmodel.cpp \
     ../object3d.cpp \
-    bsp3d.cpp \
     main.cpp \
     mainwindow.cpp \
     mainwindow2.cpp
@@ -39,6 +38,7 @@ HEADERS += \
     ../3dmaths/v2.h \
     ../3dmaths/v3.h \
     ../3dmaths/v4.h \
+    ../BspModelDefs.h \
     ../Config.h \
     ../ConfigInternal.h \
     ../ConfigUser.h \
@@ -53,8 +53,6 @@ HEADERS += \
     ../bspmodel.h \
     ../object3d.h \
     ../potato3d.h \
-    ../rtypes.h \
-    bsp3d.h \
     mainwindow.h \
     mainwindow2.h \
     models/model.h

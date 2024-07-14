@@ -94,13 +94,14 @@ int main()
     P3D::RenderTarget* render_target = new P3D::RenderTarget(240, 160, I_GetBackBuffer());
     render_target->AttachZBuffer();
 
+
     P3D::RenderDevice* render_device = new P3D::RenderDevice();
-    //render_device->SetRenderFlags<P3D::RenderFlags::NoFlags, P3D::PixelShaderGBA8<P3D::RenderFlags::NoFlags>>();
-    render_device->SetRenderFlags<P3D::RenderFlags::SubdividePerspectiveMapping, P3D::PixelShaderGBA8<P3D::RenderFlags::SubdividePerspectiveMapping>>();
+    render_device->SetRenderFlags<P3D::RenderFlags::NoFlags, P3D::PixelShaderGBA8<P3D::RenderFlags::NoFlags>>();
+    //render_device->SetRenderFlags<P3D::RenderFlags::SubdividePerspectiveMapping, P3D::PixelShaderGBA8<P3D::RenderFlags::SubdividePerspectiveMapping>>();
     //render_device->SetRenderFlags<P3D::RenderFlags::FullPerspectiveMapping, P3D::PixelShaderGBA8<P3D::RenderFlags::FullPerspectiveMapping>>();
     //render_device->SetRenderFlags<P3D::RenderFlags::ZTest | P3D::RenderFlags::ZWrite, P3D::PixelShaderGBA8<P3D::RenderFlags::ZTest | P3D::RenderFlags::ZWrite>>();
     render_device->SetRenderTarget(render_target);
-
+    render_device->ClearDepth(1);
 
     P3D::pixel* tex = new P3D::pixel[P3D::TEX_SIZE*P3D::TEX_SIZE];
     for(int i = 0; i < P3D::TEX_SIZE*P3D::TEX_SIZE; i++)

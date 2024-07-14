@@ -2,6 +2,7 @@
 #include "object3d.h"
 
 #include "PixelShaderDefault.h"
+#include "PixelShaderGBA8.h"
 
 #include <string.h>
 
@@ -50,6 +51,11 @@ namespace P3D
         render_device->SetFogColor(0x799ED7);
         render_device->SetFogDensity(2);
 #endif
+
+        if(sizeof(P3D::pixel) == 1)
+        {
+            render_device->SetFogLightMap(model->GetFogLightMap());
+        }
 
         //render_device->SetRenderFlags<P3D::ZWrite | P3D::ZTest, PixelShaderGBA8<P3D::ZWrite | P3D::ZTest>>();
 

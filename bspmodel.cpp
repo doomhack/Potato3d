@@ -1,3 +1,4 @@
+#include "Config.h"
 #include "bspmodel.h"
 
 namespace P3D

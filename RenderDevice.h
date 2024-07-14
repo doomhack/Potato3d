@@ -81,6 +81,8 @@ namespace P3D
         void SetTextureCache(TextureCacheBase* cache);
         void SetMaterial(const Material& material, const signed char importance = 0);
 
+        void SetFogLightMap(const unsigned char* colorMap);
+
         //Draw Objects.
         void DrawTriangle(const V3<fp> vertexes[3], const V2<fp> uvs[3] = nullptr);
 

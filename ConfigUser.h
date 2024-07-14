@@ -13,8 +13,10 @@ namespace P3D
     //Type of a texture and framebuffer pixel.
 
 #ifndef __arm__
-    typedef uint32_t pixel;
-    typedef RGB888 pixelType;
+    //typedef uint32_t pixel;
+    //typedef RGB888 pixelType;
+    typedef uint8_t pixel;
+    typedef Pixel<3,2,3, pixel> pixelType;
 #else
     typedef uint8_t pixel;
     typedef Pixel<3,2,3, pixel> pixelType;

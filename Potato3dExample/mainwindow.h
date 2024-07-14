@@ -21,10 +21,6 @@ protected:
 
 private:
 
-    P3D::Model3d* LoadObjFile(QString objFile, QString mtlFile);
-    void SaveBytesAsCFile(QByteArray *bytes, QString file);
-
-
     QElapsedTimer fpsTimer;
     QElapsedTimer renderTimer;
 

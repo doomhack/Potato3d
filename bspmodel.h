@@ -1,65 +1,11 @@
 #ifndef BSPMODEL_H
 #define BSPMODEL_H
 
-#include "rtypes.h"
+#include <vector>
+#include "BspModelDefs.h"
 
 namespace P3D
 {
-    typedef struct BspModelHeader
-    {
-        unsigned int texture_count;
-        unsigned int texture_offset; //Offset in bytes from BspModel*
-
-        unsigned int triangle_count;
-        unsigned int triangle_offset; //Bytes from BspModel*
-
-        unsigned int node_count;
-        unsigned int node_offset;
-
-        unsigned int texture_pixels_offset; //Bytes from BspModel*
-
-        unsigned int texture_palette_offset; //Bytes from BspModel*
-
-    } BspModelHeader;
-
-    typedef struct BspModelTriangle
-    {
-    public:
-        Triangle3d tri;
-        int texture;
-        pixel color;
-        AABB tri_bb;
-    } BspModelTriangle;
-
-    typedef struct TriIndexList
-    {
-        unsigned short offset;
-        unsigned short count;
-    } TriIndexList;
-
-    typedef struct BspNodeTexture
-    {
-        unsigned int texture_pixels_offset; //Pixels
-        unsigned short width;
-        unsigned short height;
-        unsigned short u_mask;
-        unsigned short v_mask;
-        unsigned short v_shift;
-        unsigned short alpha;
-    } BspNodeTexture;
-
-
-    typedef struct BspModelNode
-    {
-        BspPlane plane;
-        AABB node_bb;
-        AABB child_bb;
-        unsigned int front_node;
-        unsigned int back_node;
-        TriIndexList front_tris;
-        TriIndexList back_tris;
-    } BspModelNode;
-
     class BspModel
     {
     public:
@@ -86,6 +32,11 @@ namespace P3D
         unsigned int GetColorMapColor(unsigned int n) const
         {
             return ((const unsigned int*)(GetBasePtr() + header.texture_palette_offset))[n];
+        }
+
+        const unsigned char* GetFogLightMap() const
+        {
+            return ((const unsigned char*)(GetBasePtr() + header.fog_lightmap_offset));
         }
 
     private:

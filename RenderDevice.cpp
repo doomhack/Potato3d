@@ -314,6 +314,11 @@ namespace P3D
         }
     }
 
+    void RenderDevice::SetFogLightMap(const unsigned char* color_map)
+    {
+        triangle_render->SetFogLightMap(color_map);
+    }
+
     //Draw Objects.
     void RenderDevice::DrawTriangle(const V3<fp> vertexes[3], const V2<fp> uvs[3])
     {
