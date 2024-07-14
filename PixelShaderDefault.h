@@ -46,28 +46,12 @@ namespace P3D
             const unsigned int tx2 = (unsigned int)u2 & TEX_MASK;
             const unsigned int ty2 = ((unsigned int)v2 & TEX_MASK) << TEX_SHIFT;
 
-            pixel p1, p2;
+            pixel p1 = texels[(ty + tx)], p2 = texels[(ty2 + tx2)];
 
             if constexpr(render_flags & Fog)
             {
-                if constexpr(sizeof(pixel) == 1)
-                {
-                    //(color×16×16)+(light×16)+fog
-                    const int fog1 = f1.toFPInt() / 4096;
-                    const int fog2 = f2.toFPInt() / 4096;
-
-                    const int light = 0;
-
-                    p1 = fog_light_map[(texels[(ty + tx)] * 16 * 16) + (light * 16) + fog1];
-                    p2 = fog_light_map[(texels[(ty2 + tx2)] * 16 * 16) + (light * 16) + fog2];
-
-                }
-                else
-                {
-
-                    p1 = BlendPixel(texels[(ty + tx)], fog_color, f1);
-                    p2 = BlendPixel(texels[(ty2 + tx2)], fog_color, f2);
-                }
+                p1 = FogLightPixel(p1, f1, 0, fog_color, fog_light_map);
+                p2 = FogLightPixel(p2, f2, 0, fog_color, fog_light_map);
             }
 
             *(pixel_pair*)fb = ( (p1) | ((pixel_pair)p2 << (sizeof(pixel)*8)) );
@@ -89,22 +73,11 @@ namespace P3D
             const unsigned int tx = (int)u & TEX_MASK;
             const unsigned int ty = ((int)v & TEX_MASK) << TEX_SHIFT;
 
-            pixel p1;
+            pixel p1 = texels[(ty + tx)];
 
             if constexpr(render_flags & Fog)
             {
-                if constexpr(sizeof(pixel) == 1)
-                {
-                    //(color×16×16)+(light×16)+fog
-                    const int fog1 = f.toFPInt() / 4096;
-                    const int light = 0;
-
-                    p1 = fog_light_map[(texels[(ty + tx)] * 16 * 16) + + (light * 16) + fog1];
-                }
-                else
-                {
-                    p1 = BlendPixel(texels[(ty + tx)], fog_color, f);
-                }
+                p1 = FogLightPixel(p1, f, 0, fog_color, fog_light_map);
             }
 
             *fb = p1;
@@ -121,7 +94,7 @@ namespace P3D
         }
 
 
-        static pixel BlendPixel(const pixel src_color, const pixel dst_color, const fp f)
+        static constexpr pixel BlendPixel(const pixel src_color, const pixel dst_color, const fp f)
         {
             if constexpr (render_flags & Fog)
             {
@@ -144,6 +117,23 @@ namespace P3D
             else
             {
                 return src_color;
+            }
+        }
+
+        static constexpr pixel FogLightPixel(pixel src_color, fp fog_frac, fp light_frac, pixel fog_color, const unsigned char* fog_light_map)
+        {
+            if constexpr(sizeof(pixel) == 1)
+            {
+                //(color×16×16)+(light×16)+fog
+                const int fog = pASL(fog_frac, FOG_SHIFT);
+                const int light = pASL(light_frac, LIGHT_SHIFT);
+                const int texel = src_color;
+
+                return fog_light_map[pASL(texel, FOG_SHIFT + LIGHT_SHIFT) + pASL(light, LIGHT_SHIFT) + fog];
+            }
+            else
+            {
+                return BlendPixel(src_color, fog_color, fog_frac);
             }
         }
     };

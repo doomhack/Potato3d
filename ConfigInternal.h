@@ -15,6 +15,10 @@ namespace P3D
 
 
     inline constexpr int SUBDIVIDE_SPAN_SHIFT = constexpr_log2(SUBDIVIDE_SPAN_LEN);
+
+    inline constexpr int FOG_SHIFT = constexpr_log2(FOG_LEVELS);
+    inline constexpr int LIGHT_SHIFT = constexpr_log2(LIGHT_LEVELS);
+
 }
 
 #endif // CONFIGINTERNAL_H

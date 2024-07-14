@@ -30,9 +30,21 @@ MainWindow::MainWindow(QWidget *parent)
     object3d->SetModel(bspModel);
 
     //object3d->Setup(screenWidth, screenHeight, 54, 25, 1500, (P3D::pixel*)frameBufferImage.bits());
-    object3d->Setup(screenWidth, screenHeight, 60, 25, 3000, (P3D::pixel*)frameBufferImage.bits());
+    object3d->Setup(screenWidth, screenHeight, 60, 25, 5000, (P3D::pixel*)frameBufferImage.bits());
 
-    object3d->SetBackgroundColor(0x799ED7);
+    QRgb backgroundColor = 0x799dd6;
+    P3D::pixel bg = 0;
+
+    if constexpr(sizeof(P3D::pixel) == 1)
+    {
+        bg = bspModel->GetFogLightMap()[15];
+    }
+    else
+    {
+        bg = backgroundColor;
+    }
+
+    object3d->SetBackgroundColor(bg);
 
     for(int i = 0; i < 256; i++)
         frameBufferImage.setColor(i, bspModel->GetColorMapColor(i));

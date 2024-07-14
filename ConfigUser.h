@@ -12,15 +12,12 @@ namespace P3D
 
     //Type of a texture and framebuffer pixel.
 
-#ifndef __arm__
-    //typedef uint32_t pixel;
-    //typedef RGB888 pixelType;
     typedef uint8_t pixel;
     typedef Pixel<3,2,3, pixel> pixelType;
-#else
-    typedef uint8_t pixel;
-    typedef Pixel<3,2,3, pixel> pixelType;
-#endif
+
+    inline constexpr int LIGHT_LEVELS = 16;
+    inline constexpr int FOG_LEVELS = 16;
+
 
     //Width & height of a texture in pixels.
     inline constexpr int TEX_SIZE = 64;

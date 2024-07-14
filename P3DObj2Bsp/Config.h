@@ -11,8 +11,6 @@ namespace Obj2Bsp
     inline constexpr int TEX_SIZE = 64;
     inline constexpr int TEX_MAX_TILE = 4;
 
-    inline constexpr QRgb fogColor = QRgb(0x799ED7);
-
     inline constexpr QImage::Format textureFormat = QImage::Format_Indexed8;
 
 
