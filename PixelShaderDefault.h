@@ -12,7 +12,7 @@ namespace P3D
     {
         public:
 
-        static void DrawScanlinePixelPair(pixel* fb, z_val *zb, const z_val zv1, const z_val zv2, const pixel* texels, const fp u1, const fp v1, const fp u2, const fp v2, const fp f1, const fp f2, const pixel fog_color, const unsigned char* fog_light_map = nullptr)
+        static void DrawScanlinePixelPair(pixel* fb, z_val *zb, const z_val zv1, const z_val zv2, const pixel* texels, const fp u1, const fp v1, const fp u2, const fp v2, const fp f1, const fp f2, const fp l1, const fp l2, const pixel fog_color, const unsigned char* fog_light_map = nullptr)
         {
             if constexpr (render_flags & ZTest)
             {
@@ -22,14 +22,14 @@ namespace P3D
                         return; //Both Z Reject.
 
                     //Accept right.
-                    DrawScanlinePixel(fb+1, zb+1, zv2, texels, u2, v2, f2, fog_color, fog_light_map);
+                    DrawScanlinePixel(fb+1, zb+1, zv2, texels, u2, v2, f2, l2, fog_color, fog_light_map);
                     return;
                 }
                 else //Accept left.
                 {
                     if(zv2 >= zb[1]) //Reject right?
                     {
-                        DrawScanlinePixel(fb, zb, zv1, texels, u1, v1, f1, fog_color, fog_light_map);
+                        DrawScanlinePixel(fb, zb, zv1, texels, u1, v1, f1, l1, fog_color, fog_light_map);
                         return;
                     }
                 }
@@ -48,16 +48,16 @@ namespace P3D
 
             pixel p1 = texels[(ty + tx)], p2 = texels[(ty2 + tx2)];
 
-            if constexpr(render_flags & Fog)
+            if constexpr(render_flags & (Fog | VertexLight))
             {
-                p1 = FogLightPixel(p1, f1, 0, fog_color, fog_light_map);
-                p2 = FogLightPixel(p2, f2, 0, fog_color, fog_light_map);
+                p1 = FogLightPixel(p1, f1, l1, fog_color, fog_light_map);
+                p2 = FogLightPixel(p2, f2, l2, fog_color, fog_light_map);
             }
 
             *(pixel_pair*)fb = ( (p1) | ((pixel_pair)p2 << (sizeof(pixel)*8)) );
         }
 
-        static void DrawScanlinePixel(pixel *fb, z_val *zb, const z_val zv, const pixel* texels, const fp u, const fp v, const fp f, const pixel fog_color, const unsigned char* fog_light_map = nullptr)
+        static void DrawScanlinePixel(pixel *fb, z_val *zb, const z_val zv, const pixel* texels, const fp u, const fp v, const fp f, const fp l, const pixel fog_color, const unsigned char* fog_light_map = nullptr)
         {
             if constexpr (render_flags & ZTest)
             {
@@ -75,22 +75,22 @@ namespace P3D
 
             pixel p1 = texels[(ty + tx)];
 
-            if constexpr(render_flags & Fog)
+            if constexpr(render_flags & (Fog | VertexLight))
             {
-                p1 = FogLightPixel(p1, f, 0, fog_color, fog_light_map);
+                p1 = FogLightPixel(p1, f, l, fog_color, fog_light_map);
             }
 
             *fb = p1;
         }
 
-        static void DrawScanlinePixelHigh(pixel *fb, z_val *zb, const z_val zv, const pixel* texels, const fp u, const fp v, const fp f, const pixel fog_color, const unsigned char* fog_light_map = nullptr)
+        static void DrawScanlinePixelHigh(pixel *fb, z_val *zb, const z_val zv, const pixel* texels, const fp u, const fp v, const fp f, const fp l, const pixel fog_color, const unsigned char* fog_light_map = nullptr)
         {
-            DrawScanlinePixel(fb, zb, zv, texels, u, v, f, fog_color, fog_light_map);
+            DrawScanlinePixel(fb, zb, zv, texels, u, v, f, l, fog_color, fog_light_map);
         }
 
-        static void DrawScanlinePixelLow(pixel *fb, z_val *zb, const z_val zv, const pixel* texels, const fp u, const fp v, const fp f, const pixel fog_color, const unsigned char* fog_light_map = nullptr)
+        static void DrawScanlinePixelLow(pixel *fb, z_val *zb, const z_val zv, const pixel* texels, const fp u, const fp v, const fp f, const fp l, const pixel fog_color, const unsigned char* fog_light_map = nullptr)
         {
-            DrawScanlinePixel(fb, zb, zv, texels, u, v, f, fog_color, fog_light_map);
+            DrawScanlinePixel(fb, zb, zv, texels, u, v, f, l, fog_color, fog_light_map);
         }
 
 
@@ -125,9 +125,20 @@ namespace P3D
             if constexpr(sizeof(pixel) == 1)
             {
                 //(color×16×16)+(light×16)+fog
-                const int fog = pASL(fog_frac, FOG_SHIFT);
-                const int light = pASL(light_frac, LIGHT_SHIFT);
-                const int texel = src_color;
+
+                unsigned int light = 0, fog = 0;
+
+                if constexpr(render_flags & VertexLight)
+                {
+                    light = pASL(light_frac, LIGHT_SHIFT);
+                }
+
+                if constexpr(render_flags & Fog)
+                {
+                    fog = pASL(fog_frac, FOG_SHIFT);
+                }
+
+                const unsigned int texel = src_color;
 
                 return fog_light_map[pASL(texel, FOG_SHIFT + LIGHT_SHIFT) + pASL(light, LIGHT_SHIFT) + fog];
             }

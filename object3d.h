@@ -34,6 +34,7 @@ namespace P3D
 #endif
 
         bool update_frustrum_bb = true;
+        fp light_level = 1.0;
 
     private:
 

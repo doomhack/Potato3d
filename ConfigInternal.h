@@ -18,6 +18,8 @@ namespace P3D
 
     inline constexpr int FOG_SHIFT = constexpr_log2(FOG_LEVELS);
     inline constexpr int LIGHT_SHIFT = constexpr_log2(LIGHT_LEVELS);
+    inline constexpr fp FOG_MAX = fp(1) - std::numeric_limits<fp>().epsilon();
+    inline constexpr fp LIGHT_MAX = fp(1) - std::numeric_limits<fp>().epsilon();
 
 }
 

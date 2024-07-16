@@ -45,8 +45,10 @@ namespace Obj2Bsp
         if(triangles.size() == 0)
             return nullptr;
 
+        qDebug() << "Bulding node with" << triangles.size() << "triangles";
+
+
         int front = 0, back = 0, on = 0;
-        int best_index = 0;
 
         int best_score = 0; //Higher is worse!
 
@@ -54,7 +56,9 @@ namespace Obj2Bsp
 
         best_score = std::abs(back - front) + ((back + front + on) * 10);
 
-        for(unsigned int i = 0; i < triangles.size(); i++)
+        const int numTris = triangles.size();
+
+        for(unsigned int i = 0; i < numTris; i++)
         {
             BspPlane plane = CheckPlane(triangles, i, front, back, on);
 
@@ -63,8 +67,6 @@ namespace Obj2Bsp
             if (score < best_score)
             {
                 best_plane = plane;
-                best_index = i;
-
                 best_score = score;
             }
         }

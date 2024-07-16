@@ -16,6 +16,7 @@ namespace P3D
         BackFaceCulling = 64ul,
         FrontFaceCulling = 128ul,
         Fog = 512ul,
+        VertexLight = 1024ul,
     };
 
     typedef enum FogMode : unsigned int
@@ -142,6 +143,7 @@ namespace P3D
             V4<fp> pos;
             V2<fp> uv;
             fp fog_factor;
+            fp light_factor;
 
             void toPerspectiveCorrect(const fp scale = fp(1))
             {

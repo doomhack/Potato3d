@@ -20,6 +20,11 @@ MainWindow::MainWindow(QWidget *parent)
     object3d = new P3D::Object3d();
 
     QFile f("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\Streets\\Streets.bsp");
+    //QFile f("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\temple.bsp");
+    //QFile f("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\hf\\hf2.bsp");
+    //QFile f("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\d2\\driver2_small.bsp");
+
+
     f.open(QFile::ReadOnly);
     QByteArray* bf = new QByteArray();
     *bf = f.readAll();
@@ -30,7 +35,7 @@ MainWindow::MainWindow(QWidget *parent)
     object3d->SetModel(bspModel);
 
     //object3d->Setup(screenWidth, screenHeight, 54, 25, 1500, (P3D::pixel*)frameBufferImage.bits());
-    object3d->Setup(screenWidth, screenHeight, 60, 25, 5000, (P3D::pixel*)frameBufferImage.bits());
+    object3d->Setup(screenWidth, screenHeight, 60, 25, 3000, (P3D::pixel*)frameBufferImage.bits());
 
     QRgb backgroundColor = 0x799dd6;
     P3D::pixel bg = 0;
@@ -157,6 +162,14 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     else if(event->key() == Qt::Key_Space)
     {
         object3d->update_frustrum_bb = !object3d->update_frustrum_bb;
+    }
+    else if(event->key() == Qt::Key_Equal)
+    {
+        object3d->light_level += P3D::fp(0.05);
+    }
+    else if(event->key() == Qt::Key_Minus)
+    {
+        object3d->light_level -= P3D::fp(0.05);
     }
 
 }

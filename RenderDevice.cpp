@@ -320,13 +320,13 @@ namespace P3D
     }
 
     //Draw Objects.
-    void RenderDevice::DrawTriangle(const V3<fp> vertexes[3], const V2<fp> uvs[3])
+    void RenderDevice::DrawTriangle(const V3<fp> vertexes[3], const V2<fp> uvs[3], const fp light_levels[3])
     {
         TransformVertexes(vertexes, 3);
 
         const unsigned int indexes[3] = {0,1,2};
 
-        DrawTriangle(indexes, uvs);
+        DrawTriangle(indexes, uvs, light_levels);
     }
 
     void RenderDevice::TransformVertexes(const V3<fp>* vertexes, const unsigned int count)
@@ -348,7 +348,7 @@ namespace P3D
 #endif
     }
 
-    void RenderDevice::DrawTriangle(const unsigned int indexes[3], const V2<fp> uvs[3]) const
+    void RenderDevice::DrawTriangle(const unsigned int indexes[3], const V2<fp> uvs[3], const fp light_levels[3]) const
     {
         P3D::Internal::TransformedTriangle tri;
 
@@ -361,6 +361,13 @@ namespace P3D
             tri.verts[0].uv =  uvs[0];
             tri.verts[1].uv =  uvs[1];
             tri.verts[2].uv =  uvs[2];
+        }
+
+        if(light_levels)
+        {
+            tri.verts[0].light_factor = pClamp(fp(0), fp(1) - light_levels[0], LIGHT_MAX);
+            tri.verts[1].light_factor = pClamp(fp(0), fp(1) - light_levels[1], LIGHT_MAX);
+            tri.verts[2].light_factor = pClamp(fp(0), fp(1) - light_levels[2], LIGHT_MAX);
         }
 
         triangle_render->DrawTriangle(tri, *current_material);

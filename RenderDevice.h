@@ -84,11 +84,11 @@ namespace P3D
         void SetFogLightMap(const unsigned char* colorMap);
 
         //Draw Objects.
-        void DrawTriangle(const V3<fp> vertexes[3], const V2<fp> uvs[3] = nullptr);
+        void DrawTriangle(const V3<fp> vertexes[3], const V2<fp> uvs[3] = nullptr, const fp light_levels[3] = nullptr);
 
         void TransformVertexes(const V3<fp>* vertexes, const unsigned int count);
 
-        void DrawTriangle(const unsigned int vx_indexes[3], const V2<fp> uvs[3] = nullptr) const;
+        void DrawTriangle(const unsigned int vx_indexes[3], const V2<fp> uvs[3] = nullptr, const fp light_levels[3] = nullptr) const;
 
 #ifdef RENDER_STATS
         const RenderStats& GetRenderStats() const;

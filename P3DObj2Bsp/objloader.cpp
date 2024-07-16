@@ -403,7 +403,7 @@ namespace Obj2Bsp
         p.setProgram(temp.filePath("nQuantCpp.exe"));
         p.setWorkingDirectory(temp.path());
 
-        p.setArguments(QStringList() << "megaTex.png" << "/m" << "256");
+        p.setArguments(QStringList() << "megaTex.png" << "/a" << "wu" << "/m" << "256");
 
         p.start();
         p.waitForFinished(10 * 60 * 1000); //Wait for up to 10 mins.

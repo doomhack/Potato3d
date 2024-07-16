@@ -29,6 +29,8 @@
 
 #define REG_WAITCNT	*((vu16 *)(0x4000204))
 
+const uint8_t fogLightMap[65536] = {255};
+
 #ifndef __arm__
     P3D::pixel frontbuffer[240*160];
     P3D::pixel backbuffer[240*160];
@@ -96,12 +98,29 @@ int main()
 
 
     P3D::RenderDevice* render_device = new P3D::RenderDevice();
-    render_device->SetRenderFlags<P3D::RenderFlags::NoFlags, P3D::PixelShaderGBA8<P3D::RenderFlags::NoFlags>>();
+    //render_device->SetRenderFlags<P3D::RenderFlags::NoFlags, P3D::PixelShaderGBA8<P3D::RenderFlags::NoFlags>>();
     //render_device->SetRenderFlags<P3D::RenderFlags::SubdividePerspectiveMapping, P3D::PixelShaderGBA8<P3D::RenderFlags::SubdividePerspectiveMapping>>();
     //render_device->SetRenderFlags<P3D::RenderFlags::FullPerspectiveMapping, P3D::PixelShaderGBA8<P3D::RenderFlags::FullPerspectiveMapping>>();
     //render_device->SetRenderFlags<P3D::RenderFlags::ZTest | P3D::RenderFlags::ZWrite, P3D::PixelShaderGBA8<P3D::RenderFlags::ZTest | P3D::RenderFlags::ZWrite>>();
+    //render_device->SetRenderFlags<P3D::RenderFlags::Fog, P3D::PixelShaderGBA8<P3D::RenderFlags::Fog>>();
+    //render_device->SetRenderFlags<P3D::RenderFlags::VertexLight | P3D::RenderFlags::Fog, P3D::PixelShaderGBA8<P3D::RenderFlags::VertexLight | P3D::RenderFlags::Fog>>();
+    render_device->SetRenderFlags<P3D::RenderFlags::VertexLight, P3D::PixelShaderGBA8<P3D::RenderFlags::VertexLight>>();
+
+
+#if 1
+    render_device->SetFogMode(P3D::FogMode::FogLinear);
+    render_device->SetFogDepth(500, 1000);
+#else
+    render_device->SetFogMode(P3D::FogMode::FogExponential2);
+    render_device->SetFogDensity(2);
+#endif
+
     render_device->SetRenderTarget(render_target);
+
+
+
     render_device->ClearDepth(1);
+    render_device->SetFogLightMap(fogLightMap);
 
     P3D::pixel* tex = new P3D::pixel[P3D::TEX_SIZE*P3D::TEX_SIZE];
     for(int i = 0; i < P3D::TEX_SIZE*P3D::TEX_SIZE; i++)
@@ -160,6 +179,10 @@ int main()
 
     I_FinishUpdate_e32();
 
+    unsigned int ll;
+
+    P3D::fp lights[3] = {ll,ll,ll};
+
     for(int i = 0; i < runs; i++)
     {
         P3D::V3<P3D::fp> v[3];
@@ -169,7 +192,7 @@ int main()
 
         render_device->TransformVertexes(v, 3);
 
-        render_device->DrawTriangle(vi, uv);
+        render_device->DrawTriangle(vi, uv, lights);
     }
 
 

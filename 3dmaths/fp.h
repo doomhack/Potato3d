@@ -15,7 +15,7 @@ namespace P3D
     template<const unsigned int fracbits> class FP
     {
     public:
-        FP()                                                {}
+        constexpr FP()                                      {}
 
         constexpr FP(const FP& r)   : n(r.n)                {}
         constexpr FP(const int v)   : n(v << fracbits)      {}
