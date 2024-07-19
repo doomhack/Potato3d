@@ -25,3 +25,4 @@ SOURCES += \
 
 DISTFILES += \
     Makefile
+
