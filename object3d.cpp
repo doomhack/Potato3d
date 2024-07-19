@@ -44,7 +44,7 @@ namespace P3D
         render_device->SetRenderFlags<P3D::RenderFlags::SubdividePerspectiveMapping | P3D::RenderFlags::Fog | P3D::RenderFlags::VertexLight, P3D::PixelShaderGBA8<P3D::RenderFlags::SubdividePerspectiveMapping | P3D::RenderFlags::Fog | P3D::RenderFlags::VertexLight>>();
         //render_device->SetRenderFlags<P3D::RenderFlags::Fog>();
 
-#if 0
+#if 1
         render_device->SetFogMode(FogLinear);
         render_device->SetFogColor(0x799ED7);
         render_device->SetFogDepth(2000, 3000);

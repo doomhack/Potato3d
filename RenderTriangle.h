@@ -43,6 +43,17 @@ namespace P3D
             fp l;
         } TriDrawYDeltaZWUV;
 
+        typedef union Packed_16_16
+        {
+            unsigned int lr;
+
+            struct
+            {
+                unsigned int l : 16;
+                unsigned int r : 16;
+            };
+        } Packed_16_16;
+
         class RenderTriangleBase
         {
         public:

@@ -119,23 +119,26 @@ namespace P3D
 
         static constexpr pixel FogLightPixel(pixel src_color, fp fog_frac, fp light_frac, const unsigned char* fog_light_map)
         {
-            //(color×16×16)+(light×16)+fog
-
             unsigned int light = 0, fog = 0;
 
             if constexpr(render_flags & VertexLight)
             {
-                light = pASL(light_frac, LIGHT_SHIFT);
+                light = pASL(light_frac, LIGHT_SHIFT) & 0xf;
             }
 
             if constexpr(render_flags & Fog)
             {
-                fog = pASL(fog_frac, FOG_SHIFT);
+                fog = pASL(fog_frac, FOG_SHIFT) & 0xf;
             }
 
             const unsigned int texel = src_color;
 
-            return fog_light_map[pASL(texel, FOG_SHIFT + LIGHT_SHIFT) + pASL(light, LIGHT_SHIFT) + fog];
+            return fog_light_map[FogLightIndex(texel, fog, light)];
+        }
+
+        static constexpr unsigned int FogLightIndex(const unsigned int color, const unsigned int fog, const unsigned int light)
+        {
+            return (light * (FOG_LEVELS * 256)) + (fog * 256) + color;
         }
     };
 };

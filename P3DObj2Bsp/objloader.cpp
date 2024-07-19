@@ -56,7 +56,7 @@ namespace Obj2Bsp
             for(int i = 0; i < megaTexture.colorTable().length(); i++)
                 model->colormap[i] = megaTexture.colorTable().at(i);
 
-            memcpy(model->foglightmap, fogLightMap.constData(), 256 * FOG_LEVELS * LIGHT_LEVELS);
+            memcpy(model->foglightmap, fogLightMap.constData(), FOG_LEVELS * LIGHT_LEVELS * 256);
         }
         else
         {
@@ -285,7 +285,7 @@ namespace Obj2Bsp
     {
         QList<QRgb> colorTable = imageIn.colorTable();
 
-        quint8 fogLightMap[256][LIGHT_LEVELS][FOG_LEVELS];
+        quint8 fogLightMap[LIGHT_LEVELS][FOG_LEVELS][256];
 
         for(int i = 0; i < 256; i++)
         {
@@ -318,7 +318,7 @@ namespace Obj2Bsp
                         }
                     }
 
-                    fogLightMap[i][l][f] = bestColor;
+                    fogLightMap[l][f][i] = bestColor;
                 }
             }
         }
