@@ -74,7 +74,7 @@ namespace P3D
         void BeginFrame();
         void EndFrame();
 
-        void BeginDraw();
+        void BeginDraw(Plane<fp> frustrumPlanes[6] = nullptr);
         void EndDraw();
 
         //

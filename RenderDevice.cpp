@@ -283,9 +283,14 @@ namespace P3D
 
     }
 
-    void RenderDevice::BeginDraw()
+    void RenderDevice::BeginDraw(Plane<fp> frustrumPlanes[6])
     {
         UpdateTransformMatrix();
+
+        if(frustrumPlanes)
+        {
+            transform_matrix.ExtractFrustrumPlanes(frustrumPlanes);
+        }
     }
 
     void RenderDevice::EndDraw()

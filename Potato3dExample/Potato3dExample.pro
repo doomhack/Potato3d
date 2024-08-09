@@ -33,6 +33,7 @@ HEADERS += \
     ../3dmaths/f3dmath.h \
     ../3dmaths/fp.h \
     ../3dmaths/m4.h \
+    ../3dmaths/plane.h \
     ../3dmaths/recip.h \
     ../3dmaths/utils.h \
     ../3dmaths/v2.h \

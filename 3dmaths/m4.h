@@ -3,6 +3,7 @@
 
 #include "v3.h"
 #include "v4.h"
+#include "plane.h"
 
 namespace P3D
 {
@@ -565,6 +566,16 @@ namespace P3D
             r.m[3][3] = 1;
 
             return r;
+        }
+
+        constexpr void ExtractFrustrumPlanes(Plane<T> planes[6]) const
+        {
+            planes[Near]    = Plane<T>(V3<T>(m[0][3] + m[0][2], m[1][3] + m[1][2], m[2][3] + m[2][2]), m[3][3] + m[3][2]);
+            planes[Far]     = Plane<T>(V3<T>(m[0][3] - m[0][2], m[1][3] - m[1][2], m[2][3] - m[2][2]), m[3][3] - m[3][2]);
+            planes[Left]    = Plane<T>(V3<T>(m[0][3] + m[0][0], m[1][3] + m[1][0], m[2][3] + m[2][0]), m[3][3] + m[3][0]);
+            planes[Right]   = Plane<T>(V3<T>(m[0][3] - m[0][0], m[1][3] - m[1][0], m[2][3] - m[2][0]), m[3][3] - m[3][0]);
+            planes[Top]     = Plane<T>(V3<T>(m[0][3] - m[0][1], m[1][3] - m[1][1], m[2][3] - m[2][1]), m[3][3] - m[3][1]);
+            planes[Bottom]  = Plane<T>(V3<T>(m[0][3] + m[0][1], m[1][3] + m[1][1], m[2][3] + m[2][1]), m[3][3] + m[3][1]);
         }
 
     private:

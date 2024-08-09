@@ -55,6 +55,8 @@ namespace P3D
         pixel backgroundColor = 0x799ED7;
 
         V3<fp> frustrumPoints[4]; //Top left and bottom-right frustrum points.
+
+        Plane<fp> frustrumPlanes[6];
     };
 }
 

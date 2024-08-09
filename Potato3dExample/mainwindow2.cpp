@@ -8,7 +8,7 @@
 #include "../RenderTarget.h"
 #include "../PixelShaderGBA8.h"
 
-const QImage::Format format = QImage::Format::Format_RGB32;
+const QImage::Format format = QImage::Format_Indexed8;
 
 MainWindow2::MainWindow2(QWidget *parent)
     : QMainWindow(parent)
@@ -41,8 +41,8 @@ MainWindow2::MainWindow2(QWidget *parent)
     render_device->SetPerspective(60, aspectRatio, 10, 1000);
 
     //render_device->SetRenderFlags<P3D::RenderFlags::ZTest | P3D::RenderFlags::ZWrite, P3D::PixelShaderGBA8<P3D::RenderFlags::ZTest | P3D::RenderFlags::ZWrite>>();
-    render_device->SetRenderFlags<P3D::NoFlags>();
-    //render_device->SetRenderFlags<P3D::NoFlags, P3D::PixelShaderGBA8<P3D::NoFlags>>();
+    //render_device->SetRenderFlags<P3D::NoFlags>();
+    render_device->SetRenderFlags<P3D::NoFlags, P3D::PixelShaderGBA8<P3D::NoFlags>>();
 
     //render_device->SetRenderFlags<P3D::SubdividePerspectiveMapping>();
 
@@ -142,18 +142,20 @@ void MainWindow2::paintEvent(QPaintEvent *event)
 
     render_device->TransformVertexes(v, 4);
 
+    const int uv_tile = 128;
+
     P3D::V2<P3D::fp> uv[3];
     uv[0] = P3D::V2<P3D::fp>(0,0);
-    uv[1] = P3D::V2<P3D::fp>(64,0);
-    uv[2] = P3D::V2<P3D::fp>(64,64);
+    uv[1] = P3D::V2<P3D::fp>(64*uv_tile,0);
+    uv[2] = P3D::V2<P3D::fp>(64*uv_tile,64*uv_tile);
 
     unsigned int vi[3] = {2,1,0};
 
     render_device->DrawTriangle(vi, uv);
 
     uv[0] = P3D::V2<P3D::fp>(0,0);
-    uv[1] = P3D::V2<P3D::fp>(64,64);
-    uv[2] = P3D::V2<P3D::fp>(0,64);
+    uv[1] = P3D::V2<P3D::fp>(64*uv_tile,64*uv_tile);
+    uv[2] = P3D::V2<P3D::fp>(0,64*uv_tile);
 
     unsigned int vi2[3] = {0,2,3};
 

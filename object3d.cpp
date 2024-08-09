@@ -44,12 +44,12 @@ namespace P3D
         render_device->SetRenderFlags<P3D::RenderFlags::SubdividePerspectiveMapping | P3D::RenderFlags::Fog | P3D::RenderFlags::VertexLight, P3D::PixelShaderGBA8<P3D::RenderFlags::SubdividePerspectiveMapping | P3D::RenderFlags::Fog | P3D::RenderFlags::VertexLight>>();
         //render_device->SetRenderFlags<P3D::RenderFlags::Fog>();
 
-#if 1
+#if 0
         render_device->SetFogMode(FogLinear);
         render_device->SetFogColor(0x799ED7);
         render_device->SetFogDepth(2000, 3000);
 #else
-        render_device->SetFogMode(FogExponential);
+        render_device->SetFogMode(FogExponential2);
         render_device->SetFogColor(0x799ED7);
         render_device->SetFogDensity(2);
 #endif
@@ -122,7 +122,7 @@ namespace P3D
 
         render_device->BeginFrame();
 
-        render_device->BeginDraw();
+        render_device->BeginDraw(update_frustrum_bb ? frustrumPlanes : nullptr);
 
         RenderBsp();
 
@@ -141,11 +141,29 @@ namespace P3D
         static std::vector<const BspModelTriangle*> tris;
 
         //model->SortBackToFront(cameraPos, viewFrustrumBB, tris, true);
-        model->SortBackToFront(cameraPos, viewFrustrumBB, tris, false);
+        model->SortBackToFront(cameraPos, viewFrustrumBB, tris, true);
 
         for(unsigned int i = 0; i < tris.size(); i++)
         {            
             const BspModelTriangle* tri = tris[i];
+
+            if(!frustrumPlanes[Left].TriangleIsFrontside(tri->tri.verts[0].pos, tri->tri.verts[1].pos, tri->tri.verts[2].pos))
+                continue;
+
+            if(!frustrumPlanes[Right].TriangleIsFrontside(tri->tri.verts[0].pos, tri->tri.verts[1].pos, tri->tri.verts[2].pos))
+                continue;
+
+            if(!frustrumPlanes[Top].TriangleIsFrontside(tri->tri.verts[0].pos, tri->tri.verts[1].pos, tri->tri.verts[2].pos))
+                continue;
+
+            if(!frustrumPlanes[Bottom].TriangleIsFrontside(tri->tri.verts[0].pos, tri->tri.verts[1].pos, tri->tri.verts[2].pos))
+                continue;
+
+            if(!frustrumPlanes[Near].TriangleIsFrontside(tri->tri.verts[0].pos, tri->tri.verts[1].pos, tri->tri.verts[2].pos))
+                continue;
+
+            if(!frustrumPlanes[Far].TriangleIsFrontside(tri->tri.verts[0].pos, tri->tri.verts[1].pos, tri->tri.verts[2].pos))
+                continue;
 
             const BspNodeTexture* ntex = model->GetTexture(tri->texture);
 

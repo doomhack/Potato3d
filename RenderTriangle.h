@@ -488,7 +488,7 @@ namespace P3D
                 DrawTriangleSpans(yStart, yEnd, pos, y_delta_left, y_delta_right, x_delta);
 
                 //Draw bottom half.
-                pixelCentreTopY = PixelCentre(pMax(middle.pos.y, fp(0)));
+                pixelCentreTopY = fp(pMax(yEnd, 0)) + fp(0.5);
                 stepY = pixelCentreTopY - middle.pos.y;
 
                 yStart = pixelCentreTopY;

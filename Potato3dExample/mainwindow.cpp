@@ -19,10 +19,13 @@ MainWindow::MainWindow(QWidget *parent)
 
     object3d = new P3D::Object3d();
 
-    QFile f("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\Streets\\Streets.bsp");
+    //QFile f("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\Streets\\Streets.bsp");
     //QFile f("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\temple.bsp");
     //QFile f("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\hf\\hf2.bsp");
     //QFile f("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\d2\\driver2_small.bsp");
+    //QFile f("C:\\Users\\Zak\\Downloads\\Temple\\temple.bsp");
+    QFile f("C:\\Users\\Zak\\Downloads\\Dam\\dam.bsp");
+
 
 
     f.open(QFile::ReadOnly);
@@ -42,7 +45,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     if constexpr(sizeof(P3D::pixel) == 1)
     {
-        bg = bspModel->GetFogLightMap()[15];
+        bg = bspModel->GetFogLightMap()[15*256];
     }
     else
     {
