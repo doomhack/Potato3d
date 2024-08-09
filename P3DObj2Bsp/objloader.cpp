@@ -1,4 +1,5 @@
 #include "objloader.h"
+#include "wuquant.h"
 
 namespace Obj2Bsp
 {
@@ -109,9 +110,10 @@ namespace Obj2Bsp
 
             if(elements[0] == "vt")
             {
-                float u = (elements[1].toFloat() * TEX_SIZE);
-                float v = (elements[2].toFloat() * TEX_SIZE);
+                float u = elements[1].toFloat();
+                float v = elements[2].toFloat();
 
+                /*
                 if(u > (TEX_MAX_TILE * TEX_SIZE))
                 {
                     qDebug() << "Clamp u" << u << "to" << TEX_MAX_TILE * TEX_SIZE;
@@ -123,6 +125,7 @@ namespace Obj2Bsp
                     qDebug() << "Clamp v" << v << "to" << TEX_MAX_TILE * TEX_SIZE;
                     v = TEX_MAX_TILE * TEX_SIZE;
                 }
+                */
 
                 uvs.append(QVector2D(u, v));
             }
@@ -141,6 +144,57 @@ namespace Obj2Bsp
                     t3d->verts[t].pos = vertexes.at(vtx_elelments[0].toInt() - 1);
                     t3d->verts[t].vertex_id = vtx_elelments[0].toInt() - 1;
                     t3d->verts[t].uv = uvs.at(vtx_elelments[1].toInt() - 1);
+                }
+
+                //Normalise UV's. So U10 -> U11 is corrected to U0 -> U1
+                {
+                    //Find closest U to 0.
+                    float minU = t3d->verts[0].uv.x();
+
+                    if(std::abs(minU) > std::abs(t3d->verts[1].uv.x()))
+                        minU = t3d->verts[1].uv.x();
+
+                    if(std::abs(minU) > std::abs(t3d->verts[2].uv.x()))
+                        minU = t3d->verts[2].uv.x();
+
+                    int wholeU = minU;
+
+                    if(wholeU > 0)
+                    {
+                        qDebug() << "Clamping U";
+                        qDebug() <<  t3d->verts[0].uv.x() << "to" << t3d->verts[0].uv.x() - wholeU;
+                        qDebug() <<  t3d->verts[1].uv.x() << "to" << t3d->verts[1].uv.x() - wholeU;
+                        qDebug() <<  t3d->verts[2].uv.x() << "to" << t3d->verts[2].uv.x() - wholeU;
+                    }
+
+                    t3d->verts[0].uv.setX((t3d->verts[0].uv.x() - wholeU) * TEX_SIZE);
+                    t3d->verts[1].uv.setX((t3d->verts[1].uv.x() - wholeU) * TEX_SIZE);
+                    t3d->verts[2].uv.setX((t3d->verts[2].uv.x() - wholeU) * TEX_SIZE);
+                }
+
+                {
+                    //Find closest V to 0.
+                    float minV = t3d->verts[0].uv.y();
+
+                    if(std::abs(minV) > std::abs(t3d->verts[1].uv.y()))
+                        minV = t3d->verts[1].uv.y();
+
+                    if(std::abs(minV) > std::abs(t3d->verts[2].uv.y()))
+                        minV = t3d->verts[2].uv.y();
+
+                    int wholeV = minV;
+
+                    if(wholeV > 0)
+                    {
+                        qDebug() << "Clamping V";
+                        qDebug() <<  t3d->verts[0].uv.y() << "to" << t3d->verts[0].uv.y() - wholeV;
+                        qDebug() <<  t3d->verts[1].uv.y() << "to" << t3d->verts[1].uv.y() - wholeV;
+                        qDebug() <<  t3d->verts[2].uv.y() << "to" << t3d->verts[2].uv.y() - wholeV;
+                    }
+
+                    t3d->verts[0].uv.setY((t3d->verts[0].uv.y() - wholeV) * TEX_SIZE);
+                    t3d->verts[1].uv.setY((t3d->verts[1].uv.y() - wholeV) * TEX_SIZE);
+                    t3d->verts[2].uv.setY((t3d->verts[2].uv.y() - wholeV) * TEX_SIZE);
                 }
 
                 currentMesh->tris.push_back(t3d);
@@ -387,6 +441,11 @@ namespace Obj2Bsp
 
         QDir temp = QDir::temp();
 
+#ifndef USE_NQUANTCPP
+        WuQuant q;
+        QImage imageOut = q.QuantizeImage(imageIn);
+        return imageOut;
+#else
         QFile nQuantResource(":/exe/nQuantCpp.exe");
         nQuantResource.open(QFile::ReadOnly);
 
@@ -411,6 +470,7 @@ namespace Obj2Bsp
         QImage quantizedImage = QImage(temp.filePath("megaTex-WUquant256.png")).convertToFormat(QImage::Format_Indexed8);
 
         return quantizedImage;
+#endif
     }
 
     QColor ObjLoader::blendColor(QColor color1, QColor color2, double frac)

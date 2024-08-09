@@ -164,7 +164,7 @@ namespace Obj2Bsp
 
 
 
-        static constexpr float epsilon = 0.1f;
+        static constexpr float epsilon = 0.25f;
     };
 
 }

@@ -10,7 +10,8 @@ SOURCES += \
         bspbuilder.cpp \
         bspmodelexport.cpp \
         main.cpp \
-        objloader.cpp
+        objloader.cpp \
+        wuquant.cpp
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -22,7 +23,8 @@ HEADERS += \
     bspbuilder.h \
     bspmodelexport.h \
     config.h \
-    objloader.h
+    objloader.h \
+    wuquant.h
 
 RESOURCES += \
     resources.qrc
