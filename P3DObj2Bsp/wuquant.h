@@ -4,19 +4,14 @@
 #include <QtCore>
 #include <QtGui>
 
-namespace Obj2Bsp
-{
-
 /*
     Having received many constructive comments and bug reports about my previous
     C implementation of my color quantizer (Graphics Gems vol. II, p. 126-133),
     I am posting the following second version of my program (hopefully 100%
     healthy) as a reply to all those who are interested in the problem.
-    */
+*/
 
-
-
-    /**********************************************************************
+/**********************************************************************
         C Implementation of Wu's Color Quantizer (v. 2)
         (see Graphics Gems vol. II, pp. 126-133)
 
@@ -38,6 +33,9 @@ additional documentation and a cure to a previous bug.
 Free to distribute, comments and suggestions are appreciated.
 **********************************************************************/
 
+
+namespace Obj2Bsp
+{
     struct box {
         int r0;			 /* min value, exclusive */
         int r1;			 /* max value, inclusive */
@@ -53,7 +51,7 @@ Free to distribute, comments and suggestions are appreciated.
     public:
         WuQuant();
 
-        QImage QuantizeImage(QImage imageIn);
+        QImage QuantizeImage(QImage imageIn, int colors);
 
     private:
 
@@ -67,18 +65,23 @@ Free to distribute, comments and suggestions are appreciated.
         int Bottom(struct box *cube, unsigned char dir, int mmt[33][33][33]);
         int Top(struct box *cube, unsigned char dir, int   pos, int mmt[33][33][33]);
 
-
-
         /* Histogram is in elements 1..HISTSIZE along each axis,
          * element 0 is for base or marginal value
          * NB: these must start out 0!
          */
-        float		m2[33][33][33];
-        int	wt[33][33][33], mr[33][33][33],	mg[33][33][33],	mb[33][33][33];
-        unsigned char   *Ir, *Ig, *Ib;
-        int	        size; /*image size*/
-        int		K;    /*color look-up table size*/
-        unsigned short int *Qadd;
+        float   m2[33][33][33] = {{{0.0f}}};
+        int     wt[33][33][33] = {{{0}}};
+        int     mr[33][33][33] = {{{0}}};
+        int     mg[33][33][33] = {{{0}}};
+        int     mb[33][33][33] = {{{0}}};
+
+        unsigned char *Ir = nullptr;
+        unsigned char *Ig = nullptr;
+        unsigned char *Ib = nullptr;
+
+        int size = 0; /*image size*/
+        int K = 0;    /*color look-up table size*/
+        unsigned short int *Qadd = nullptr;
 
         static constexpr int MAXCOLOR = 256;
         static constexpr int RED = 2;

@@ -443,8 +443,7 @@ namespace Obj2Bsp
 
 #ifndef USE_NQUANTCPP
         WuQuant q;
-        QImage imageOut = q.QuantizeImage(imageIn);
-        return imageOut;
+        return q.QuantizeImage(imageIn, 256);
 #else
         QFile nQuantResource(":/exe/nQuantCpp.exe");
         nQuantResource.open(QFile::ReadOnly);
