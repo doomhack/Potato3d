@@ -122,16 +122,11 @@ namespace P3D
             return v;
         }
 
-        V3 Normalised() const
+        constexpr V3 Normalised() const
         {
             V3 v;
 
-            double len = x*x+y*y+z*z;
-
-            if(len == 0)
-                return *this;
-
-            len = std::sqrt(len);
+            T len = Length();
 
             v.x = (float)((float)x / len);
             v.y = (float)((float)y / len);
@@ -145,9 +140,14 @@ namespace P3D
             return ((x * r.y) - (y * r.x));
         }
 
-        T DotProduct(const V3<T>& v2) const
+        constexpr T DotProduct(const V3<T>& v2) const
         {
             return x * v2.x + y * v2.y + z * v2.z;
+        }
+
+        constexpr T Length() const
+        {
+            return  std::sqrt((x * x) + (y * y) + (z * z));
         }
     };
 

@@ -21,6 +21,10 @@ namespace P3D
         V3<fp>& CameraPos();
         V3<fp>& CameraAngle();
 
+        void DoCollisions();
+        bool CheckCollision(const BspModelTriangle* tri, V3<fp>& point, const fp radius);
+
+
         void RenderScene();
 
         void SetModel(const BspModel* model);
@@ -50,8 +54,9 @@ namespace P3D
 
         AABB viewFrustrumBB;
 
-        V3<fp> cameraPos = V3<fp>(0,100,0);
-        V3<fp> cameraAngle = V3<fp>(0,0,0);
+        //V3<fp> cameraPos = V3<fp>(0,50,0);
+        V3<fp> cameraPos = V3<fp>(8508,13,8563);
+        V3<fp> cameraAngle = V3<fp>(0,-236,0);
         pixel backgroundColor = 0x799ED7;
 
         V3<fp> frustrumPoints[4]; //Top left and bottom-right frustrum points.

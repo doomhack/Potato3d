@@ -3,6 +3,7 @@
 
 #include "PixelShaderDefault.h"
 #include "PixelShaderGBA8.h"
+#include "qlogging.h"
 
 #include <string.h>
 
@@ -84,14 +85,25 @@ namespace P3D
         V4<fp> t2 = camMatrix * frustrumPoints[1];
         V4<fp> t3 = camMatrix * frustrumPoints[2];
         V4<fp> t4 = camMatrix * frustrumPoints[3];
-
+#if 1
         viewFrustrumBB.AddPoint(cameraPos);
 
         viewFrustrumBB.AddPoint(V3<fp>(t1.x, t1.y, t1.z));
         viewFrustrumBB.AddPoint(V3<fp>(t2.x, t2.y, t2.z));
         viewFrustrumBB.AddPoint(V3<fp>(t3.x, t3.y, t3.z));
         viewFrustrumBB.AddPoint(V3<fp>(t4.x, t4.y, t4.z));
+#else
+        fp bb_size = 100;
+        viewFrustrumBB.AddPoint(cameraPos);
+        viewFrustrumBB.x1 -= bb_size;
+        viewFrustrumBB.x2 += bb_size;
 
+        viewFrustrumBB.y1 -= bb_size;
+        viewFrustrumBB.y2 += bb_size;
+
+        viewFrustrumBB.z1 -= bb_size;
+        viewFrustrumBB.z2 += bb_size;
+#endif
 
         V3<fp> t[3];
 
@@ -100,8 +112,100 @@ namespace P3D
         t[2] = V3<fp>(t3.x, t3.y, t3.z);
 
         //render_device->DrawTriangle(t, nullptr);
+    }
 
+    void Object3d::DoCollisions()
+    {
+        const int bb_size = 100;
+        AABB player_box;
 
+        player_box.AddPoint(cameraPos);
+        player_box.x1 -= bb_size;
+        player_box.x2 += bb_size;
+
+        player_box.y1 -= bb_size;
+        player_box.y2 += bb_size;
+
+        player_box.z1 -= bb_size;
+        player_box.z2 += bb_size;
+
+        std::vector<const BspModelTriangle*> tris;
+/*
+        BspModelTriangle t;
+        t.tri.verts[0].pos = V3<fp>(0,0,0);
+        t.tri.verts[1].pos = V3<fp>(-100,0,0);
+        t.tri.verts[2].pos = V3<fp>(0,0,-100);
+
+        V3<fp> p(-25, 10, -25);
+
+        CheckCollision2(&t, p, 50);
+*/
+        model->SortFrontToBack(cameraPos, player_box, tris, true);
+
+        for(int i = 0; i < tris.size(); i++)
+        {
+            if(CheckCollision(tris.at(i), cameraPos, 50))
+            {
+                i = 0;
+                continue;
+            }
+        }
+
+    }
+
+    bool Object3d::CheckCollision(const BspModelTriangle* tri, V3<fp>& point, const fp radius)
+    {
+        //Compute Normal
+        V3<fp> side1 = tri->tri.verts[1].pos - tri->tri.verts[0].pos;
+        V3<fp> side2 = tri->tri.verts[2].pos - tri->tri.verts[0].pos;
+
+        V3<fp> normal = side2.CrossProductNormalised(side1);
+
+        //Compute plane.
+        float d = -normal.DotProduct(tri->tri.verts[0].pos);
+
+        Plane<fp> plane(normal, d);
+
+        fp distance = plane.DistanceToPoint(point);
+
+        //No collision
+        if(distance < 0 || distance >= radius)
+            return false;
+
+        fp margin = 0;
+
+        V3<fp> edge01 = tri->tri.verts[1].pos - tri->tri.verts[0].pos;
+        V3<fp> edge01_normal = edge01.CrossProductNormalised(normal);
+        fp d01 = -edge01_normal.DotProduct(tri->tri.verts[0].pos);
+
+        Plane<fp> plane01(edge01_normal, d01);
+        fp pd01 = plane01.DistanceToPoint(point);
+        if(pd01 < margin)
+            return false;
+
+        V3<fp> edge12 = tri->tri.verts[2].pos - tri->tri.verts[1].pos;
+        V3<fp> edge12_normal = edge12.CrossProductNormalised(normal);
+        fp d12 = -edge12_normal.DotProduct(tri->tri.verts[1].pos);
+
+        Plane<fp> plane12(edge12_normal, d12);
+        fp pd12 = plane12.DistanceToPoint(point);
+        if(pd12 < margin)
+            return false;
+
+        V3<fp> edge20 = tri->tri.verts[0].pos - tri->tri.verts[2].pos;
+        V3<fp> edge20_normal = edge20.CrossProductNormalised(normal);
+        fp d20 = -edge20_normal.DotProduct(tri->tri.verts[2].pos);
+
+        Plane<fp> plane20(edge20_normal, d20);
+        fp pd20 = plane20.DistanceToPoint(point);
+        if(pd20 < margin)
+            return false;
+
+        //Move in direction of normal.
+        fp penetrationDepth = radius - distance;
+        point += normal * (penetrationDepth + fp(0.1));
+
+        return true;
     }
 
     void Object3d::RenderScene()
@@ -146,7 +250,7 @@ namespace P3D
         for(unsigned int i = 0; i < tris.size(); i++)
         {            
             const BspModelTriangle* tri = tris[i];
-
+#if 1
             if(!frustrumPlanes[Left].TriangleIsFrontside(tri->tri.verts[0].pos, tri->tri.verts[1].pos, tri->tri.verts[2].pos))
                 continue;
 
@@ -164,7 +268,7 @@ namespace P3D
 
             if(!frustrumPlanes[Far].TriangleIsFrontside(tri->tri.verts[0].pos, tri->tri.verts[1].pos, tri->tri.verts[2].pos))
                 continue;
-
+#endif
             const BspNodeTexture* ntex = model->GetTexture(tri->texture);
 
             V3<fp> verts[3] = {tri->tri.verts[0].pos, tri->tri.verts[1].pos, tri->tri.verts[2].pos};

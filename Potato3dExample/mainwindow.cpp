@@ -175,4 +175,6 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         object3d->light_level -= P3D::fp(0.05);
     }
 
+    object3d->DoCollisions();
+
 }

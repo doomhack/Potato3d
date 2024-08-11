@@ -24,6 +24,7 @@ namespace P3D
 {
     typedef quint8 pixel;
 
+    //typedef double fp;
     typedef P3D::FP16 fp;
 }
 
