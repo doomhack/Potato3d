@@ -76,6 +76,7 @@ namespace P3D
         int zj = (zf - zn);
 
         z_planes.z_ratio_2 = fp::fromFPInt(FixedDiv(zi, zj, 16));
+        //z_planes.z_ratio_2 = zi / zj;
 
         if(triangle_render)
         {

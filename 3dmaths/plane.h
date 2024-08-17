@@ -28,7 +28,7 @@ public:
         d /= length;
     }
 
-    constexpr T DistanceToPoint(const V3<T>& v)
+    constexpr T DistanceToPoint(const V3<T>& v) const
     {
         return n.DotProduct(v) + d;
     }

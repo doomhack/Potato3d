@@ -11,9 +11,9 @@ namespace P3D
     public:
         BspModelHeader header;
 
-        void SortFrontToBack(const V3<fp>& p, const AABB& frustrum, std::vector<const BspModelTriangle*>& out, bool backface_cull) const;
+        void SortFrontToBack(const V3<fp>& p, const AABB<fp>& frustrum, std::vector<const BspModelTriangle*>& out, bool backface_cull) const;
 
-        void SortBackToFront(const V3<fp>& p, const AABB& frustrum, std::vector<const BspModelTriangle*>& out, bool backface_cull) const;
+        void SortBackToFront(const V3<fp>& p, const AABB<fp>& frustrum, std::vector<const BspModelTriangle*>& out, bool backface_cull) const;
 
 
         const BspNodeTexture* GetTexture(int n) const
@@ -41,14 +41,14 @@ namespace P3D
 
     private:
 
-        void SortFrontToBackRecursive(const V3<fp>& p, const AABB& frustrum, const BspModelNode* n, std::vector<const BspModelTriangle *> &out, bool backface_cull) const;
+        void SortFrontToBackRecursive(const V3<fp>& p, const AABB<fp>& frustrum, const BspModelNode* n, std::vector<const BspModelTriangle *> &out, bool backface_cull) const;
 
-        void SortBackToFrontRecursive(const V3<fp>& p, const AABB& frustrum, const BspModelNode* n, std::vector<const BspModelTriangle *> &out, bool backface_cull) const;
+        void SortBackToFrontRecursive(const V3<fp>& p, const AABB<fp>& frustrum, const BspModelNode* n, std::vector<const BspModelTriangle *> &out, bool backface_cull) const;
 
 
-        bool TriAABBIntersect(const BspModelTriangle* tri, const AABB& aabb) const
+        bool TriAABBIntersect(const BspModelTriangle* tri, const AABB<fp>& aabb) const
         {
-            AABB polybb;
+            AABB<fp> polybb;
             polybb.AddPoint(tri->tri.verts[0].pos);
             polybb.AddPoint(tri->tri.verts[1].pos);
             polybb.AddPoint(tri->tri.verts[2].pos);
@@ -61,11 +61,11 @@ namespace P3D
             return (const unsigned char*)&header;
         }
 
-        fp Distance(const BspPlane& plane, const V3<fp>& pos) const
+        fp Distance(const Plane<fp>& plane, const V3<fp>& pos) const
         {
-            fp dot = plane.normal.DotProduct(pos);
+            fp dot = plane.Normal().DotProduct(pos);
 
-            return dot - plane.plane;
+            return dot - plane.Distance();
         }
 
         const BspModelTriangle* GetTriangle(unsigned int n) const

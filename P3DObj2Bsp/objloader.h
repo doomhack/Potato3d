@@ -31,10 +31,7 @@ namespace Obj2Bsp
         QByteArray pixels;
         unsigned short width;
         unsigned short height;
-        unsigned short u_mask;
-        unsigned short v_mask;
-        unsigned short v_shift;
-        unsigned short alpha;
+        bool alpha;
     };
 
     class Mesh3d
@@ -79,6 +76,10 @@ namespace Obj2Bsp
         QImage GetImageWithFogAndLightmap(QImage imageIn);
 
         QColor blendColor(QColor color1, QColor color2, double frac);
+
+        QColor rgbToLab(const QColor &color);
+        double colorDistanceCIEDE2000(const QColor &lab1, const QColor &lab2);
+
         double colorDiff(QColor e1, QColor e2);
 
         QByteArray GenerateFogAndLightTables(QImage imageIn);

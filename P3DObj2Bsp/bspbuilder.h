@@ -120,19 +120,48 @@ namespace Obj2Bsp
         }
     };
 
+    typedef struct BspPlane
+    {
+        QVector3D normal;
+        float distance;
+    } BspPlane;
+
     class BspTriangle
     {
     public:
         Triangle3d* tri;
+        BspPlane normal_plane;
+        BspPlane edge_plane_01;
+        BspPlane edge_plane_12;
+        BspPlane edge_plane_20;
         const Texture* texture;
         P3D::pixel color;
-    };
 
-    typedef struct BspPlane
-    {
-        QVector3D normal;
-        float plane;
-    } BspPlane;
+        void ComputePlanes()
+        {
+            //Edge vectors
+            QVector3D side01 = tri->verts[1].pos - tri->verts[0].pos;
+            QVector3D side02 = tri->verts[2].pos - tri->verts[0].pos;
+            QVector3D side12 = tri->verts[2].pos - tri->verts[1].pos;
+            QVector3D side20 = tri->verts[0].pos - tri->verts[2].pos;
+
+            //Compute Normal
+            normal_plane.normal = QVector3D::crossProduct(side02, side01).normalized();
+            normal_plane.distance = -QVector3D::dotProduct(normal_plane.normal, tri->verts[0].pos);
+
+            //Edge 0-1 plane
+            edge_plane_01.normal = QVector3D::crossProduct(side01, normal_plane.normal).normalized();
+            edge_plane_01.distance = -QVector3D::dotProduct(edge_plane_01.normal, tri->verts[0].pos);
+
+            //Edge 1-2 plane
+            edge_plane_12.normal = QVector3D::crossProduct(side12, normal_plane.normal).normalized();
+            edge_plane_12.distance = -QVector3D::dotProduct(edge_plane_12.normal, tri->verts[1].pos);
+
+            //Edge 2-0 plane
+            edge_plane_20.normal = QVector3D::crossProduct(side20, normal_plane.normal).normalized();
+            edge_plane_20.distance = -QVector3D::dotProduct(edge_plane_20.normal, tri->verts[2].pos);
+        }
+    };
 
     class BspNode
     {
@@ -161,8 +190,6 @@ namespace Obj2Bsp
         void SeperateTriangles(BspPlane& plane, std::vector<BspTriangle*>& triangles, std::vector<BspTriangle*>& front_tris, std::vector<BspTriangle*>& back_tris, std::vector<BspTriangle*>& plane_tris_front, std::vector<BspTriangle *> &plane_tris_back);
         float Relation(float a, float b);
         Vertex3d LerpVertex(Vertex3d& out, const Vertex3d& vx1, const Vertex3d& vx2, float frac);
-
-
 
         static constexpr float epsilon = 0.25f;
     };

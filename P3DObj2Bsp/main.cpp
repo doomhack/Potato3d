@@ -9,8 +9,12 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
+    QImageReader::setAllocationLimit(4096);
+
     Obj2Bsp::ObjLoader loader;
 
+    //QString objPath = "C:\\Users\\Zak\\Downloads\\DDHQ\\ddhq.obj";
+    //QString objPath = "C:\\Users\\Zak\\Downloads\\Villa\\villa.obj";
     QString objPath = "C:\\Users\\Zak\\Downloads\\Dam\\dam.obj";
     //QString objPath = "C:\\Users\\Zak\\Downloads\\Temple\\temple.obj";
     //QString objPath = "C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\Streets\\Streets.obj";

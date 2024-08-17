@@ -38,6 +38,7 @@ namespace P3D
 #endif
 
         bool update_frustrum_bb = true;
+        bool do_collisions = true;
         fp light_level = 1.0;
 
     private:
@@ -52,10 +53,11 @@ namespace P3D
 
         const BspModel* model;
 
-        AABB viewFrustrumBB;
+        AABB<fp> viewFrustrumBB;
 
-        //V3<fp> cameraPos = V3<fp>(0,50,0);
-        V3<fp> cameraPos = V3<fp>(8508,13,8563);
+        V3<fp> eyePos;
+        V3<fp> cameraPos = V3<fp>(0,50,0);
+        //V3<fp> cameraPos = V3<fp>(8508,13,8563);
         V3<fp> cameraAngle = V3<fp>(0,-236,0);
         pixel backgroundColor = 0x799ED7;
 

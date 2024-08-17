@@ -24,7 +24,7 @@ namespace Obj2Bsp
 
                 //NaN always compares != to anything. Even itself.
                 //Hopefully, the optimiser won't break this.
-                if(p.plane != p.plane)
+                if(p.distance != p.distance)
                     continue;
 
                 BspTriangle* bsptri = new BspTriangle();
@@ -689,7 +689,7 @@ namespace Obj2Bsp
     {
         float dot = QVector3D::dotProduct(plane.normal, pos);
 
-        return dot - plane.plane;
+        return dot - plane.distance;
     }
 
     int BspBuilder::Sign(float i)
@@ -728,7 +728,7 @@ namespace Obj2Bsp
 
         BspPlane p;
 
-        p.plane = plane;
+        p.distance = plane;
         p.normal = normal;
 
         return p;

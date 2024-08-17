@@ -25,6 +25,8 @@ MainWindow::MainWindow(QWidget *parent)
     //QFile f("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\d2\\driver2_small.bsp");
     //QFile f("C:\\Users\\Zak\\Downloads\\Temple\\temple.bsp");
     QFile f("C:\\Users\\Zak\\Downloads\\Dam\\dam.bsp");
+    //QFile f("C:\\Users\\Zak\\Downloads\\Villa\\villa.bsp");
+    //QFile f("C:\\Users\\Zak\\Downloads\\DDHQ\\ddhq.bsp");
 
 
 
@@ -174,7 +176,8 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     {
         object3d->light_level -= P3D::fp(0.05);
     }
-
-    object3d->DoCollisions();
-
+    else if(event->key() == Qt::Key_C)
+    {
+        object3d->do_collisions = !object3d->do_collisions;
+    }
 }

@@ -77,7 +77,7 @@ namespace P3D
 
     void Object3d::UpdateFrustrumAABB()
     {
-        viewFrustrumBB = AABB();
+        viewFrustrumBB = AABB<fp>();
 
         M4<fp> camMatrix = render_device->GetMatrix().Inverted();
 
@@ -86,7 +86,7 @@ namespace P3D
         V4<fp> t3 = camMatrix * frustrumPoints[2];
         V4<fp> t4 = camMatrix * frustrumPoints[3];
 #if 1
-        viewFrustrumBB.AddPoint(cameraPos);
+        viewFrustrumBB.AddPoint(eyePos);
 
         viewFrustrumBB.AddPoint(V3<fp>(t1.x, t1.y, t1.z));
         viewFrustrumBB.AddPoint(V3<fp>(t2.x, t2.y, t2.z));
@@ -117,17 +117,7 @@ namespace P3D
     void Object3d::DoCollisions()
     {
         const int bb_size = 100;
-        AABB player_box;
-
-        player_box.AddPoint(cameraPos);
-        player_box.x1 -= bb_size;
-        player_box.x2 += bb_size;
-
-        player_box.y1 -= bb_size;
-        player_box.y2 += bb_size;
-
-        player_box.z1 -= bb_size;
-        player_box.z2 += bb_size;
+        AABB<fp> player_box(cameraPos, bb_size);
 
         std::vector<const BspModelTriangle*> tris;
 /*
@@ -142,12 +132,19 @@ namespace P3D
 */
         model->SortFrontToBack(cameraPos, player_box, tris, true);
 
+        int collision_count = 0;
+
         for(int i = 0; i < tris.size(); i++)
         {
             if(CheckCollision(tris.at(i), cameraPos, 50))
             {
                 i = 0;
-                continue;
+                collision_count++;
+
+                if(collision_count < 10)
+                    continue;
+
+                break;
             }
         }
 
@@ -155,18 +152,7 @@ namespace P3D
 
     bool Object3d::CheckCollision(const BspModelTriangle* tri, V3<fp>& point, const fp radius)
     {
-        //Compute Normal
-        V3<fp> side1 = tri->tri.verts[1].pos - tri->tri.verts[0].pos;
-        V3<fp> side2 = tri->tri.verts[2].pos - tri->tri.verts[0].pos;
-
-        V3<fp> normal = side2.CrossProductNormalised(side1);
-
-        //Compute plane.
-        float d = -normal.DotProduct(tri->tri.verts[0].pos);
-
-        Plane<fp> plane(normal, d);
-
-        fp distance = plane.DistanceToPoint(point);
+        fp distance = tri->normal_plane.DistanceToPoint(point);
 
         //No collision
         if(distance < 0 || distance >= radius)
@@ -174,42 +160,36 @@ namespace P3D
 
         fp margin = 0;
 
-        V3<fp> edge01 = tri->tri.verts[1].pos - tri->tri.verts[0].pos;
-        V3<fp> edge01_normal = edge01.CrossProductNormalised(normal);
-        fp d01 = -edge01_normal.DotProduct(tri->tri.verts[0].pos);
-
-        Plane<fp> plane01(edge01_normal, d01);
-        fp pd01 = plane01.DistanceToPoint(point);
+        fp pd01 = tri->edge_plane_0_1.DistanceToPoint(point);
         if(pd01 < margin)
             return false;
 
-        V3<fp> edge12 = tri->tri.verts[2].pos - tri->tri.verts[1].pos;
-        V3<fp> edge12_normal = edge12.CrossProductNormalised(normal);
-        fp d12 = -edge12_normal.DotProduct(tri->tri.verts[1].pos);
-
-        Plane<fp> plane12(edge12_normal, d12);
-        fp pd12 = plane12.DistanceToPoint(point);
+        fp pd12 = tri->edge_plane_1_2.DistanceToPoint(point);
         if(pd12 < margin)
             return false;
 
-        V3<fp> edge20 = tri->tri.verts[0].pos - tri->tri.verts[2].pos;
-        V3<fp> edge20_normal = edge20.CrossProductNormalised(normal);
-        fp d20 = -edge20_normal.DotProduct(tri->tri.verts[2].pos);
-
-        Plane<fp> plane20(edge20_normal, d20);
-        fp pd20 = plane20.DistanceToPoint(point);
+        fp pd20 = tri->edge_plane_2_0.DistanceToPoint(point);
         if(pd20 < margin)
             return false;
 
         //Move in direction of normal.
         fp penetrationDepth = radius - distance;
-        point += normal * (penetrationDepth + fp(0.1));
+        point += tri->normal_plane.Normal() * (penetrationDepth + fp(0.1));
 
         return true;
     }
 
     void Object3d::RenderScene()
-    {        
+    {
+        if(do_collisions)
+        {
+            cameraPos.y -= 5;
+            DoCollisions();
+        }
+
+        eyePos = cameraPos;
+        eyePos.y += 25;
+
         render_device->ClearColor(backgroundColor);
         render_device->ClearDepth(1);
 
@@ -219,7 +199,7 @@ namespace P3D
         render_device->RotateY(-cameraAngle.y);
         render_device->RotateZ(-cameraAngle.z);
 
-        render_device->Translate(V3<fp>(-cameraPos.x, -cameraPos.y, -cameraPos.z));
+        render_device->Translate(V3<fp>(-eyePos.x, -(eyePos.y), -eyePos.z));
 
         if(update_frustrum_bb)
             UpdateFrustrumAABB();
@@ -244,8 +224,8 @@ namespace P3D
 
         static std::vector<const BspModelTriangle*> tris;
 
-        //model->SortBackToFront(cameraPos, viewFrustrumBB, tris, true);
-        model->SortBackToFront(cameraPos, viewFrustrumBB, tris, true);
+        //model->SortBackToFront(eyePos, viewFrustrumBB, tris, true);
+        model->SortBackToFront(eyePos, viewFrustrumBB, tris, true);
 
         for(unsigned int i = 0; i < tris.size(); i++)
         {            

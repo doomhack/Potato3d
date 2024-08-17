@@ -1,4 +1,4 @@
-#include <numeric>
+#include "../3dmaths/f3dmath.h"
 
 namespace P3D
 {
@@ -24,120 +24,7 @@ namespace P3D
         const pixel* pixels;
         unsigned short width;
         unsigned short height;
-        unsigned short u_mask;
-        unsigned short v_mask;
-        unsigned short v_shift;
-        unsigned short alpha;
-    };
-
-    class AABB
-    {
-    public:
-        fp x1,x2;
-        fp y1,y2;
-        fp z1,z2;
-
-        AABB()
-        {
-            x1 = y1 = z1 = std::numeric_limits<short>::max();
-            x2 = y2 = z2 = std::numeric_limits<short>::min();
-        }
-
-        void AddTriangle(const Triangle3d& tri)
-        {
-            for(unsigned int i = 0; i < 3; i++)
-            {
-                AddPoint(tri.verts[i].pos);
-            }
-        }
-
-        void AddPoint(const V3<fp>& point)
-        {
-            if(point.x < x1)
-                x1 = point.x;
-
-            if(point.x > x2)
-                x2 = point.x;
-
-            if(point.y < y1)
-                y1 = point.y;
-
-            if(point.y > y2)
-                y2 = point.y;
-
-            if(point.z < z1)
-                z1 = point.z;
-
-            if(point.z > z2)
-                z2 = point.z;
-        }
-
-        void AddAABB(const AABB& other)
-        {
-            if(other.x1 < x1)
-                x1 = other.x1;
-
-            if(other.x2 > x2)
-                x2 = other.x2;
-
-            if(other.y1 < y1)
-                y1 = other.y1;
-
-            if(other.y2 > y2)
-                y2 = other.y2;
-
-            if(other.z1 < z1)
-                z1 = other.z1;
-
-            if(other.z2 > z2)
-                z2 = other.z2;
-        }
-
-        bool Intersect(const V3<fp>& point) const
-        {
-            if(x1 > point.x)
-                return false;
-
-            if(x2 < point.x)
-                return false;
-
-            if(y1 > point.y)
-                return false;
-
-            if(y2 < point.y)
-                return false;
-
-            if(z1 > point.z)
-                return false;
-
-            if(z2 < point.z)
-                return false;
-
-            return true;
-        }
-
-        bool Intersect(const AABB& other) const
-        {
-            if(x1 > other.x2)
-                return false;
-
-            if(x2 < other.x1)
-                return false;
-
-            if(y1 > other.y2)
-                return false;
-
-            if(y2 < other.y1)
-                return false;
-
-            if(z1 > other.z2)
-                return false;
-
-            if(z2 < other.z1)
-                return false;
-
-            return true;
-        }
+        bool alpha;
     };
 
     typedef struct BspModelHeader
@@ -163,9 +50,15 @@ namespace P3D
     {
     public:
         Triangle3d tri;
+        AABB<fp> tri_bb;
+
+        Plane<fp> normal_plane;
+        Plane<fp> edge_plane_0_1;
+        Plane<fp> edge_plane_1_2;
+        Plane<fp> edge_plane_2_0;
+
         int texture;
         pixel color;
-        AABB tri_bb;
     } BspModelTriangle;
 
     typedef struct TriIndexList
@@ -179,23 +72,14 @@ namespace P3D
         unsigned int texture_pixels_offset; //Pixels
         unsigned short width;
         unsigned short height;
-        unsigned short u_mask;
-        unsigned short v_mask;
-        unsigned short v_shift;
-        unsigned short alpha;
+        bool alpha;
     } BspNodeTexture;
-
-    typedef struct BspPlane
-    {
-        V3<fp> normal;
-        fp plane;
-    } BspPlane;
 
     typedef struct BspModelNode
     {
-        BspPlane plane;
-        AABB node_bb;
-        AABB child_bb;
+        Plane<fp> plane;
+        AABB<fp> node_bb;
+        AABB<fp> child_bb;
         unsigned int front_node;
         unsigned int back_node;
         TriIndexList front_tris;

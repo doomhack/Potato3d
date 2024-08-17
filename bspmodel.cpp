@@ -3,12 +3,12 @@
 
 namespace P3D
 {
-    void BspModel::SortFrontToBack(const V3<fp>& p, const AABB& frustrum, std::vector<const BspModelTriangle *> &out, bool backface_cull) const
+    void BspModel::SortFrontToBack(const V3<fp>& p, const AABB<fp>& frustrum, std::vector<const BspModelTriangle *> &out, bool backface_cull) const
     {
         SortFrontToBackRecursive(p, frustrum ,this->GetNode(0), out, backface_cull);
     }
 
-    void BspModel::SortFrontToBackRecursive(const V3<fp>& p, const AABB& frustrum, const BspModelNode* n, std::vector<const BspModelTriangle*>& out, bool backface_cull) const
+    void BspModel::SortFrontToBackRecursive(const V3<fp>& p, const AABB<fp>& frustrum, const BspModelNode* n, std::vector<const BspModelTriangle*>& out, bool backface_cull) const
     {
         if(!frustrum.Intersect(n->child_bb))
             return;
@@ -75,12 +75,12 @@ namespace P3D
         }
     }
 
-    void BspModel::SortBackToFront(const V3<fp>& p, const AABB& frustrum, std::vector<const BspModelTriangle *> &out, bool backface_cull) const
+    void BspModel::SortBackToFront(const V3<fp>& p, const AABB<fp>& frustrum, std::vector<const BspModelTriangle *> &out, bool backface_cull) const
     {
         SortBackToFrontRecursive(p, frustrum ,this->GetNode(0), out, backface_cull);
     }
 
-    void BspModel::SortBackToFrontRecursive(const V3<fp>& p, const AABB& frustrum, const BspModelNode* n, std::vector<const BspModelTriangle*>& out, bool backface_cull) const
+    void BspModel::SortBackToFrontRecursive(const V3<fp>& p, const AABB<fp>& frustrum, const BspModelNode* n, std::vector<const BspModelTriangle*>& out, bool backface_cull) const
     {
         if(!frustrum.Intersect(n->child_bb))
             return;

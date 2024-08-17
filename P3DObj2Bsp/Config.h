@@ -18,6 +18,8 @@ namespace Obj2Bsp
     inline constexpr int FOG_LEVELS = 16;
 
     inline constexpr int FOG_COLOR = 0x799ED7;
+
+    inline constexpr const char QUANT_ALGO[] = "WU"; //PNN, DIV, NEU
 }
 
 namespace P3D

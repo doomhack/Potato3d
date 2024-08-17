@@ -921,73 +921,65 @@ namespace P3D
 
             constexpr void GetTriangleLerpXDeltas(const Vertex4d& left, const Vertex4d& right, TriDrawXDeltaZWUV& x_delta) const
             {
-                constexpr unsigned int shift = 8;
-
                 const fp dx = (right.pos.x != left.pos.x) ? (right.pos.x - left.pos.x) : fp(1);
-
-                const fp recip = fp(pASL(fp(1), shift) / dx);
 
                 if(current_texture)
                 {
-                    x_delta.u = pASR((right.uv.x - left.uv.x) * recip, shift);
-                    x_delta.v = pASR((right.uv.y - left.uv.y) * recip, shift);
+                    x_delta.u = (right.uv.x - left.uv.x) / dx;
+                    x_delta.v = (right.uv.y - left.uv.y) / dx;
 
                     if constexpr (render_flags & (FullPerspectiveMapping | SubdividePerspectiveMapping))
                     {
-                        x_delta.w = pASR((right.pos.w - left.pos.w) * recip, shift);
+                        x_delta.w = (right.pos.w - left.pos.w) / dx;
                     }
                 }
 
                 if constexpr (render_flags & (ZTest | ZWrite))
                 {
-                    x_delta.z = pASR((right.pos.z - left.pos.z) * recip, shift);
+                    x_delta.z = (right.pos.z - left.pos.z) / dx;
                 }
 
                 if constexpr (render_flags & Fog)
                 {
-                    x_delta.f = pASR((right.fog_factor - left.fog_factor) * recip, shift);
+                    x_delta.f = (right.fog_factor - left.fog_factor) / dx;
                 }
 
                 if constexpr (render_flags & VertexLight)
                 {
-                    x_delta.l = pASR((right.light_factor - left.light_factor) * recip, shift);
+                    x_delta.l = (right.light_factor - left.light_factor) / dx;
                 }
             }
 
             constexpr void GetTriangleLerpYDeltas(const Vertex4d& a, const Vertex4d& b, TriDrawYDeltaZWUV &y_delta) const
             {
-                constexpr unsigned int shift = 4;
-
                 const fp dy = (a.pos.y != b.pos.y) ? (a.pos.y - b.pos.y) : fp(1);
 
-                const fp recip = fp(pASL(fp(1), shift) / dy);
-
-                y_delta.x = pASR((a.pos.x - b.pos.x) * recip, shift);
+                y_delta.x = (a.pos.x - b.pos.x) / dy;
 
                 if(current_texture)
                 {
-                    y_delta.u = pASR((a.uv.x - b.uv.x) * recip, shift);
-                    y_delta.v = pASR((a.uv.y - b.uv.y) * recip, shift);
+                    y_delta.u = (a.uv.x - b.uv.x) / dy;
+                    y_delta.v = (a.uv.y - b.uv.y) / dy;
 
                     if constexpr (render_flags & (FullPerspectiveMapping | SubdividePerspectiveMapping))
                     {
-                        y_delta.w = pASR((a.pos.w - b.pos.w) * recip, shift);
+                        y_delta.w = (a.pos.w - b.pos.w) / dy;
                     }
                 }
 
                 if constexpr (render_flags & (ZTest | ZWrite))
                 {
-                    y_delta.z = pASR((a.pos.z - b.pos.z) * recip, shift);
+                    y_delta.z = (a.pos.z - b.pos.z) / dy;
                 }
 
                 if constexpr (render_flags & Fog)
                 {
-                    y_delta.f = pASR((a.fog_factor - b.fog_factor) * recip, shift);
+                    y_delta.f = (a.fog_factor - b.fog_factor) / dy;
                 }
 
                 if constexpr (render_flags & VertexLight)
                 {
-                    y_delta.l = pASR((a.light_factor - b.light_factor) * recip, shift);
+                    y_delta.l = (a.light_factor - b.light_factor) / dy;
                 }
             }
 
@@ -1069,9 +1061,6 @@ namespace P3D
 
             constexpr fp GetZDelta(const Vertex4d verts[3]) const
             {
-                fp zr1 = z_planes->z_ratio_1;
-                fp zr2 = z_planes->z_ratio_2;
-
                 fp z0 = WtoZ(verts[0].pos.w);
                 fp z1 = WtoZ(verts[1].pos.w);
                 fp z2 = WtoZ(verts[2].pos.w);
@@ -1080,7 +1069,9 @@ namespace P3D
                 fp d2 = pAbs(z0 - z2);
                 fp d3 = pAbs(z1 - z2);
 
-                return (d1 + d2 + d3) * fp(85); //Scale to 0..255 range.
+                fp maxd = pMin(fp(1), pMax(d1, pMax(d2, d3)));
+
+                return maxd * fp(256); //Scale to 0..256 range.
             }
 
             constexpr fp GetFogFactor(const V4<fp>& pos) const

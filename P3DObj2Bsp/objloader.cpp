@@ -1,5 +1,4 @@
 #include "objloader.h"
-#include "wuquant.h"
 
 namespace Obj2Bsp
 {
@@ -113,20 +112,6 @@ namespace Obj2Bsp
                 float u = elements[1].toFloat();
                 float v = elements[2].toFloat();
 
-                /*
-                if(u > (TEX_MAX_TILE * TEX_SIZE))
-                {
-                    qDebug() << "Clamp u" << u << "to" << TEX_MAX_TILE * TEX_SIZE;
-                    u = TEX_MAX_TILE * TEX_SIZE;
-                }
-
-                if(v > (TEX_MAX_TILE * TEX_SIZE))
-                {
-                    qDebug() << "Clamp v" << v << "to" << TEX_MAX_TILE * TEX_SIZE;
-                    v = TEX_MAX_TILE * TEX_SIZE;
-                }
-                */
-
                 uvs.append(QVector2D(u, v));
             }
 
@@ -146,6 +131,19 @@ namespace Obj2Bsp
                     t3d->verts[t].uv = uvs.at(vtx_elelments[1].toInt() - 1);
                 }
 
+                //Check for zero area triangle.
+                QVector3D side1_0 = t3d->verts[1].pos - t3d->verts[0].pos;
+                QVector3D side2_0 = t3d->verts[2].pos - t3d->verts[0].pos;
+
+                QVector3D cross = QVector3D::crossProduct(side1_0, side2_0);
+
+                if(cross.length() <= 0.0)
+                {
+                    qDebug() << "Ignoring 0 area face";
+                    continue;
+                }
+
+
                 //Normalise UV's. So U10 -> U11 is corrected to U0 -> U1
                 {
                     //Find closest U to 0.
@@ -161,7 +159,7 @@ namespace Obj2Bsp
 
                     if(wholeU > 0)
                     {
-                        qDebug() << "Clamping U";
+                        qDebug() << "Normalising U";
                         qDebug() <<  t3d->verts[0].uv.x() << "to" << t3d->verts[0].uv.x() - wholeU;
                         qDebug() <<  t3d->verts[1].uv.x() << "to" << t3d->verts[1].uv.x() - wholeU;
                         qDebug() <<  t3d->verts[2].uv.x() << "to" << t3d->verts[2].uv.x() - wholeU;
@@ -186,7 +184,7 @@ namespace Obj2Bsp
 
                     if(wholeV > 0)
                     {
-                        qDebug() << "Clamping V";
+                        qDebug() << "Normalising V";
                         qDebug() <<  t3d->verts[0].uv.y() << "to" << t3d->verts[0].uv.y() - wholeV;
                         qDebug() <<  t3d->verts[1].uv.y() << "to" << t3d->verts[1].uv.y() - wholeV;
                         qDebug() <<  t3d->verts[2].uv.y() << "to" << t3d->verts[2].uv.y() - wholeV;
@@ -211,7 +209,6 @@ namespace Obj2Bsp
                 }
 
                 currentMesh->texture = textures.value(elements[1]);
-
                 currentMesh->color = textureColors.value(elements[1]);
             }
         }
@@ -282,18 +279,8 @@ namespace Obj2Bsp
                         t->width = image.width();
                         t->height = image.height();
 
-                        t->u_mask = t->width-1;
-
-
-                        t->v_shift = 0;
-
                         if(lastBit.left(2) == "A_")
-                            t->alpha = 1;
-
-                        while( (1 << t->v_shift) < t->width)
-                            t->v_shift++;
-
-                        t->v_mask = (t->height-1) << t->v_shift;
+                            t->alpha = true;
 
                         t->pixels = QByteArray((const char*)image.constScanLine(0), TEX_SIZE * TEX_SIZE * 4);
                     }
@@ -323,7 +310,7 @@ namespace Obj2Bsp
 
     QImage ObjLoader::QuantizeMegaTexture(QImage megaTexture, QByteArray &fogLightMap)
     {
-        if(FOG_LEVELS > 0 || LIGHT_LEVELS > 0)
+        if(FOG_LEVELS > 1 || LIGHT_LEVELS > 1)
         {
             QImage flTexture = GetImageWithFogAndLightmap(megaTexture);
 
@@ -387,7 +374,8 @@ namespace Obj2Bsp
         const int w = imageIn.width();
         const int h = imageIn.height();
 
-        QImage flTex = QImage(w * LIGHT_LEVELS, h * FOG_LEVELS, QImage::Format_RGB32);
+        QImage flTex = QImage(w * (LIGHT_LEVELS * FOG_LEVELS), h, QImage::Format_RGB32);
+
         QPainter painter(&flTex);
         painter.drawImage(0,0,imageIn);
 
@@ -398,24 +386,26 @@ namespace Obj2Bsp
 
             painter.setOpacity(1);
 
-
             painter.drawImage(w*ll,0,imageIn);
 
             painter.setOpacity(lFrac);
             painter.fillRect(w*ll,0,w,h,QBrush(Qt::black));
-
-            for(int f = 0; f < FOG_LEVELS; f++)
-            {
-                double fFrac = double(f) / double(FOG_LEVELS-1);
-
-                painter.setOpacity(1);
-
-                painter.drawImage(w*ll,h*f,flTex,w*ll,0,w,h);
-
-                painter.setOpacity(fFrac);
-                painter.fillRect(w*ll,h*f,w,h,QBrush(QColor::fromRgb(FOG_COLOR)));
-            }
         }
+
+        for(int f = 0; f < FOG_LEVELS; f++)
+        {
+            double fFrac = double(f) / double(FOG_LEVELS-1);
+
+            painter.setOpacity(1);
+
+            int stride = (w*LIGHT_LEVELS);
+
+            painter.drawImage(stride*f,0,flTex,0,0,stride,h);
+
+            painter.setOpacity(fFrac);
+            painter.fillRect(stride * f,0,stride,h,QBrush(QColor::fromRgb(FOG_COLOR)));
+        }
+
 
         QImage quantizedImage = nQuantCppImage(flTex);
 
@@ -441,10 +431,6 @@ namespace Obj2Bsp
 
         QDir temp = QDir::temp();
 
-#ifndef USE_NQUANTCPP
-        WuQuant q;
-        return q.QuantizeImage(imageIn, 256);
-#else
         QFile nQuantResource(":/exe/nQuantCpp.exe");
         nQuantResource.open(QFile::ReadOnly);
 
@@ -461,15 +447,17 @@ namespace Obj2Bsp
         p.setProgram(temp.filePath("nQuantCpp.exe"));
         p.setWorkingDirectory(temp.path());
 
-        p.setArguments(QStringList() << "megaTex.png" << "/a" << "wu" << "/m" << "256");
+        //p.setArguments(QStringList() << "megaTex.png" <<"/m" << "256");
+        p.setArguments(QStringList() << "megaTex.png" << "/a" << QUANT_ALGO <<"/m" << "256");
 
         p.start();
-        p.waitForFinished(10 * 60 * 1000); //Wait for up to 10 mins.
+        p.waitForFinished(60 * 60 * 1000); //Wait for up to 60 mins.
 
-        QImage quantizedImage = QImage(temp.filePath("megaTex-WUquant256.png")).convertToFormat(QImage::Format_Indexed8);
+        QString filename = QString("megaTex-%1quant256.png").arg(QUANT_ALGO);
+
+        QImage quantizedImage = QImage(temp.filePath(filename)).convertToFormat(QImage::Format_Indexed8);
 
         return quantizedImage;
-#endif
     }
 
     QColor ObjLoader::blendColor(QColor color1, QColor color2, double frac)
@@ -491,11 +479,16 @@ namespace Obj2Bsp
 
     double ObjLoader::colorDiff(QColor e1, QColor e2)
     {
-        long rmean = ( (long)e1.red() + (long)e2.red() ) / 2;
-        long r = (long)e1.red() - (long)e2.red();
-        long g = (long)e1.green() - (long)e2.green();
-        long b = (long)e1.blue() - (long)e2.blue();
-        return sqrt((((512+rmean)*r*r)>>8) + 4*g*g + (((767-rmean)*b*b)>>8));
+        int r1 = e1.red();
+        int g1 = e1.green();
+        int b1 = e1.blue();
+        int r2 = e2.red();
+        int g2 = e2.green();
+        int b2 = e2.blue();
+
+        return std::sqrt(std::pow(r1 - r2, 2) +
+                         std::pow(g1 - g2, 2) +
+                         std::pow(b1 - b2, 2));
     }
 
 }

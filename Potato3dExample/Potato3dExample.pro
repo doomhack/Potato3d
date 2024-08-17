@@ -39,6 +39,7 @@ HEADERS += \
     ../3dmaths/v2.h \
     ../3dmaths/v3.h \
     ../3dmaths/v4.h \
+    ../3dmaths/aabb.h \
     ../BspModelDefs.h \
     ../Config.h \
     ../ConfigInternal.h \

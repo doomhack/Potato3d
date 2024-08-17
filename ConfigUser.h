@@ -38,8 +38,8 @@ namespace P3D
     typedef fp z_val;
 
     inline constexpr int SUBDIVIDE_SPAN_LEN = 16;
-    //inline constexpr fp SUBDIVIDE_Z_THREASHOLD = fp(11);
-    inline constexpr fp SUBDIVIDE_Z_THREASHOLD = fp(2);
+    inline constexpr fp SUBDIVIDE_Z_THREASHOLD = fp(11);
+    //inline constexpr fp SUBDIVIDE_Z_THREASHOLD = fp(2);
 }
 
 #endif // CONFIGUSER_H

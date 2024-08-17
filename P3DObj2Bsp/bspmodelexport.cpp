@@ -42,24 +42,16 @@ namespace Obj2Bsp
 
             P3D::BspModelNode bn;
 
-            bn.plane.plane = nodeList[i]->plane.plane;
-            bn.plane.normal.x = nodeList[i]->plane.normal.x();
-            bn.plane.normal.y = nodeList[i]->plane.normal.y();
-            bn.plane.normal.z = nodeList[i]->plane.normal.z();
+            P3D::V3<P3D::fp> normal = P3D::V3<P3D::fp>(nodeList[i]->plane.normal.x(), nodeList[i]->plane.normal.y(), nodeList[i]->plane.normal.z());
+            bn.plane = P3D::Plane<P3D::fp>(normal, nodeList[i]->plane.distance);
 
-            bn.node_bb.x1 = nodeList[i]->node_bb.x1;
-            bn.node_bb.x2 = nodeList[i]->node_bb.x2;
-            bn.node_bb.y1 = nodeList[i]->node_bb.y1;
-            bn.node_bb.y2 = nodeList[i]->node_bb.y2;
-            bn.node_bb.z1 = nodeList[i]->node_bb.z1;
-            bn.node_bb.z2 = nodeList[i]->node_bb.z2;
+            bn.node_bb = P3D::AABB<P3D::fp>(nodeList[i]->node_bb.x1, nodeList[i]->node_bb.x2,
+                                            nodeList[i]->node_bb.y1, nodeList[i]->node_bb.y2,
+                                            nodeList[i]->node_bb.z1, nodeList[i]->node_bb.z2);
 
-            bn.child_bb.x1 = nodeList[i]->child_node_bb.x1;
-            bn.child_bb.x2 = nodeList[i]->child_node_bb.x2;
-            bn.child_bb.y1 = nodeList[i]->child_node_bb.y1;
-            bn.child_bb.y2 = nodeList[i]->child_node_bb.y2;
-            bn.child_bb.z1 = nodeList[i]->child_node_bb.z1;
-            bn.child_bb.z2 = nodeList[i]->child_node_bb.z2;
+            bn.child_bb = P3D::AABB<P3D::fp>(nodeList[i]->child_node_bb.x1, nodeList[i]->child_node_bb.x2,
+                                             nodeList[i]->child_node_bb.y1, nodeList[i]->child_node_bb.y2,
+                                             nodeList[i]->child_node_bb.z1, nodeList[i]->child_node_bb.z2);
 
             bn.front_tris.count = nodeList[i]->front_tris.size() & 0xffff;
             bn.front_tris.offset = modelTriList.length();
@@ -67,6 +59,8 @@ namespace Obj2Bsp
             for(unsigned int j = 0; j < nodeList[i]->front_tris.size(); j++)
             {
                 P3D::BspModelTriangle bmt;
+
+                nodeList[i]->front_tris[j]->ComputePlanes();
 
                 for(int v = 0; v < 3; v++)
                 {
@@ -80,7 +74,28 @@ namespace Obj2Bsp
 
                 bmt.color = nodeList[i]->front_tris[j]->color;
                 bmt.texture = -1;
-                bmt.tri_bb.AddTriangle(bmt.tri);
+
+                P3D::V3<P3D::fp> normal = P3D::V3<P3D::fp>(nodeList[i]->front_tris[j]->normal_plane.normal.x(),
+                                                           nodeList[i]->front_tris[j]->normal_plane.normal.y(),
+                                                           nodeList[i]->front_tris[j]->normal_plane.normal.z());
+                bmt.normal_plane = P3D::Plane<P3D::fp>(normal, nodeList[i]->front_tris[j]->normal_plane.distance);
+
+                normal = P3D::V3<P3D::fp>(  nodeList[i]->front_tris[j]->edge_plane_01.normal.x(),
+                                            nodeList[i]->front_tris[j]->edge_plane_01.normal.y(),
+                                            nodeList[i]->front_tris[j]->edge_plane_01.normal.z());
+                bmt.edge_plane_0_1 = P3D::Plane<P3D::fp>(normal, nodeList[i]->front_tris[j]->edge_plane_01.distance);
+
+                normal = P3D::V3<P3D::fp>(  nodeList[i]->front_tris[j]->edge_plane_12.normal.x(),
+                                            nodeList[i]->front_tris[j]->edge_plane_12.normal.y(),
+                                            nodeList[i]->front_tris[j]->edge_plane_12.normal.z());
+                bmt.edge_plane_1_2 = P3D::Plane<P3D::fp>(normal, nodeList[i]->front_tris[j]->edge_plane_12.distance);
+
+                normal = P3D::V3<P3D::fp>(  nodeList[i]->front_tris[j]->edge_plane_20.normal.x(),
+                                            nodeList[i]->front_tris[j]->edge_plane_20.normal.y(),
+                                            nodeList[i]->front_tris[j]->edge_plane_20.normal.z());
+                bmt.edge_plane_2_0 = P3D::Plane<P3D::fp>(normal, nodeList[i]->front_tris[j]->edge_plane_20.distance);
+
+                bmt.tri_bb.AddTriangle(bmt.tri.verts[0].pos, bmt.tri.verts[1].pos, bmt.tri.verts[2].pos);
 
                 const Texture* tex = nodeList[i]->front_tris[j]->texture;
 
@@ -96,9 +111,6 @@ namespace Obj2Bsp
                         bnt.alpha = nodeList[i]->front_tris[j]->texture->alpha;
                         bnt.width = nodeList[i]->front_tris[j]->texture->width;
                         bnt.height = nodeList[i]->front_tris[j]->texture->height;
-                        bnt.u_mask = nodeList[i]->front_tris[j]->texture->u_mask;
-                        bnt.v_mask = nodeList[i]->front_tris[j]->texture->v_mask;
-                        bnt.v_shift = nodeList[i]->front_tris[j]->texture->v_shift;
                         bnt.texture_pixels_offset = texturePixels.length() / sizeof(P3D::pixel);
 
                         texturePixels.append(nodeList[i]->front_tris[j]->texture->pixels);
@@ -122,6 +134,8 @@ namespace Obj2Bsp
             {
                 P3D::BspModelTriangle bmt;
 
+                nodeList[i]->back_tris[j]->ComputePlanes();
+
                 for(int v = 0; v < 3; v++)
                 {
                     bmt.tri.verts[v].pos.x = nodeList[i]->back_tris[j]->tri->verts[v].pos.x();
@@ -134,7 +148,28 @@ namespace Obj2Bsp
 
                 bmt.color = nodeList[i]->back_tris[j]->color;
                 bmt.texture = -1;
-                bmt.tri_bb.AddTriangle(bmt.tri);
+
+                P3D::V3<P3D::fp> normal = P3D::V3<P3D::fp>(nodeList[i]->back_tris[j]->normal_plane.normal.x(),
+                                                           nodeList[i]->back_tris[j]->normal_plane.normal.y(),
+                                                           nodeList[i]->back_tris[j]->normal_plane.normal.z());
+                bmt.normal_plane = P3D::Plane<P3D::fp>(normal, nodeList[i]->back_tris[j]->normal_plane.distance);
+
+                normal = P3D::V3<P3D::fp>(  nodeList[i]->back_tris[j]->edge_plane_01.normal.x(),
+                                            nodeList[i]->back_tris[j]->edge_plane_01.normal.y(),
+                                            nodeList[i]->back_tris[j]->edge_plane_01.normal.z());
+                bmt.edge_plane_0_1 = P3D::Plane<P3D::fp>(normal, nodeList[i]->back_tris[j]->edge_plane_01.distance);
+
+                normal = P3D::V3<P3D::fp>(  nodeList[i]->back_tris[j]->edge_plane_12.normal.x(),
+                                            nodeList[i]->back_tris[j]->edge_plane_12.normal.y(),
+                                            nodeList[i]->back_tris[j]->edge_plane_12.normal.z());
+                bmt.edge_plane_1_2 = P3D::Plane<P3D::fp>(normal, nodeList[i]->back_tris[j]->edge_plane_12.distance);
+
+                normal = P3D::V3<P3D::fp>(  nodeList[i]->back_tris[j]->edge_plane_20.normal.x(),
+                                            nodeList[i]->back_tris[j]->edge_plane_20.normal.y(),
+                                            nodeList[i]->back_tris[j]->edge_plane_20.normal.z());
+                bmt.edge_plane_2_0 = P3D::Plane<P3D::fp>(normal, nodeList[i]->back_tris[j]->edge_plane_20.distance);
+
+                bmt.tri_bb.AddTriangle(bmt.tri.verts[0].pos, bmt.tri.verts[1].pos, bmt.tri.verts[2].pos);
 
                 const Texture* tex = nodeList[i]->back_tris[j]->texture;
 
@@ -150,9 +185,6 @@ namespace Obj2Bsp
                         bnt.alpha = nodeList[i]->back_tris[j]->texture->alpha;
                         bnt.width = nodeList[i]->back_tris[j]->texture->width;
                         bnt.height = nodeList[i]->back_tris[j]->texture->height;
-                        bnt.u_mask = nodeList[i]->back_tris[j]->texture->u_mask;
-                        bnt.v_mask = nodeList[i]->back_tris[j]->texture->v_mask;
-                        bnt.v_shift = nodeList[i]->back_tris[j]->texture->v_shift;
                         bnt.texture_pixels_offset = texturePixels.length() / sizeof(P3D::pixel);
 
                         texturePixels.append(nodeList[i]->back_tris[j]->texture->pixels);
