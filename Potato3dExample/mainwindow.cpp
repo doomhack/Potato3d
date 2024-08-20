@@ -47,7 +47,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     if constexpr(sizeof(P3D::pixel) == 1)
     {
-        bg = bspModel->GetFogLightMap()[15*256];
+        bg = bspModel->GetFogLightMap()[(P3D::FOG_LEVELS-1)*256];
     }
     else
     {

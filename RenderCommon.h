@@ -45,7 +45,7 @@ namespace P3D
             struct
             {
                 const pixel* pixels;
-                pixel alpha_mask; //If pixel & alpha_mask > 0 -> draw pixel.
+                bool alpha; //If pixel == 0. Don't draw.
             };
             struct
             {

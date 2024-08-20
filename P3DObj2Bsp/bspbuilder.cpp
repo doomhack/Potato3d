@@ -169,15 +169,24 @@ namespace Obj2Bsp
 
             case SplitType( 0,  0,  0):
             {
-                //Figure out if triangle faces the same way as the BSP plane.
 
-                QVector3D normal = QVector3D::normal(triangles[i]->tri->verts[0].pos, triangles[i]->tri->verts[1].pos, triangles[i]->tri->verts[2].pos);
-                float sp = QVector3D::dotProduct(plane.normal, normal);
-
-                if(sp < 0)
+                if(triangles[i]->texture && triangles[i]->texture->alpha)
+                {
+                    //Triangles with alpha blending are placed on both sides of the node to disable backface culling.
                     plane_tris_back.push_back(triangles[i]);
-                else
                     plane_tris_front.push_back(triangles[i]);
+                }
+                else
+                {
+                    //Figure out if triangle faces the same way as the BSP plane.
+                    QVector3D normal = QVector3D::normal(triangles[i]->tri->verts[0].pos, triangles[i]->tri->verts[1].pos, triangles[i]->tri->verts[2].pos);
+                    float sp = QVector3D::dotProduct(plane.normal, normal);
+
+                    if(sp < 0)
+                        plane_tris_back.push_back(triangles[i]);
+                    else
+                        plane_tris_front.push_back(triangles[i]);
+                }
             }
             break;
 

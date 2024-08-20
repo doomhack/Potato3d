@@ -334,14 +334,14 @@ namespace Obj2Bsp
 
             for(int l = 0; l < LIGHT_LEVELS; l++)
             {
-                double lFrac = double(l) / double(LIGHT_LEVELS-1);
+                double lFrac = LIGHT_LEVELS > 1 ? (double(l) / double(LIGHT_LEVELS-1)) : 0;
 
                 //Blend C with black.
                 QColor cl = blendColor(c, QColor(Qt::black), lFrac);
 
                 for(int f = 0; f < FOG_LEVELS; f++)
                 {
-                    double fFrac = double(f) / double(FOG_LEVELS-1);
+                    double fFrac = FOG_LEVELS > 1 ? (double(f) / double(FOG_LEVELS-1)) : 0;
                     //Blend C with fog.
                     QColor clf = blendColor(cl, QColor::fromRgb(0x799ED7), fFrac);
 
@@ -364,7 +364,7 @@ namespace Obj2Bsp
             }
         }
 
-        return QByteArray((const char*)fogLightMap, 256 * LIGHT_LEVELS * FOG_LEVELS);
+        return QByteArray((const char*)fogLightMap, LIGHT_LEVELS * FOG_LEVELS * 256);
     }
 
     QImage ObjLoader::GetImageWithFogAndLightmap(QImage imageIn)

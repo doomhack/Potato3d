@@ -9,17 +9,17 @@
 namespace Obj2Bsp
 {
     inline constexpr int TEX_SIZE = 64;
-    inline constexpr int TEX_MAX_TILE = 4;
+    inline constexpr int TEX_MAX_TILE = 8;
 
     inline constexpr QImage::Format textureFormat = QImage::Format_Indexed8;
 
 
-    inline constexpr int LIGHT_LEVELS = 16;
+    inline constexpr int LIGHT_LEVELS = 4;
     inline constexpr int FOG_LEVELS = 16;
 
     inline constexpr int FOG_COLOR = 0x799ED7;
 
-    inline constexpr const char QUANT_ALGO[] = "WU"; //PNN, DIV, NEU
+    inline constexpr const char QUANT_ALGO[] = "PNN"; //PNN, DIV, NEU, WU
 }
 
 namespace P3D

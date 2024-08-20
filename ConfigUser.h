@@ -15,7 +15,7 @@ namespace P3D
     typedef uint8_t pixel;
     typedef Pixel<3,2,3, pixel> pixelType;
 
-    inline constexpr int LIGHT_LEVELS = 16;
+    inline constexpr int LIGHT_LEVELS = 4;
     inline constexpr int FOG_LEVELS = 16;
 
 
@@ -23,7 +23,7 @@ namespace P3D
     inline constexpr int TEX_SIZE = 64;
 
     //Maximum UV tiling. Increasing this will reduce bits available for perspective correct texture mapper.
-    inline constexpr int TEX_MAX_TILE = 4;
+    inline constexpr int TEX_MAX_TILE = 8;
 
     inline constexpr int CLIP_GUARD_BAND_SHIFT = 1;
 

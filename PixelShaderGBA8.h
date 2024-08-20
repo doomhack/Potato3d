@@ -2,7 +2,6 @@
 #define PIXELSHADERGBA8_H
 
 #include "RenderCommon.h"
-#include "RenderTriangle.h"
 
 namespace P3D
 {

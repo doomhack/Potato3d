@@ -158,23 +158,21 @@ namespace P3D
         if(distance < 0 || distance >= radius)
             return false;
 
-        fp margin = 0;
+        fp margin = -fp(2.5);
 
-        fp pd01 = tri->edge_plane_0_1.DistanceToPoint(point);
-        if(pd01 < margin)
+        if(tri->edge_plane_0_1.DistanceToPoint(point) < margin)
             return false;
 
-        fp pd12 = tri->edge_plane_1_2.DistanceToPoint(point);
-        if(pd12 < margin)
+        if(tri->edge_plane_1_2.DistanceToPoint(point) < margin)
             return false;
 
-        fp pd20 = tri->edge_plane_2_0.DistanceToPoint(point);
-        if(pd20 < margin)
+        if(tri->edge_plane_2_0.DistanceToPoint(point) < margin)
             return false;
 
         //Move in direction of normal.
         fp penetrationDepth = radius - distance;
-        point += tri->normal_plane.Normal() * (penetrationDepth + fp(0.1));
+
+        point += tri->normal_plane.Normal() * (penetrationDepth + fp(0.01));
 
         return true;
     }
