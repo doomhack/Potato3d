@@ -48,7 +48,7 @@ namespace P3D
 #if 0
         render_device->SetFogMode(FogLinear);
         render_device->SetFogColor(0x799ED7);
-        render_device->SetFogDepth(2000, 3000);
+        render_device->SetFogDepth(750, 1500);
 #else
         render_device->SetFogMode(FogExponential2);
         render_device->SetFogColor(0x799ED7);
@@ -136,7 +136,7 @@ namespace P3D
 
         for(int i = 0; i < tris.size(); i++)
         {
-            if(CheckCollision(tris.at(i), cameraPos, 50))
+            if(CheckCollision(tris.at(i), cameraPos, 25))
             {
                 i = 0;
                 collision_count++;
@@ -158,7 +158,8 @@ namespace P3D
         if(distance < 0 || distance >= radius)
             return false;
 
-        fp margin = -fp(2.5);
+        fp margin = -fp(radius / 4);
+
 
         if(tri->edge_plane_0_1.DistanceToPoint(point) < margin)
             return false;
@@ -172,7 +173,7 @@ namespace P3D
         //Move in direction of normal.
         fp penetrationDepth = radius - distance;
 
-        point += tri->normal_plane.Normal() * (penetrationDepth + fp(0.01));
+        point += tri->normal_plane.Normal() * (penetrationDepth + fp(0.1));
 
         return true;
     }

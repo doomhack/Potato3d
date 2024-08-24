@@ -15,7 +15,7 @@ namespace P3D
     typedef uint8_t pixel;
     typedef Pixel<3,2,3, pixel> pixelType;
 
-    inline constexpr int LIGHT_LEVELS = 4;
+    inline constexpr int LIGHT_LEVELS = 8;
     inline constexpr int FOG_LEVELS = 16;
 
 
@@ -38,7 +38,7 @@ namespace P3D
     typedef fp z_val;
 
     inline constexpr int SUBDIVIDE_SPAN_LEN = 16;
-    inline constexpr fp SUBDIVIDE_Z_THREASHOLD = fp(11);
+    inline constexpr fp SUBDIVIDE_Z_THREASHOLD = fp(2);
     //inline constexpr fp SUBDIVIDE_Z_THREASHOLD = fp(2);
 }
 

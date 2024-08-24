@@ -14,7 +14,7 @@ namespace Obj2Bsp
     inline constexpr QImage::Format textureFormat = QImage::Format_Indexed8;
 
 
-    inline constexpr int LIGHT_LEVELS = 4;
+    inline constexpr int LIGHT_LEVELS = 8;
     inline constexpr int FOG_LEVELS = 16;
 
     inline constexpr int FOG_COLOR = 0x799ED7;

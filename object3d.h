@@ -56,8 +56,8 @@ namespace P3D
         AABB<fp> viewFrustrumBB;
 
         V3<fp> eyePos;
-        V3<fp> cameraPos = V3<fp>(0,50,0);
-        //V3<fp> cameraPos = V3<fp>(8508,13,8563);
+        //V3<fp> cameraPos = V3<fp>(0,50,0);
+        V3<fp> cameraPos = V3<fp>(8508,13,8563);
         V3<fp> cameraAngle = V3<fp>(0,-236,0);
         pixel backgroundColor = 0x799ED7;
 

@@ -40,7 +40,7 @@ MainWindow::MainWindow(QWidget *parent)
     object3d->SetModel(bspModel);
 
     //object3d->Setup(screenWidth, screenHeight, 54, 25, 1500, (P3D::pixel*)frameBufferImage.bits());
-    object3d->Setup(screenWidth, screenHeight, 60, 25, 3000, (P3D::pixel*)frameBufferImage.bits());
+    object3d->Setup(screenWidth, screenHeight, 60, 10, 1500, (P3D::pixel*)frameBufferImage.bits());
 
     QRgb backgroundColor = 0x799dd6;
     P3D::pixel bg = 0;
