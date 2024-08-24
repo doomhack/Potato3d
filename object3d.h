@@ -4,10 +4,10 @@
 #include <vector>
 #include <map>
 
-#include "common.h"
-#include "rtypes.h"
-#include "render.h"
+#include "Config.h"
 #include "bspmodel.h"
+
+#include "RenderDevice.h"
 
 namespace P3D
 {
@@ -15,12 +15,15 @@ namespace P3D
     {
     public:
         Object3d();
-        Object3d(Render* render);
 
         bool Setup(unsigned int screenWidth, unsigned int screenHeight, fp hFov = 54, fp zNear = 5, fp zFar = 1024, pixel *framebuffer = nullptr);
 
         V3<fp>& CameraPos();
         V3<fp>& CameraAngle();
+
+        void DoCollisions();
+        bool CheckCollision(const BspModelTriangle* tri, V3<fp>& point, const fp radius);
+
 
         void RenderScene();
 
@@ -28,11 +31,15 @@ namespace P3D
 
         void SetBackgroundColor(pixel color);
 
-        void SetFramebuffer(pixel *framebuffer);
+        void SetFrameBuffer(pixel* buffer);
 
-        Render* GetRender();
+#ifdef RENDER_STATS
+        const RenderStats& GetRenderStats();
+#endif
 
         bool update_frustrum_bb = true;
+        bool do_collisions = true;
+        fp light_level = 1.0;
 
     private:
 
@@ -40,21 +47,23 @@ namespace P3D
 
         void UpdateFrustrumAABB();
 
-        Render* render = nullptr;
+        RenderDevice* render_device = nullptr;
+
+        RenderTarget* render_target = nullptr;
 
         const BspModel* model;
 
-        AABB viewFrustrumBB;
+        AABB<fp> viewFrustrumBB;
 
-        V3<fp> cameraPos = V3<fp>(0,100,0);
-        V3<fp> cameraAngle = V3<fp>(0,0,0);
-        pixel backgroundColor = 0;
-
-        RenderFlags renderFlags = RenderFlags::AutoPerspectiveCorrect;
+        V3<fp> eyePos;
+        //V3<fp> cameraPos = V3<fp>(0,50,0);
+        V3<fp> cameraPos = V3<fp>(8508,13,8563);
+        V3<fp> cameraAngle = V3<fp>(0,-236,0);
+        pixel backgroundColor = 0x799ED7;
 
         V3<fp> frustrumPoints[4]; //Top left and bottom-right frustrum points.
 
-        std::map<const BspNodeTexture*, Texture*> textureMap;
+        Plane<fp> frustrumPlanes[6];
     };
 }
 

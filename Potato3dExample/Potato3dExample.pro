@@ -2,7 +2,7 @@ QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-CONFIG += c++14
+CONFIG += c++20
 CONFIG += force_debug_info
 
 
@@ -11,6 +11,7 @@ CONFIG += force_debug_info
 # depend on your compiler). Please consult the documentation of the
 # deprecated API in order to know how to port your code away from it.
 DEFINES += QT_DEPRECATED_WARNINGS
+DEFINES += _USE_MATH_DEFINES
 
 # You can also make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -19,31 +20,43 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     ../3dmaths/recip.cpp \
+    ../RenderDevice.cpp \
+    ../RenderTarget.cpp \
     ../bspmodel.cpp \
     ../object3d.cpp \
-    ../render.cpp \
-    bsp3d.cpp \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    mainwindow2.cpp
 
 HEADERS += \
     ../3dmaths/divide.h \
     ../3dmaths/f3dmath.h \
     ../3dmaths/fp.h \
     ../3dmaths/m4.h \
+    ../3dmaths/plane.h \
     ../3dmaths/recip.h \
     ../3dmaths/utils.h \
     ../3dmaths/v2.h \
     ../3dmaths/v3.h \
     ../3dmaths/v4.h \
+    ../3dmaths/aabb.h \
+    ../BspModelDefs.h \
+    ../Config.h \
+    ../ConfigInternal.h \
+    ../ConfigUser.h \
+    ../PixelShaderDefault.h \
+    ../PixelShaderGBA8.h \
+    ../RenderCommon.h \
+    ../RenderDevice.h \
+    ../RenderTarget.h \
+    ../RenderTriangle.h \
+    ../TextureCache.h \
+    ../Pixel.h \
     ../bspmodel.h \
-    ../common.h \
     ../object3d.h \
     ../potato3d.h \
-    ../render.h \
-    ../rtypes.h \
-    bsp3d.h \
     mainwindow.h \
+    mainwindow2.h \
     models/model.h
 
 # Default rules for deployment.
@@ -57,3 +70,8 @@ RESOURCES += \
 #LIBS += $$PWD/codeprophet.lib
 #QMAKE_CXXFLAGS += /GH /Gh
 #QMAKE_CFLAGS += /GH /Gh
+
+QMAKE_CXXFLAGS += /GL
+QMAKE_CFLAGS += /GL
+
+QMAKE_LFLAGS += /LTCG

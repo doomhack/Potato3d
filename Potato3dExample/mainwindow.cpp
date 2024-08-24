@@ -3,11 +3,8 @@
 #include <QtCore>
 #include <QtGui>
 
-#include "models/model.h"
+const QImage::Format format = QImage::Format_Indexed8;
 
-#include "bsp3d.h"
-
-#include "../rtypes.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -18,32 +15,49 @@ MainWindow::MainWindow(QWidget *parent)
 
     fpsTimer.start();
 
-    frameBufferImage = QImage(screenWidth, screenHeight, QImage::Format::Format_Indexed8);
+    frameBufferImage = QImage(screenWidth, screenHeight, format);
 
     object3d = new P3D::Object3d();
 
-    //object3d->Setup(screenWidth, screenHeight, 54, 25, 1500, (P3D::pixel*)frameBufferImage.bits());
-    object3d->Setup(screenWidth, screenHeight, 60, 25, 2500, (P3D::pixel*)frameBufferImage.bits());
+    //QFile f("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\Streets\\Streets.bsp");
+    //QFile f("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\temple.bsp");
+    //QFile f("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\hf\\hf2.bsp");
+    //QFile f("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\d2\\driver2_small.bsp");
+    //QFile f("C:\\Users\\Zak\\Downloads\\Temple\\temple.bsp");
+    QFile f("C:\\Users\\Zak\\Downloads\\Dam\\dam.bsp");
+    //QFile f("C:\\Users\\Zak\\Downloads\\Villa\\villa.bsp");
+    //QFile f("C:\\Users\\Zak\\Downloads\\DDHQ\\ddhq.bsp");
 
-    object3d->SetBackgroundColor(0);
-
-    //P3D::Model3d* runway = LoadObjFile(":/models/temple.obj", ":/models/temple.mtl");
-    //P3D::Model3d* runway = LoadObjFile(":/models/Mk64Beach/Mk64Kb.obj", ":/models/Mk64Beach/Mk64Kb.mtl");
-    P3D::Model3d* runway = LoadObjFile(":/models/Streets/Streets.obj", ":/models/Streets/Streets.mtl");
 
 
-    P3D::Bsp3d* bsp = new P3D::Bsp3d;
+    f.open(QFile::ReadOnly);
+    QByteArray* bf = new QByteArray();
+    *bf = f.readAll();
+    f.close();
 
-    P3D::BspTree* bspTree = bsp->BuildBspTree(runway);
-
-    QByteArray* ba = new QByteArray;
-    bspTree->SaveBspTree(ba);
-
-    SaveBytesAsCFile(ba, "C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\model.cpp");
-
-    const P3D::BspModel* bspModel = (P3D::BspModel*)ba->constData();
+    const P3D::BspModel* bspModel = (P3D::BspModel*)bf->constData();
 
     object3d->SetModel(bspModel);
+
+    //object3d->Setup(screenWidth, screenHeight, 54, 25, 1500, (P3D::pixel*)frameBufferImage.bits());
+    object3d->Setup(screenWidth, screenHeight, 60, 10, 1500, (P3D::pixel*)frameBufferImage.bits());
+
+    QRgb backgroundColor = 0x799dd6;
+    P3D::pixel bg = 0;
+
+    if constexpr(sizeof(P3D::pixel) == 1)
+    {
+        bg = bspModel->GetFogLightMap()[(P3D::FOG_LEVELS-1)*256];
+    }
+    else
+    {
+        bg = backgroundColor;
+    }
+
+    object3d->SetBackgroundColor(bg);
+
+    for(int i = 0; i < 256; i++)
+        frameBufferImage.setColor(i, bspModel->GetColorMapColor(i));
 }
 
 MainWindow::~MainWindow()
@@ -75,7 +89,7 @@ void MainWindow::paintEvent(QPaintEvent *event)
 
     unsigned int elapsed = fpsTimer.elapsed();
 
-    P3D::RenderStats rs = object3d->GetRender()->GetRenderStats();
+    P3D::RenderStats rs = object3d->GetRenderStats();
 
     if(elapsed > 1000)
     {
@@ -88,7 +102,7 @@ void MainWindow::paintEvent(QPaintEvent *event)
         fpsTimer.restart();
     }
 
-    p.setPen(Qt::yellow);
+    p.setPen(Qt::red);
 
     p.drawText(32,32, QString("FPS: %1").arg(currentFps));
     p.drawText(32,48, QString("Ave Render Time: %1ms").arg(aveRtime));
@@ -99,6 +113,7 @@ void MainWindow::paintEvent(QPaintEvent *event)
     p.drawText(32,112, QString("Scanlines drawn: %1").arg(rs.scanlines_drawn));
     p.drawText(32,128, QString("Spans checked: %1").arg(rs.span_checks));
     p.drawText(32,144, QString("Spans generated: %1").arg(rs.span_count));
+    p.drawText(32,160, QString("Triangles clipped: %1").arg(rs.triangles_clipped));
 
     this->update();
 }
@@ -153,261 +168,16 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     {
         object3d->update_frustrum_bb = !object3d->update_frustrum_bb;
     }
-
-}
-
-P3D::Model3d* MainWindow::LoadObjFile(QString objFile, QString mtlFile)
-{
-    P3D::Model3d* model = new P3D::Model3d();
-
-    model->pos.x = 0;
-    model->pos.z = 0;
-
-    QFile f(objFile);
-
-    f.open(QFile::ReadOnly);
-
-    QString objFileText = f.readAll();
-
-    f.close();
-
-    QFile f2(mtlFile);
-
-    f2.open(QFile::ReadOnly);
-
-    QString mtlFileText = f2.readAll();
-
-    f2.close();
-
-    QStringList mtlLines = mtlFileText.split("\n");
-
-    QString currMtlName;
-
-    QMap<QString, P3D::Texture*> textureMap;
-    QMap<QString, QRgb> textureColors;
-
-
-    QStringList texParts = mtlFile.split("/");
-    texParts.pop_back();
-    QString texBase = texParts.join("/");
-
-
-    for(int i = 0; i < mtlLines.length(); i++)
+    else if(event->key() == Qt::Key_Equal)
     {
-        QString line = mtlLines.at(i);
-
-        QStringList elements = line.split(" ");
-
-        if(elements[0] == "#")
-            continue; //Comment
-
-        if(elements[0] == "newmtl")
-        {
-            currMtlName = elements[1];
-        }
-
-        if(elements[0] == "Kd")
-        {
-            float r = qRound(elements[1].toFloat() * 255);
-            float g = qRound(elements[2].toFloat() * 255);
-            float b = qRound(elements[3].toFloat() * 255);
-
-            if(currMtlName.length())
-            {
-                textureColors[currMtlName] = qRgb(r,g,b);
-            }
-        }
-
-        if(elements[0] == "map_Kd")
-        {
-            QString fileName = elements[1];
-
-            QStringList parts = fileName.split("\\");
-            QString lastBit = parts.at(parts.size()-1);
-
-            if(currMtlName.length())
-            {
-                P3D::Texture* t = new P3D::Texture();
-
-                QImage* image = new QImage(texBase + "/" + lastBit);
-
-                *image = image->scaled(TEX_SIZE, TEX_SIZE, Qt::IgnoreAspectRatio, Qt::SmoothTransformation).mirrored();
-
-                textureColors[currMtlName] = image->scaled(1,1, Qt::IgnoreAspectRatio, Qt::SmoothTransformation).pixel(0,0);
-
-                *image = image->convertToFormat(QImage::Format_RGB32);
-
-                if(!image->isNull())
-                {
-                    textureMap[currMtlName] = t;
-                    t->width = image->width();
-                    t->height = image->height();
-
-                    t->u_mask = t->width-1;
-
-
-                    t->v_shift = 0;
-
-                    if(lastBit.left(2) == "A_")
-                        t->alpha = 1;
-
-                    while( (1 << t->v_shift) < t->width)
-                        t->v_shift++;
-
-                    t->v_mask = (t->height-1) << t->v_shift;
-
-                    t->pixels = image->constScanLine(0);
-                }
-
-                currMtlName.clear();
-            }
-        }
+        object3d->light_level += P3D::fp(0.05);
     }
-
-    //
-    unsigned int numTextures = textureMap.keys().count();
-    QImage allTexImage = QImage(TEX_SIZE, TEX_SIZE * numTextures, QImage::Format_RGB32);
-
-    for(int i =0; i < numTextures; i++)
+    else if(event->key() == Qt::Key_Minus)
     {
-        unsigned int* scanline = (unsigned int*)allTexImage.scanLine(i * TEX_SIZE);
-
-        memcpy(scanline, textureMap.value(textureMap.keys().at(i))->pixels, TEX_SIZE * TEX_SIZE * 4);
+        object3d->light_level -= P3D::fp(0.05);
     }
-
-    //Quantise to 256 colors.
-    allTexImage.save("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\allTex.png");
-
-    QProcess p;
-    p.setWorkingDirectory("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\");
-    p.start("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\nQuantCpp.exe allTex.png /m 256");
-    p.waitForFinished();
-
-    qDebug() << p.readAll();
-
-    QImage* allTex256 = new QImage("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\allTex-WUquant256.png");
-    //QImage* allTex256 = new QImage("C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\allTex-WUquant128.png");
-
-    for(int i =0; i < numTextures; i++)
+    else if(event->key() == Qt::Key_C)
     {
-        unsigned char* scanline = (unsigned char*)allTex256->scanLine(i * TEX_SIZE);
-
-        textureMap.value(textureMap.keys().at(i))->pixels = scanline;
+        object3d->do_collisions = !object3d->do_collisions;
     }
-
-    for(int i = 0; i < allTex256->colorTable().length(); i++)
-        model->colormap[i] = allTex256->colorTable().at(i);
-
-    frameBufferImage.setColorTable(allTex256->colorTable());
-
-    //
-
-    QStringList lines = objFileText.split("\n");
-
-    QList<P3D::V3<P3D::fp>> vertexes;
-    QList<P3D::V2<P3D::fp>> uvs;
-
-
-    P3D::Mesh3d* currentMesh = new P3D::Mesh3d();
-    currentMesh->color = Qt::lightGray;
-
-
-
-    for(int i = 0; i < lines.length(); i++)
-    {
-        QString line = lines.at(i);
-
-        QStringList elements = line.split(" ");
-
-        if(elements[0] == "#")
-            continue; //Comment
-
-        //Vertex
-        if(elements[0] == "v")
-        {
-            P3D::fp x = elements[1].toFloat();
-            P3D::fp y = elements[2].toFloat();
-            P3D::fp z = elements[3].toFloat();
-
-            vertexes.append(P3D::V3<P3D::fp>(x, y, z));
-        }
-
-        if(elements[0] == "vt")
-        {
-            float u = (elements[1].toFloat() * TEX_SIZE);
-            float v = (elements[2].toFloat() * TEX_SIZE);
-
-            uvs.append(P3D::V2<P3D::fp>(u, v));
-        }
-
-        //Face
-        if(elements[0] == "f")
-        {
-            P3D::Triangle3d* t3d = new P3D::Triangle3d();
-
-            for(int t = 0; t < 3; t++)
-            {
-                QString tri = elements[t+1];
-
-                QStringList vtx_elelments = tri.split("/");
-
-                t3d->verts[t].pos = vertexes.at(vtx_elelments[0].toInt() - 1);
-                t3d->verts[t].vertex_id = vtx_elelments[0].toInt() - 1;
-                t3d->verts[t].uv = uvs.at(vtx_elelments[1].toInt() - 1);
-            }
-
-            currentMesh->tris.push_back(t3d);
-        }
-
-        if(elements[0] == "usemtl")
-        {
-            if(currentMesh->tris.size())
-            {
-                //Start new mesh when texture changes.
-                model->mesh.push_back(currentMesh);
-                currentMesh = new P3D::Mesh3d();
-                currentMesh->color = Qt::lightGray;
-            }
-
-            currentMesh->texture = textureMap.value(elements[1]);
-
-            QRgb cx = textureColors.value(elements[1]);
-
-            currentMesh->color = ((qRed(cx) >> 3) << 10) | ((qGreen(cx) >> 3) << 5) | ((qBlue(cx) >> 3));
-        }
-    }
-
-    model->vertex_id_count = vertexes.length();
-
-    if(currentMesh->tris.size())
-        model->mesh.push_back(currentMesh);
-
-    return model;
-}
-
-void MainWindow::SaveBytesAsCFile(QByteArray* bytes, QString file)
-{
-    QFile f(file);
-
-    if(!f.open(QIODevice::Truncate | QIODevice::ReadWrite))
-        return;
-
-    QString decl = QString("const extern unsigned char modeldata[%1UL] = {\n").arg(bytes->size());
-
-    f.write(decl.toLatin1());
-
-    for(int i = 0; i < bytes->size(); i++)
-    {
-        QString element = QString("0x%1,").arg((quint8)bytes->at(i),2, 16, QChar('0'));
-
-        if(( (i+1) % 40) == 0)
-            element += "\n";
-
-        f.write(element.toLatin1());
-    }
-
-    QString close = QString("\n};");
-    f.write(close.toLatin1());
-
-    f.close();
 }

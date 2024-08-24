@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/exe">
+        <file>nQuantCpp.exe</file>
+    </qresource>
+</RCC>

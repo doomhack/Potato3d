@@ -2,9 +2,7 @@
 #define V4_H
 
 #include "fp.h"
-
 #include "v3.h"
-
 #include "utils.h"
 
 namespace P3D
@@ -100,29 +98,20 @@ namespace P3D
             return v;
         }
 
-        constexpr T CrossProductZ(const V4& r) const
-        {
-            return ((x * r.y) - (y * r.x));
-        }
-
         constexpr void ToScreenSpace()
         {
             if (w != T(1))
             {
-                const unsigned int s = 4;
-
-                T iw = pScaledReciprocal(s, w);
-
-                x = pASR(x * iw, s);
-                y = pASR(y * iw, s);
-                z = pASR(z * iw, s);
+                x = x / w;
+                y = y / w;
+                z = z / w;
             }
         }
     };
 
     typedef V4<float> V4F;
     typedef V4<double> V4D;
-    typedef V4<FP> V4FP;
+    typedef V4<FP16> V4FP;
 
 }
 

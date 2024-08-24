@@ -21,10 +21,6 @@ protected:
 
 private:
 
-    P3D::Model3d* LoadObjFile(QString objFile, QString mtlFile);
-    void SaveBytesAsCFile(QByteArray *bytes, QString file);
-
-
     QElapsedTimer fpsTimer;
     QElapsedTimer renderTimer;
 
@@ -32,6 +28,9 @@ private:
     P3D::Object3d* object3d;
 
     QImage frameBufferImage;
+
+    //static const int screenWidth = 1920;
+    //static const int screenHeight = 1080;
 
     //static const int screenWidth = 1280;
     //static const int screenHeight = 1024;

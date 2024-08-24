@@ -2,7 +2,6 @@
 #define FP_H
 
 #include <limits>
-
 #include "divide.h"
 
 //#define OVERFLOW_CHECK
@@ -13,16 +12,21 @@
 
 namespace P3D
 {
-    class FP
+    template<const unsigned int fracbits> class FP
     {
     public:
-        FP()                                                {}
+        constexpr FP()                                      {}
 
         constexpr FP(const FP& r)   : n(r.n)                {}
-        constexpr FP(int v)         : n(v << fracbits)      {}
-        constexpr FP(float v)       : n((int)(v * one))     {}
+        constexpr FP(const int v)   : n(v << fracbits)      {}
+        constexpr FP(const unsigned int v)  : n(v << fracbits)      {}
+        constexpr FP(const float v) : n((int)(v * one))     {}
+        constexpr FP(const double v): n((int)(v * one))     {}
+
+
 
         constexpr operator int() const                      {return i();}
+        constexpr operator unsigned int() const             {return i();}
         constexpr operator float() const                    {return f();}
 
         constexpr int i() const                             {return n >> fracbits;}
@@ -31,16 +35,16 @@ namespace P3D
         static constexpr FP fromFPInt(const int r)          {FP v(0); v.n = r; return v;}
         constexpr int toFPInt() const                       {return n;}
 
-        constexpr int intMul(int r) const                   {return ((long long int)n * r) >> fracbits;}
+        constexpr int intMul(const int r) const             {return ((long long int)n * r) >> fracbits;}
 
         constexpr static int max()
         {
-            return std::numeric_limits<short>::max();
+            return (std::numeric_limits<int>::max() >> fracbits);
         }
 
         constexpr static int min()
         {
-            return std::numeric_limits<short>::min();
+            return (std::numeric_limits<int>::min() >> fracbits);
         }
 
         constexpr FP& operator=(const FP& r)
@@ -131,7 +135,7 @@ namespace P3D
 
         constexpr FP& operator*=(const FP& r)
         {
-            long long int tmp = (((long long int)n * r.n) >> fracbits);
+            const long long int tmp = (((const long long int)n * r.n) >> fracbits);
 
     #ifdef OVERFLOW_CHECK
 
@@ -151,7 +155,7 @@ namespace P3D
         //Divide
         constexpr FP operator/(const FP& r) const
         {
-            FP v(r); v.n = FixedDiv(n, r.n);
+            FP v(r); v.n = FixedDiv(n, r.n, fracbits);
             return v;
         }
 
@@ -160,7 +164,7 @@ namespace P3D
 
         constexpr FP& operator/=(const FP& r)
         {
-            n = FixedDiv(n, r.n);
+            n = FixedDiv(n, r.n, fracbits);
             return *this;
         }
 
@@ -206,7 +210,7 @@ namespace P3D
 
         //|
         constexpr FP operator|(const FP& r) const           {FP v(r); v.n |= n;  return v;}
-        constexpr FP operator|(int r) const                 {FP v(r);   return v|=*this;}
+        constexpr FP operator|(const int r) const           {FP v(r);   return v|=*this;}
         constexpr FP& operator|=(const FP& r)               {n |= r.n;  return *this;}
         constexpr FP& operator|=(const int& r)              {return *this|=FP(r);}
 
@@ -217,21 +221,33 @@ namespace P3D
         constexpr FP& operator^=(const int& r)              {return *this^=FP(r);}
 
         //<<
-        constexpr FP operator<<(const unsigned int r) const {FP v(*this);   return v<<=r;}
-        constexpr FP& operator<<=(const unsigned int r)     {n <<= r;  return *this;}
+        constexpr FP operator<<(const int r) const {FP v(*this);   return v<<=r;}
+        constexpr FP& operator<<=(const int r)     {n <<= r;  return *this;}
 
         //>>
-        constexpr FP operator>>(const unsigned int r) const {FP v(*this);   return v>>=r;}
-        constexpr FP& operator>>=(const unsigned int r)     {n >>= r;  return *this;}
-
-        static const unsigned int fracbits = 16;
+        constexpr FP operator>>(const int r) const {FP v(*this);   return v>>=r;}
+        constexpr FP& operator>>=(const int r)     {n >>= r;  return *this;}
 
     private:
         int n;
 
-        static const unsigned int one = (1 << fracbits);
+        static constexpr int one = (1 << fracbits);
     };
 
+    typedef FP<16>  FP16;   //s + 15 + 16 (-32768 to +32767) (0.000015)
+    typedef FP<8>   FP8;    //s + 23 + 8  (-8,388,608 to +8,388,608) (0.039)
+    typedef FP<24>  FP24;   //s + 7 + 24  (-128 to +127) (0.0000000596)
 }
+
+template<int fracbits>
+struct std::numeric_limits<P3D::FP<fracbits>> : public numeric_limits<int>
+{
+    static constexpr bool is_specialized = true;
+
+    static constexpr P3D::FP<fracbits> min() noexcept { return P3D::FP<fracbits>::fromFPInt(std::numeric_limits<int>::min()); }
+    static constexpr P3D::FP<fracbits> max() noexcept { return P3D::FP<fracbits>::fromFPInt(std::numeric_limits<int>::max()); }
+    static constexpr P3D::FP<fracbits> lowest() noexcept { return min(); }
+    static constexpr P3D::FP<fracbits> epsilon() noexcept { return P3D::FP<fracbits>::fromFPInt(1); }
+};
 
 #endif // FP_H

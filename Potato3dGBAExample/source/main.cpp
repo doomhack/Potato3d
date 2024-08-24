@@ -117,9 +117,7 @@ int main()
     }
 
 
-    obj3d->SetBackgroundColor(RGB8(0x4d, 0xc9, 0xff));
-
-    //obj3d->SetBackgroundColor(0);
+    obj3d->SetBackgroundColor(10);
 
     while(true)
     {
@@ -128,6 +126,10 @@ int main()
         obj3d->RenderScene();
         I_FinishUpdate_e32();
 
-        obj3d->SetFramebuffer(I_GetBackBuffer());
+        obj3d->SetFrameBuffer(I_GetBackBuffer());
     }
+
 }
+
+
+
