@@ -21,7 +21,6 @@ DEFINES += _USE_MATH_DEFINES
 SOURCES += \
     ../3dmaths/recip.cpp \
     ../RenderDevice.cpp \
-    ../RenderTarget.cpp \
     ../bspmodel.cpp \
     ../object3d.cpp \
     main.cpp \
