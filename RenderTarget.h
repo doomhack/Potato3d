@@ -13,6 +13,11 @@ namespace P3D
             AttachColorBuffer(width, height, buffer, y_pitch);
         }
 
+        RenderTarget(const RenderTarget&) = delete;
+        RenderTarget& operator=(const RenderTarget&) = delete;
+        RenderTarget(RenderTarget&&) = delete;
+        RenderTarget& operator=(RenderTarget&&) = delete;
+
         ~RenderTarget()
         {
             RemoveColorBuffer();
@@ -101,7 +106,7 @@ namespace P3D
                 delete[] color_buffer;
 
             color_buffer = nullptr;
-            owned_color_buffer = 0;
+            owned_color_buffer = false;
         }
 
         pixel* color_buffer = nullptr;
