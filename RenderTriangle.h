@@ -81,6 +81,13 @@ namespace P3D
                 if constexpr (render_flags & (SubdividePerspectiveMapping))
                 {
                     subdivide_spans = (GetZDelta(tri.verts) > SUBDIVIDE_Z_THREASHOLD);
+/*
+                    if(!subdivide_spans)
+                    {
+                        current_texture = nullptr;
+                        current_color = material.pixels[0];
+                    }
+*/
                 }
 
                 unsigned int vxCount = ClipTriangle(tri);

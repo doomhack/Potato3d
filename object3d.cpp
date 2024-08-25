@@ -173,7 +173,7 @@ namespace P3D
         //Move in direction of normal.
         fp penetrationDepth = radius - distance;
 
-        point += tri->normal_plane.Normal() * (penetrationDepth + fp(0.1));
+        point += tri->normal_plane.Normal() * (penetrationDepth + fp(0.01));
 
         return true;
     }
