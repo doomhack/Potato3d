@@ -94,6 +94,12 @@ namespace Obj2Bsp
         node->back = BuildTreeRecursive(back_tris);
         node->front = BuildTreeRecursive(front_tris);
 
+        if(node->front)
+            node->front->parent = node;
+
+        if(node->back)
+            node->back->parent = node;
+
         if(node->back)
             node->child_node_bb.AddAABB(node->back->child_node_bb);
 

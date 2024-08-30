@@ -33,7 +33,7 @@ public:
         return n.DotProduct(v) + d;
     }
 
-    constexpr bool TriangleIsFrontside(const V3<T>& v1, const V3<T>& v2, const V3<T>& v3)
+    constexpr bool TriangleIsFrontside(const V3<T>& v1, const V3<T>& v2, const V3<T>& v3) const
     {
         if ((DistanceToPoint(v1) < 0) && (DistanceToPoint(v2) < 0) && (DistanceToPoint(v3) < 0))
             return false;

@@ -14,8 +14,6 @@ namespace Obj2Bsp
         QBuffer buffer(&bytes);
         buffer.open(QIODevice::WriteOnly);
 
-        //BspModel* bspModel = new BspModel;
-
         QList<const Texture*> textureList;
         QList<const BspTriangle*> triangleList;
 
@@ -203,6 +201,7 @@ namespace Obj2Bsp
 
             bn.front_node = 0;
             bn.back_node = 0;
+            bn.parent_node = 0;
 
             if(nodeList[i]->front)
             {
@@ -214,6 +213,10 @@ namespace Obj2Bsp
                 bn.back_node = nodeList.indexOf(nodeList[i]->back);
             }
 
+            if(nodeList[i]->parent)
+                bn.parent_node = nodeList.indexOf(nodeList[i]->parent);
+            else
+                bn.parent_node = -1;
 
             modelNodeList.append(bn);
         }

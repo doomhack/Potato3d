@@ -13,6 +13,7 @@ int main(int argc, char *argv[])
 
     Obj2Bsp::ObjLoader loader;
 
+    //QString objPath = "C:\\Users\\Zak\\Downloads\\GE_temple\\temple.obj";
     //QString objPath = "C:\\Users\\Zak\\Downloads\\DDHQ\\ddhq.obj";
     //QString objPath = "C:\\Users\\Zak\\Downloads\\Villa\\villa.obj";
     QString objPath = "C:\\Users\\Zak\\Downloads\\Dam\\dam.obj";

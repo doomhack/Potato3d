@@ -1,0 +1,43 @@
+QT += core gui widgets
+
+CONFIG += c++20
+CONFIG += force_debug_info
+
+# You can make your code fail to compile if it uses deprecated APIs.
+# In order to do so, uncomment the following line.
+#DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
+
+SOURCES += \
+        source/bspmodel.cpp \
+        source/camera.cpp \
+        source/collision.cpp \
+        source/model.cpp \
+        source/main.cpp \
+        source/mainloop.iwram.cpp \
+        source/setup.cpp \
+        source/videosystem.cpp \
+        source/worldmodel.cpp \
+        source/recip.cpp
+
+
+
+HEADERS += \
+    include/camera.h \
+    include/BspModelDefs.h \
+    include/bspmodel.h \
+    include/common.h \
+    include/mainloop.h \
+    include/model.h \
+    include/setup.h \
+    include/videosystem.h \
+    include/worldmodel.h \
+    include/collision.h
+
+
+    # Default rules for deployment.
+    qnx: target.path = /tmp/$${TARGET}/bin
+    else: unix:!android: target.path = /opt/$${TARGET}/bin
+    !isEmpty(target.path): INSTALLS += target
+
+DISTFILES += \
+    Makefile

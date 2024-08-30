@@ -169,6 +169,7 @@ namespace Obj2Bsp
         BspPlane plane; //Plane that this node splits on.
         std::vector<BspTriangle*> back_tris; //Back facing triangles that lie on this plane.
         std::vector<BspTriangle*> front_tris; //Triangles that lie on this plane.
+        BspNode* parent = nullptr; //Parent node.
         BspNode* front = nullptr; //Front children.
         BspNode* back = nullptr; //Back children.
         BspAABB node_bb; //AABB of the triangles in this node.
