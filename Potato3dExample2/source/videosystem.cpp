@@ -148,6 +148,16 @@ unsigned int VideoSystem::GetTime()
 #ifndef GBA
     return timer.elapsed();
 #else
-    return *((volatile unsigned short*)(0x400010C));
+    static unsigned int lastVal = 0;
+    static unsigned int highPart = 0;
+
+    unsigned int currentValue = *((volatile unsigned short*)(0x400010C));
+
+    if(currentValue < lastVal)
+        highPart++;
+
+    lastVal = currentValue;
+
+    return highPart << 16 | currentValue;
 #endif
 }

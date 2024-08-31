@@ -114,7 +114,7 @@ void MainLoop::RenderModel()
 
             const P3D::fp light_levels[3] = {1, 1, 1};
 
-            P3D::V2<P3D::fp> uvs[3] = {tri->tri.verts[0].uv, tri->tri.verts[1].uv, tri->tri.verts[2].uv};
+            const P3D::V2<P3D::fp> uvs[3] = {tri->tri.verts[0].uv, tri->tri.verts[1].uv, tri->tri.verts[2].uv};
 
             renderDev.SetMaterial(m);
 
@@ -190,10 +190,7 @@ void MainLoop::RunTimeslots()
 
     unsigned int realTime = vid.GetTime();
 
-    if(realTime < gameTime) //Overflow
-        gameTime = realTime;
-
-    while(gameTime <= realTime)
+    while(gameTime < realTime)
     {
         vid.UpdateKeys();
         camera.HandleInput(keyState);
