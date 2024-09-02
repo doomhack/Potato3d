@@ -6,14 +6,32 @@
 
 namespace P3D
 {
+
+    enum class SortOrder
+    {
+        FrontToBack,
+        BackToFront
+    };
+
+    struct BspContext
+    {
+        V3<fp> point;
+        AABB<fp> frustrum;
+        std::vector<const BspModelTriangle*>* output = nullptr;
+        bool backface_cull;
+        SortOrder order;
+    };
+
     class BspModel
     {
     public:
         BspModelHeader header;
 
-        void SortFrontToBack(const V3<fp>& p, const AABB<fp>& frustrum, std::vector<const BspModelTriangle*>& out, bool backface_cull) const;
+        void SortFrontToBack(const V3<fp>& p, const AABB<fp>& frustrum, std::vector<const BspModelTriangle*>& out, const bool backface_cull) const;
 
-        void SortBackToFront(const V3<fp>& p, const AABB<fp>& frustrum, std::vector<const BspModelTriangle*>& out, bool backface_cull) const;
+        void SortBackToFront(const V3<fp>& p, const AABB<fp>& frustrum, std::vector<const BspModelTriangle*>& out, const bool backface_cull) const;
+
+        void Sort(const V3<fp>& p, const AABB<fp>& frustrum, std::vector<const BspModelTriangle*>& out, const bool backface_cull, const SortOrder order) const;
 
 
         const BspNodeTexture* GetTexture(int n) const
@@ -31,7 +49,12 @@ namespace P3D
 
         unsigned int GetColorMapColor(unsigned int n) const
         {
-            return ((const unsigned int*)(GetBasePtr() + header.texture_palette_offset))[n];
+            return GetColorMap()[n];
+        }
+
+        const unsigned int* GetColorMap() const
+        {
+            return ((const unsigned int*)(GetBasePtr() + header.texture_palette_offset));
         }
 
         const unsigned char* GetFogLightMap() const
@@ -41,10 +64,7 @@ namespace P3D
 
     private:
 
-        void SortFrontToBackRecursive(const V3<fp>& p, const AABB<fp>& frustrum, const BspModelNode* n, std::vector<const BspModelTriangle *> &out, bool backface_cull) const;
-
-        void SortBackToFrontRecursive(const V3<fp>& p, const AABB<fp>& frustrum, const BspModelNode* n, std::vector<const BspModelTriangle *> &out, bool backface_cull) const;
-
+        void SortRecursive(const BspModelNode* n) const;
 
         bool TriAABBIntersect(const BspModelTriangle* tri, const AABB<fp>& aabb) const
         {
@@ -77,6 +97,13 @@ namespace P3D
         {
             return &((const BspModelNode*)(GetBasePtr() + header.node_offset))[n];
         }
+
+        const unsigned int NodeIndex(const BspModelNode* node) const
+        {
+            return node - GetNode(0);
+        }
+
+        void VisitNode(const BspModelNode* n) const;
     };
 }
 #endif // BSPMODEL_H

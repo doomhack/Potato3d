@@ -8,23 +8,21 @@ CONFIG += force_debug_info
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-        source/bspmodel.cpp \
+        source/bspmodel.redir.iwram.cpp \
         source/camera.cpp \
         source/collision.cpp \
+        source/mainloop.iwram.cpp \
         source/model.cpp \
         source/main.cpp \
-        source/mainloop.iwram.cpp \
+        source/recip.redir.cpp \
         source/setup.cpp \
         source/videosystem.cpp \
-        source/worldmodel.cpp \
-        source/recip.cpp
+        source/worldmodel.cpp
 
 
 
 HEADERS += \
     include/camera.h \
-    include/BspModelDefs.h \
-    include/bspmodel.h \
     include/common.h \
     include/mainloop.h \
     include/model.h \

@@ -4,10 +4,11 @@
 
 MainLoop::MainLoop()
 {
-    const P3D::fp halfVFov = 45;
+    const P3D::fp halfHFov = hFov / 2;
+    const P3D::fp halfVFov = vFov / 2;
 
-    const P3D::fp halfFrustrumWidth = zFar * std::tan((float)P3D::pD2R(halfVFov));
-    const P3D::fp halfFrustrumHeight = zFar * std::tan((float)P3D::pD2R(P3D::pASR(vFov, 1)));
+    const P3D::fp halfFrustrumWidth = zFar * std::tan((float)P3D::pD2R(halfHFov));
+    const P3D::fp halfFrustrumHeight = zFar * std::tan((float)P3D::pD2R(halfVFov));
 
     frustrumPoints[0] = P3D::V3<P3D::fp>(-halfFrustrumWidth, -halfFrustrumHeight, -zFar);
     frustrumPoints[1] = P3D::V3<P3D::fp>(halfFrustrumWidth, halfFrustrumHeight, -zFar);
@@ -24,11 +25,11 @@ void MainLoop::Run()
 
     renderDev.SetPerspective(vFov, 1.5, zNear, zFar);
 
-    //renderDev.SetFogMode(P3D::FogExponential2);
-    //renderDev.SetFogDensity(2);
+    renderDev.SetFogMode(P3D::FogExponential2);
+    renderDev.SetFogDensity(2);
 
-    renderDev.SetFogMode(P3D::FogLinear);
-    renderDev.SetFogDepth(750, 1000);
+    //renderDev.SetFogMode(P3D::FogLinear);
+    //renderDev.SetFogDepth(2000, 3000);
 
 
     renderDev.SetFogLightMap(model.GetModel()->GetFogLightMap());

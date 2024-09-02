@@ -4,7 +4,7 @@
 #include "../include/common.h"
 #include "../../Config.h"
 #include "../../3dmaths/f3dmath.h"
-#include "bspmodel.h"
+#include "../../bspmodel.h"
 
 class Collision
 {

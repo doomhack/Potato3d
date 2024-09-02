@@ -1,149 +1,72 @@
 #include "Config.h"
+#include <stack>
 #include "bspmodel.h"
 
 namespace P3D
 {
-    void BspModel::SortFrontToBack(const V3<fp>& p, const AABB<fp>& frustrum, std::vector<const BspModelTriangle *> &out, bool backface_cull) const
+    BspContext context;
+
+
+    void BspModel::Sort(const V3<fp>& p, const AABB<fp>& frustrum, std::vector<const BspModelTriangle*>& out, const bool backface_cull, const SortOrder order) const
     {
-        SortFrontToBackRecursive(p, frustrum ,this->GetNode(0), out, backface_cull);
+        context.point = p;
+        context.frustrum = frustrum;
+        context.output = &out;
+        context.backface_cull = backface_cull;
+        context.order = order;
+
+        SortRecursive(this->GetNode(0));
     }
 
-    void BspModel::SortFrontToBackRecursive(const V3<fp>& p, const AABB<fp>& frustrum, const BspModelNode* n, std::vector<const BspModelTriangle*>& out, bool backface_cull) const
+    void P3D::BspModel::VisitNode(const BspModelNode* n) const
     {
-        if(!frustrum.Intersect(n->child_bb))
-            return;
-
-        if (Distance(n->plane, p) < 0)
+        if (context.frustrum.Intersect(n->node_bb))
         {
-            if(n->back_node)
-                SortFrontToBackRecursive(p, frustrum, GetNode(n->back_node), out, backface_cull);
-
-            if(frustrum.Intersect(n->node_bb))
+            for(int i = 0; i < n->front_tris.count; i++)
             {
-                for(int i = 0; i < n->front_tris.count; i++)
-                {
-                    const BspModelTriangle* t = GetTriangle(i + n->front_tris.offset);
-
-                    if(frustrum.Intersect(t->tri_bb))
-                        out.push_back(t);
-                }
-
-                if(!backface_cull)
-                {
-                    for(int i = 0; i < n->back_tris.count; i++)
-                    {
-                        const BspModelTriangle* t = GetTriangle(i + n->back_tris.offset);
-
-                        if(frustrum.Intersect(t->tri_bb))
-                            out.push_back(t);
-                    }
-                }
+                const BspModelTriangle* t = GetTriangle(i + n->front_tris.offset);
+                if (context.frustrum.Intersect(t->tri_bb))
+                    context.output->push_back(t);
             }
 
-            if(n->front_node)
-                SortFrontToBackRecursive(p, frustrum, GetNode(n->front_node), out, backface_cull);
-        }
-        else
-        {
-            if(n->front_node)
-                SortFrontToBackRecursive(p, frustrum, GetNode(n->front_node), out, backface_cull);
-
-            if(frustrum.Intersect(n->node_bb))
+            if (!context.backface_cull)
             {
                 for(int i = 0; i < n->back_tris.count; i++)
                 {
                     const BspModelTriangle* t = GetTriangle(i + n->back_tris.offset);
-
-                    if(frustrum.Intersect(t->tri_bb))
-                        out.push_back(t);
-                }
-
-                if(!backface_cull)
-                {
-                    for(int i = 0; i < n->front_tris.count; i++)
-                    {
-                        const BspModelTriangle* t = GetTriangle(i + n->front_tris.offset);
-
-                        if(frustrum.Intersect(t->tri_bb))
-                            out.push_back(t);
-                    }
+                    if (context.frustrum.Intersect(t->tri_bb))
+                        context.output->push_back(t);
                 }
             }
-
-            if(n->back_node)
-                SortFrontToBackRecursive(p, frustrum, GetNode(n->back_node), out, backface_cull);
         }
     }
 
-    void BspModel::SortBackToFront(const V3<fp>& p, const AABB<fp>& frustrum, std::vector<const BspModelTriangle *> &out, bool backface_cull) const
+    void BspModel::SortRecursive(const BspModelNode* n) const
     {
-        SortBackToFrontRecursive(p, frustrum ,this->GetNode(0), out, backface_cull);
-    }
-
-    void BspModel::SortBackToFrontRecursive(const V3<fp>& p, const AABB<fp>& frustrum, const BspModelNode* n, std::vector<const BspModelTriangle*>& out, bool backface_cull) const
-    {
-        if(!frustrum.Intersect(n->child_bb))
+        if (!context.frustrum.Intersect(n->child_bb))
             return;
 
-        if (Distance(n->plane, p) < 0)
-        {
-            if(n->front_node)
-                SortBackToFrontRecursive(p, frustrum, GetNode(n->front_node), out, backface_cull);
+        const bool pointIsInFront = (Distance(n->plane, context.point) > 0);
 
-            if(frustrum.Intersect(n->node_bb))
-            {
-                for(int i = 0; i < n->front_tris.count; i++)
-                {
-                    const BspModelTriangle* t = GetTriangle(i + n->front_tris.offset);
+        const unsigned int firstNodeIndex = ((context.order == SortOrder::FrontToBack) == pointIsInFront) ? n->front_node : n->back_node;
+        const unsigned int secondNodeIndex = ((context.order == SortOrder::FrontToBack) == pointIsInFront) ? n->back_node : n->front_node;
 
-                    if(frustrum.Intersect(t->tri_bb))
-                        out.push_back(t);
-                }
+        if (firstNodeIndex)
+            SortRecursive(GetNode(firstNodeIndex));
 
-                if(!backface_cull)
-                {
-                    for(int i = 0; i < n->back_tris.count; i++)
-                    {
-                        const BspModelTriangle* t = GetTriangle(i + n->back_tris.offset);
+        VisitNode(n);
 
-                        if(frustrum.Intersect(t->tri_bb))
-                            out.push_back(t);
-                    }
-                }
-            }
+        if (secondNodeIndex)
+            SortRecursive(GetNode(secondNodeIndex));
+    }
 
-            if(n->back_node)
-                SortBackToFrontRecursive(p, frustrum, GetNode(n->back_node), out, backface_cull);
-        }
-        else
-        {
-            if(n->back_node)
-                SortBackToFrontRecursive(p, frustrum, GetNode(n->back_node), out, backface_cull);
+    void BspModel::SortFrontToBack(const V3<fp>& p, const AABB<fp>& frustrum, std::vector<const BspModelTriangle*>& out, const bool backface_cull) const
+    {
+        Sort(p, frustrum, out, backface_cull, SortOrder::FrontToBack);
+    }
 
-            if(frustrum.Intersect(n->node_bb))
-            {
-                for(int i = 0; i < n->back_tris.count; i++)
-                {
-                    const BspModelTriangle* t = GetTriangle(i + n->back_tris.offset);
-
-                    if(frustrum.Intersect(t->tri_bb))
-                        out.push_back(t);
-                }
-
-                if(!backface_cull)
-                {
-                    for(int i = 0; i < n->front_tris.count; i++)
-                    {
-                        const BspModelTriangle* t = GetTriangle(i + n->front_tris.offset);
-
-                        if(frustrum.Intersect(t->tri_bb))
-                            out.push_back(t);
-                    }
-                }
-            }
-
-            if(n->front_node)
-                SortBackToFrontRecursive(p, frustrum, GetNode(n->front_node), out, backface_cull);
-        }
+    void BspModel::SortBackToFront(const V3<fp>& p, const AABB<fp>& frustrum, std::vector<const BspModelTriangle*>& out, const bool backface_cull) const
+    {
+        Sort(p, frustrum, out, backface_cull, SortOrder::BackToFront);
     }
 }

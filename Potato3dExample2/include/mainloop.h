@@ -28,9 +28,10 @@ private:
     void ResolveCollisions();
     void RunTimeslots();
 
-    static constexpr P3D::fp zNear = 10;
-    static constexpr P3D::fp zFar = 1000;
+    static constexpr P3D::fp zNear = 25;
+    static constexpr P3D::fp zFar = 3000;
     static constexpr P3D::fp vFov = 60;
+    static constexpr P3D::fp hFov = 90;
 
     static constexpr unsigned int frameTicks = 33;
 
