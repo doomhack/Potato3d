@@ -4,8 +4,7 @@
 
 namespace P3D
 {
-    BspContext context;
-
+    BspContext BspModel::context;
 
     void BspModel::Sort(const V3<fp>& p, const AABB<fp>& frustrum, std::vector<const BspModelTriangle*>& out, const bool backface_cull, const SortOrder order) const
     {

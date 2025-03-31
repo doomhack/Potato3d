@@ -104,6 +104,9 @@ namespace P3D
         }
 
         void VisitNode(const BspModelNode* n) const;
+
+        static BspContext context;
+
     };
 }
 #endif // BSPMODEL_H
