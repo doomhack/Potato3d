@@ -16,35 +16,12 @@ namespace P3D
     template <class T> class M4
     {
     public:
-        explicit M4()   {flags = Updated;}
+        explicit M4(){}
 
-        bool GetFlag(const MatrixFlags flag) const
-        {
-            return (flags & flag) > 0;
-        }
 
-        void SetFlag(const MatrixFlags flag)
-        {
-            flags |= flag;
-        }
-
-        void UnSetFlag(const MatrixFlags flag)
-        {
-            flags &= ~flag;
-        }
-
-        bool ResetFlag(const MatrixFlags flag)
-        {
-            const bool isSet = GetFlag(flag);
-            UnSetFlag(flag);
-
-            return isSet;
-        }
 
         constexpr void setToIdentity()
         {
-            SetFlag(Updated);
-
             m[0][0] = 1;
             m[0][1] = 0;
             m[0][2] = 0;
@@ -65,8 +42,6 @@ namespace P3D
 
         constexpr M4& operator+=(const M4& other)
         {
-            SetFlag(Updated);
-
             m[0][0] += other.m[0][0];
             m[0][1] += other.m[0][1];
             m[0][2] += other.m[0][2];
@@ -88,8 +63,6 @@ namespace P3D
 
         constexpr M4& operator-=(const M4& other)
         {
-            SetFlag(Updated);
-
             m[0][0] -= other.m[0][0];
             m[0][1] -= other.m[0][1];
             m[0][2] -= other.m[0][2];
@@ -111,8 +84,6 @@ namespace P3D
 
         constexpr M4& operator*=(const M4& other)
         {
-            SetFlag(Updated);
-
             T m0, m1, m2;
             m0 = m[0][0] * other.m[0][0]
                     + m[1][0] * other.m[0][1]
@@ -297,8 +268,6 @@ namespace P3D
 
         constexpr void translate(const V3<T>& vector)
         {
-            SetFlag(Updated);
-
             const T vx = vector.x;
             const T vy = vector.y;
             const T vz = vector.z;
@@ -313,8 +282,6 @@ namespace P3D
         {
             if (angle == 0)
                 return;
-
-            SetFlag(Updated);
 
             T c, s;
 
@@ -357,8 +324,6 @@ namespace P3D
             if (angle == 0)
                 return;
 
-            SetFlag(Updated);
-
             T c, s;
 
             if (angle == 90 || angle == -270)
@@ -398,8 +363,6 @@ namespace P3D
         {
             if (angle == 0)
                 return;
-
-            SetFlag(Updated);
 
             T c, s;
 
@@ -469,9 +432,6 @@ namespace P3D
         {
             if (nearPlane == farPlane || aspectRatio == 0)
                 return;
-
-            SetFlag(Updated);
-
 
             const T va = verticalAngle;
             const T ar = aspectRatio;
@@ -580,8 +540,6 @@ namespace P3D
 
     private:
         T m[4][4];
-
-        unsigned int flags;
     };
 
     typedef M4<float> M4F;

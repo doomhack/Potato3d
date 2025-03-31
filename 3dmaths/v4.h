@@ -11,7 +11,10 @@ namespace P3D
     template <class T> class V4
     {
     public:
-        T x,y,z,w;
+        T x;
+        T y;
+        T z;
+        T w;
 
         V4(T x, T y, T z, T w) : x(x), y(y), z(z), w(w) {}
         V4() {}
@@ -102,9 +105,11 @@ namespace P3D
         {
             if (w != T(1))
             {
-                x = x / w;
-                y = y / w;
-                z = z / w;
+                T iw = pReciprocal(w);
+
+                x = x * iw;
+                y = y * iw;
+                z = z * iw;
             }
         }
     };

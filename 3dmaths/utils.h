@@ -230,25 +230,20 @@ namespace P3D
     template<>
     constexpr inline FP16 pReciprocal(const FP16 v)
     {
-        FP16 val = v < 0 ? -v : v;
+        const FP16 val = v < 0 ? -v : v;
 
-        int shift = 0;
+        const unsigned int shift = shiftTable[val.i()];
 
-        while(val > 4)
+        FP16 result = FP16::fromFPInt(reciprocalTable[val.toFPInt() >> shift] >> shift);
+
+        if(shift)
         {
-            val >>= 1;
-            shift++;
+            //Newton-Raphson refinement.
+            //result = (result * (FP16(2) - (val * result)));
+            //result = (result * (FP16(2) - (val * result)));
         }
 
-        FP16 result = FP16::fromFPInt(reciprocalTable[val.toFPInt()] >> shift);
-
         return v < 0 ? -result : result;
-    }
-
-    template <class T>
-    constexpr inline T pScaledReciprocal(const unsigned int shift, const T val)
-    {
-        return pReciprocal(pASR(val, shift));
     }
 
     //Approx fixed point divide of a/b using reciprocal. -> a * (1/b).
@@ -257,6 +252,20 @@ namespace P3D
     {
         return a * pReciprocal(b);
     }
+
+    template <class T>
+    constexpr inline T pScaledReciprocal(const unsigned int shift, const T val)
+    {
+        return pReciprocal(pASR(val, shift));
+    }
+
+    template <class T>
+    constexpr inline T pExp(const T x)
+     {
+        return T(1) + x * x * x;
+    }
+
+
 
     //Double width type. double_width<uint16> -> uint32.
     template <class> struct double_width;

@@ -22,7 +22,7 @@ namespace P3D
             z_val* zb_ypos;
         } TriEdgeTrace;
 
-        typedef struct TriDrawXDeltaZWUV
+        typedef struct
         {
             fp u;
             fp v;
@@ -385,16 +385,14 @@ namespace P3D
 
             fp GetLineIntersectionFrac(const fp a1, const fp a2, const fp b1, const fp b2) const
             {
-                if(!pSameSignBit(a1 - b1, a2 - b2))
-                {
-                    fp l1 = (a1 - b1);
+                fp diff1 = a1 - b1;
+                fp diff2 = a2 - b2;
 
-                    fp cp = (l1 - a2 + b2);
+                if(pSameSignBit(diff1, diff2))
+                    return -1;
 
-                    return (l1 / cp);
-                }
-
-                return -1;
+                fp cp = (diff1 - a2 + b2);
+                return (diff1 / cp);
             }
 
             inline constexpr fp ClipW(const fp w) const
@@ -746,7 +744,6 @@ namespace P3D
                     {
                         pos.l_left += pASL(delta2.l, SUBDIVIDE_SPAN_SHIFT);
                     }
-
                 }
             }
 
@@ -806,7 +803,7 @@ namespace P3D
             }
 
 
-            void DrawTriangleScanlinePerspectiveCorrect(const Internal::TriEdgeTrace& pos, const Internal::TriDrawXDeltaZWUV& delta, const pixel* texture) const
+            void DrawTriangleScanlinePerspectiveCorrect(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const pixel* texture) const
             {
                 const int x_start = (int)pos.x_left;
                 const int x_end = (int)pos.x_right;
@@ -857,7 +854,7 @@ namespace P3D
                     TPixelShader::DrawScanlinePixelLow(fb, zb, z, texture, u * pReciprocal(w), v * pReciprocal(w), f, l, fog_color, fog_light_map);
             }
 
-            void DrawTriangleScanlineFlat(const Internal::TriEdgeTrace& pos, const Internal::TriDrawXDeltaZWUV& delta,  const pixel color) const
+            void DrawTriangleScanlineFlat(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta,  const pixel color) const
             {
                 const int x_start = (int)pos.x_left;
                 const int x_end = (int)pos.x_right;
@@ -869,6 +866,7 @@ namespace P3D
 
                 fp z = pos.z_left;
                 const fp dz = delta.z;
+
 
                 fp f = pos.f_left;
                 const fp df = delta.f;
@@ -882,7 +880,7 @@ namespace P3D
                     TPixelShader::DrawScanlinePixelHigh(fb, zb, z, &color, 0, 0, f, l, fog_color, fog_light_map); fb++, zb++, z += dz, f += df, l += dl, count--;
                 }
 
-                if constexpr (render_flags & (ZTest | ZWrite | Fog | VertexLight))
+                if constexpr (render_flags & (ZBuffer | Fog | VertexLight))
                 {
                     unsigned int s = count >> 3;
 
@@ -923,7 +921,7 @@ namespace P3D
                 const fp x2 = (screenSpacePoints[1].pos.x - screenSpacePoints[2].pos.x);
                 const fp y2 = (screenSpacePoints[2].pos.y - screenSpacePoints[1].pos.y);
 
-                return ((x1 * y2) < (y1 * x2));
+                return ((x1 * y2) >= (y1 * x2));
             }
 
             constexpr void GetTriangleLerpXDeltas(const Vertex4d& left, const Vertex4d& right, TriDrawXDeltaZWUV& x_delta) const
@@ -957,7 +955,7 @@ namespace P3D
                 }
             }
 
-            constexpr void GetTriangleLerpYDeltas(const Vertex4d& a, const Vertex4d& b, TriDrawYDeltaZWUV &y_delta) const
+            constexpr void GetTriangleLerpYDeltas(const Vertex4d& a, const Vertex4d& b, TriDrawYDeltaZWUV& y_delta) const
             {
                 const fp dy = (a.pos.y != b.pos.y) ? (a.pos.y - b.pos.y) : fp(1);
 
@@ -1063,7 +1061,7 @@ namespace P3D
                 const fp near = z_planes->z_near;
                 const fp far = z_planes->z_far;
 
-                return fp(1) - ((w - near) * pReciprocal(far - near));
+                return fp(1) - ((w - near) * z_planes->z_ratio_3);
             }
 
             constexpr fp GetZDelta(const Vertex4d verts[3]) const
@@ -1108,7 +1106,7 @@ namespace P3D
 
                 const fp x = fog_params->fog_end - w;
                 const fp y = fog_params->fog_end - fog_params->fog_start;
-                const fp z = x / y;
+                const fp z = pApproxDiv(x, y);
 
                 return pClamp(fp(0), fp(1)-z, FOG_MAX);
             }
@@ -1119,7 +1117,7 @@ namespace P3D
 
                 const fp d = (z * fog_params->fog_density);
 
-                const fp r = expf(-d);
+                const fp r = pReciprocal(pExp(d));
 
                 return pClamp(fp(0), fp(1)-r, FOG_MAX);
             }
@@ -1132,7 +1130,7 @@ namespace P3D
 
                 d = (d * d);
 
-                const fp r = expf(-d);
+                const fp r = pReciprocal(pExp(d));
 
                 return pClamp(fp(0), fp(1)-r, FOG_MAX);
             }

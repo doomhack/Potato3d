@@ -33,8 +33,8 @@ MUSIC		:= music
 ARCH	:=	-mthumb -mthumb-interwork
 
 CFLAGS	:=	-g -Wall -O2 -fgcse-after-reload -gdwarf-4\
-                -mcpu=arm7tdmi -mtune=arm7tdmi\
-                -ffast-math -ffunction-sections\
+                -mcpu=arm7tdmi -mtune=arm7tdmi -fno-threadsafe-statics\
+		-ffast-math -ffunction-sections\
 		$(ARCH)
 
 CFLAGS	+=	$(INCLUDE)

@@ -21,15 +21,16 @@ void MainLoop::Run()
     vid.Setup(&keyState);
     vid.SetPalette(model.GetModel()->GetColorMap());
 
-    renderDev.SetRenderFlags<P3D::Fog, P3D::PixelShaderGBA8<P3D::Fog>>();
+    //renderDev.SetRenderFlags<P3D::Fog, P3D::PixelShaderGBA8<P3D::Fog>>();
+    renderDev.SetRenderFlags<P3D::NoFlags, P3D::PixelShaderGBA8<P3D::NoFlags>>();
 
     renderDev.SetPerspective(vFov, 1.5, zNear, zFar);
 
-    renderDev.SetFogMode(P3D::FogExponential2);
-    renderDev.SetFogDensity(2);
+    renderDev.SetFogMode(P3D::FogExponential);
+    renderDev.SetFogDensity(1.5);
 
     //renderDev.SetFogMode(P3D::FogLinear);
-    //renderDev.SetFogDepth(2000, 3000);
+    //renderDev.SetFogDepth(500, 2000);
 
 
     renderDev.SetFogLightMap(model.GetModel()->GetFogLightMap());

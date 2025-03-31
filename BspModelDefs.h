@@ -48,7 +48,6 @@ namespace P3D
 
     typedef struct BspModelTriangle
     {
-    public:
         Triangle3d tri;
         AABB<fp> tri_bb;
 

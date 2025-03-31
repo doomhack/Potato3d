@@ -16,9 +16,9 @@ int main(int argc, char *argv[])
     //QString objPath = "C:\\Users\\Zak\\Downloads\\GE_temple\\temple.obj";
     //QString objPath = "C:\\Users\\Zak\\Downloads\\DDHQ\\ddhq.obj";
     //QString objPath = "C:\\Users\\Zak\\Downloads\\Villa\\villa.obj";
-    //QString objPath = "C:\\Users\\Zak\\Downloads\\Dam\\dam.obj";
+    QString objPath = "C:\\Users\\Zak\\Downloads\\Dam\\dam.obj";
     //QString objPath = "C:\\Users\\Zak\\Downloads\\Temple\\temple.obj";
-    QString objPath = "C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\Streets\\Streets.obj";
+    //QString objPath = "C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\Streets\\Streets.obj";
     //QString objPath = "C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\temple.obj";
     //QString objPath = "C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\hf\\hf2.obj";
     //QString objPath = "C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\d2\\driver2_small.obj";

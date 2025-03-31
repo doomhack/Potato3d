@@ -10,7 +10,9 @@ namespace P3D
     template <class T> class V3
     {
     public:
-        T x,y,z;
+        T x;
+        T y;
+        T z;
 
         V3(T x, T y, T z) : x(x), y(y), z(z) {}
         V3() {}

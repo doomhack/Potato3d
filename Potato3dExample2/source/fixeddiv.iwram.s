@@ -1,8 +1,8 @@
-.section .iwram
 .arm
-.align
+.align 2
 
 .global udiv64_arm
+.type udiv64_arm, %function
 
 udiv64_arm:
 

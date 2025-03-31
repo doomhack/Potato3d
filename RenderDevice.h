@@ -105,6 +105,8 @@ namespace P3D
             z_planes.z_ratio_2 = fp::fromFPInt(FixedDiv(zi, zj, 16));
             //z_planes.z_ratio_2 = zi / zj;
 
+            z_planes.z_ratio_3 = pReciprocal(z_far - z_near);
+
             if(triangle_render)
             {
                 triangle_render->SetZPlanes(z_planes);

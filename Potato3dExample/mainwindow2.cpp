@@ -42,7 +42,7 @@ MainWindow2::MainWindow2(QWidget *parent)
 
     //render_device->SetRenderFlags<P3D::RenderFlags::ZTest | P3D::RenderFlags::ZWrite, P3D::PixelShaderGBA8<P3D::RenderFlags::ZTest | P3D::RenderFlags::ZWrite>>();
     //render_device->SetRenderFlags<P3D::NoFlags>();
-    render_device->SetRenderFlags<P3D::NoFlags, P3D::PixelShaderGBA8<P3D::NoFlags>>();
+    render_device->SetRenderFlags<P3D::FullPerspectiveMapping, P3D::PixelShaderGBA8<P3D::FullPerspectiveMapping>>();
 
     //render_device->SetRenderFlags<P3D::SubdividePerspectiveMapping>();
 
@@ -142,7 +142,7 @@ void MainWindow2::paintEvent(QPaintEvent *event)
 
     render_device->TransformVertexes(v, 4);
 
-    const int uv_tile = 128;
+    const int uv_tile = 1;
 
     P3D::V2<P3D::fp> uv[3];
     uv[0] = P3D::V2<P3D::fp>(0,0);

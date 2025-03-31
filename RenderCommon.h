@@ -10,6 +10,7 @@ namespace P3D
         NoFlags = 0ul,
         ZTest = 1ul,
         ZWrite = 2ul,
+        ZBuffer = ZTest | ZWrite,
         AlphaTest = 4ul,
         FullPerspectiveMapping = 16ul,
         SubdividePerspectiveMapping = 32ul,
@@ -102,6 +103,7 @@ namespace P3D
 
             fp z_ratio_1; // (far) / (far - near)
             fp z_ratio_2; // (-far * near) / (far - near)
+            fp z_ratio_3; // (1/(far-near))
         };
 
         class RenderDeviceFogParameters

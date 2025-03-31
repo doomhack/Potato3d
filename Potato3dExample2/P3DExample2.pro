@@ -38,4 +38,5 @@ HEADERS += \
     !isEmpty(target.path): INSTALLS += target
 
 DISTFILES += \
-    Makefile
+    Makefile \
+    source/fixeddiv.iwram.s

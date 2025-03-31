@@ -8,7 +8,8 @@ namespace P3D
     template <class T> class V2
     {
     public:
-        T x,y;
+        T x;
+        T y;
 
         V2(T x, T y) : x(x), y(y) {}
         V2() {}

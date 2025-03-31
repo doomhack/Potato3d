@@ -11,8 +11,6 @@ INCLUDEPATH += "include"
 INCLUDEPATH += "C:\devkitPro\libgba\include"
 
 SOURCES += \
-    source/RenderDevice.iwram.cpp \
-    source/RenderTarget.cpp \
     source/main.iwram.cpp \
     source/recip.cpp
 

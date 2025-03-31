@@ -12,8 +12,10 @@ namespace P3D
     public:
         explicit constexpr AABB()
         {
-            x1 = y1 = z1 = std::numeric_limits<T>::max();
-            x2 = y2 = z2 = std::numeric_limits<T>::min();
+            x1 = y1 = z1 = 32767;
+            x2 = y2 = z2 = -32768;
+            //x1 = y1 = z1 = std::numeric_limits<T>::max();
+            //x2 = y2 = z2 = std::numeric_limits<T>::min();
         }
 
         explicit constexpr AABB(const V3<T>& point)
@@ -94,22 +96,16 @@ namespace P3D
 
         constexpr bool Intersect(const AABB& other) const
         {
-            if(x1 > other.x2)
+            // X-axis
+            if (x1 > other.x2 || x2 < other.x1)
                 return false;
 
-            if(x2 < other.x1)
+            // Z-axis
+            if (z1 > other.z2 || z2 < other.z1)
                 return false;
 
-            if(y1 > other.y2)
-                return false;
-
-            if(y2 < other.y1)
-                return false;
-
-            if(z1 > other.z2)
-                return false;
-
-            if(z2 < other.z1)
+            // Y-axis
+            if (y1 > other.y2 || y2 < other.y1)
                 return false;
 
             return true;
@@ -117,9 +113,14 @@ namespace P3D
 
     private:
 
-        T x1, x2;
-        T y1, y2;
-        T z1, z2;
+        T x1;
+        T x2;
+
+        T y1;
+        T y2;
+
+        T z1;
+        T z2;
     };
 
 }

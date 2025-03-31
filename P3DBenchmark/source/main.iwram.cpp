@@ -98,8 +98,8 @@ int main()
 
 
     P3D::RenderDevice* render_device = new P3D::RenderDevice();
-    //render_device->SetRenderFlags<P3D::RenderFlags::NoFlags, P3D::PixelShaderGBA8<P3D::RenderFlags::NoFlags>>();
-    render_device->SetRenderFlags<P3D::RenderFlags::SubdividePerspectiveMapping, P3D::PixelShaderGBA8<P3D::RenderFlags::SubdividePerspectiveMapping>>();
+    render_device->SetRenderFlags<P3D::RenderFlags::NoFlags, P3D::PixelShaderGBA8<P3D::RenderFlags::NoFlags>>();
+    //render_device->SetRenderFlags<P3D::RenderFlags::SubdividePerspectiveMapping, P3D::PixelShaderGBA8<P3D::RenderFlags::SubdividePerspectiveMapping>>();
     //render_device->SetRenderFlags<P3D::RenderFlags::FullPerspectiveMapping, P3D::PixelShaderGBA8<P3D::RenderFlags::FullPerspectiveMapping>>();
     //render_device->SetRenderFlags<P3D::RenderFlags::ZTest | P3D::RenderFlags::ZWrite, P3D::PixelShaderGBA8<P3D::RenderFlags::ZTest | P3D::RenderFlags::ZWrite>>();
     //render_device->SetRenderFlags<P3D::RenderFlags::Fog, P3D::PixelShaderGBA8<P3D::RenderFlags::Fog>>();
@@ -107,7 +107,7 @@ int main()
     //render_device->SetRenderFlags<P3D::RenderFlags::VertexLight, P3D::PixelShaderGBA8<P3D::RenderFlags::VertexLight>>();
 
 
-#if 1
+#if 0
     render_device->SetFogMode(P3D::FogMode::FogLinear);
     render_device->SetFogDepth(500, 1000);
 #else
@@ -193,6 +193,14 @@ int main()
         render_device->TransformVertexes(v, 3);
 
         render_device->DrawTriangle(vi, uv, lights);
+
+        //P3D::fp dx = v[0].x * v[0].y;
+        //P3D::fp dy = v[0].y * v[0].z;
+
+        //P3D::fp dz = (dx/dy);
+        //P3D::fp dz = P3D::pApproxDiv(dx, dy);
+
+        //I_GetBackBuffer()[0] = dz.i();
     }
 
 
