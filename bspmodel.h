@@ -11,6 +11,7 @@ namespace P3D
         V3<fp> point;
         AABB<fp> frustrum;
         std::vector<const BspModelTriangle*>* output = nullptr;
+        std::vector<int> node_list;
         bool backface_cull;
     };
 
@@ -53,8 +54,9 @@ namespace P3D
 
     private:
 
-        void SortBackToFrontRecursive(const BspModelNode* n) const;
+        void SortBackToFrontRecursive(const unsigned int node) const;
         //void SortFrontToBackRecursive(const BspModelNode* n) const;
+        void OutputTris() const;
 
         bool TriAABBIntersect(const BspModelTriangle* tri, const AABB<fp>& aabb) const
         {
