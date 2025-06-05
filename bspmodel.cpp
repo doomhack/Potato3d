@@ -56,50 +56,25 @@ namespace P3D
     {
         for(const int node : context.node_list)
         {
-            if(node >= 0)
+            const TriIndexList front = node >= 0 ? GetNode(node)->front_tris : GetNode(-node)->back_tris;
+            const TriIndexList back = node >= 0 ? GetNode(node)->back_tris : GetNode(-node)->front_tris;
+
+            for(unsigned int i = 0; i < front.count; i++)
             {
-                const BspModelNode* n = GetNode(node);
+                const BspModelTriangle* tri = GetTriangle(front.offset + i);
 
-                for(unsigned int i = 0; i < n->front_tris.count; i++)
-                {
-                    const BspModelTriangle* tri = GetTriangle(n->front_tris.offset + i);
-
-                    if(context.frustrum.Intersect(tri->tri_bb))
-                        context.output->push_back(tri);
-                }
-
-                if(!context.backface_cull)
-                {
-                    for(unsigned int i = 0; i < n->back_tris.count; i++)
-                    {
-                        const BspModelTriangle* tri = GetTriangle(n->back_tris.offset + i);
-
-                        if(context.frustrum.Intersect(tri->tri_bb))
-                            context.output->push_back(tri);
-                    }
-                }
+                if(context.frustrum.Intersect(tri->tri_bb))
+                    context.output->push_back(tri);
             }
-            else
-            {
-                const BspModelNode* n = GetNode(-node);
 
-                for(unsigned int i = 0; i < n->back_tris.count; i++)
+            if(!context.backface_cull)
+            {
+                for(unsigned int i = 0; i < back.count; i++)
                 {
-                    const BspModelTriangle* tri = GetTriangle(n->back_tris.offset + i);
+                    const BspModelTriangle* tri = GetTriangle(back.offset + i);
 
                     if(context.frustrum.Intersect(tri->tri_bb))
                         context.output->push_back(tri);
-                }
-
-                if(!context.backface_cull)
-                {
-                    for(unsigned int i = 0; i < n->front_tris.count; i++)
-                    {
-                        const BspModelTriangle* tri = GetTriangle(n->front_tris.offset + i);
-
-                        if(context.frustrum.Intersect(tri->tri_bb))
-                            context.output->push_back(tri);
-                    }
                 }
             }
         }
