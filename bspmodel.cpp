@@ -4,76 +4,97 @@
 
 namespace P3D
 {
-    BspContext BspModel::context;
+    Stack<unsigned int> BspModel::stack;
+    std::vector<unsigned int> BspModel::node_list;
 
     void BspModel::Sort(const V3<fp>& p, const AABB<fp>& frustrum, std::vector<const BspModelTriangle *> &out, bool backface_cull) const
     {
         out.clear();
+        node_list.clear();
 
-        context.node_list.clear();
-        context.point = p;
-        context.frustrum = frustrum;
-        context.output = &out;
-        context.backface_cull = backface_cull;
-
-        SortBackToFrontRecursive(0);
-        OutputTris();
+        SortBackToFront(p, frustrum);
+        OutputTris(frustrum, out, backface_cull);
     }
 
-    void BspModel::SortBackToFrontRecursive(const unsigned int node) const
+    constexpr unsigned int BACK_BIT = 1 << 31;
+    constexpr unsigned int POST_BIT = 1 << 30;
+
+    constexpr unsigned int NODE_MASK = ~(BACK_BIT | POST_BIT);
+
+    void BspModel::SortBackToFront(const V3<fp>& p, const AABB<fp>& frustrum) const
     {
-        const BspModelNode* n = GetNode(node);
+        stack.Push(0);
 
-        if(!context.frustrum.Intersect(n->child_bb))
-            return;
-
-        if (Distance(n->plane, context.point) < 0)
+        while(!stack.Empty())
         {
-            if(n->front_node)
-                SortBackToFrontRecursive(n->front_node);
+            const unsigned int item = stack.Pop();
 
-            if(context.frustrum.Intersect(n->node_bb))
-                context.node_list.push_back(node);
+            const BspModelNode* n = GetNode(item & NODE_MASK);
 
-            if(n->back_node)
-                SortBackToFrontRecursive(n->back_node);
-        }
-        else
-        {
-            if(n->back_node)
-                SortBackToFrontRecursive(n->back_node);
+            if (!frustrum.Intersect(n->child_bb))
+                continue;
 
-            if(context.frustrum.Intersect(n->node_bb))
-                context.node_list.push_back(-node);
+            if (item & POST_BIT)
+            {
+                if (frustrum.Intersect(n->node_bb))
+                {
+                    if (item & BACK_BIT)
+                        node_list.push_back(item & NODE_MASK);
+                    else
+                        node_list.push_back((item & NODE_MASK) | BACK_BIT);
+                }
+            }
+            else
+            {
+                if(Distance(n->plane, p) >= 0)
+                {
+                    if (n->front_node)
+                        stack.Push(n->front_node);
 
-            if(n->front_node)
-                SortBackToFrontRecursive(n->front_node);
+                    stack.Push(item | POST_BIT);
+
+                    if (n->back_node)
+                        stack.Push(n->back_node);
+                }
+                else
+                {
+                    if (n->back_node)
+                        stack.Push(n->back_node);
+
+                    stack.Push(item | POST_BIT | BACK_BIT);
+
+                    if (n->front_node)
+                        stack.Push(n->front_node);
+                }
+            }
         }
     }
 
-    void BspModel::OutputTris() const
+    void BspModel::OutputTris(const AABB<fp>& frustrum, std::vector<const BspModelTriangle *> &out, bool backface_cull) const
     {
-        for(const int node : context.node_list)
+        for(const unsigned int node : node_list)
         {
-            const TriIndexList* front = node >= 0 ? &GetNode(node)->front_tris : &GetNode(-node)->back_tris;
-            const TriIndexList* back = node >= 0 ? &GetNode(node)->back_tris : &GetNode(-node)->front_tris;
+            const BspModelNode* n = GetNode(node & NODE_MASK);
+
+            const TriIndexList* front = (node & BACK_BIT) ? &n->back_tris : &n->front_tris;
+            const TriIndexList* back = (node & BACK_BIT) ? &n->front_tris : &n->back_tris;
 
             for(unsigned int i = 0; i < front->count; i++)
             {
                 const BspModelTriangle* tri = GetTriangle(front->offset + i);
 
-                if(context.frustrum.Intersect(tri->tri_bb))
-                    context.output->push_back(tri);
+                if(frustrum.Intersect(tri->tri_bb))
+                    out.push_back(tri);
             }
 
-            if(!context.backface_cull)
+            if(!backface_cull)
             {
                 for(unsigned int i = 0; i < back->count; i++)
                 {
                     const BspModelTriangle* tri = GetTriangle(back->offset + i);
 
-                    if(context.frustrum.Intersect(tri->tri_bb))
-                        context.output->push_back(tri);
+                    if(frustrum.Intersect(tri->tri_bb))
+                        out.push_back(tri);
                 }
             }
         }

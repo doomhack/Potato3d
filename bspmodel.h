@@ -2,18 +2,41 @@
 #define BSPMODEL_H
 
 #include <vector>
+#include <stack>
 #include "BspModelDefs.h"
 
 namespace P3D
 {
-    struct BspContext
+    //Bare minimum monday stack.
+    template <class T> class Stack
     {
-        V3<fp> point;
-        AABB<fp> frustrum;
-        std::vector<const BspModelTriangle*>* output = nullptr;
-        std::vector<int> node_list;
-        bool backface_cull;
+    public:
+        Stack(unsigned int size = 1024) { pos = mem = (T*)new char[sizeof(T) * size]; }
+        ~Stack()                        { delete[] mem; }
+        void Push(T item)               { *pos = item, pos++; }
+        T Pop()                         { pos--; return *pos; }
+        bool Empty() const              { return pos == mem; }
+        void Clear()                    { pos = mem; }
+
+    private:
+        T* mem; T* pos;
     };
+
+    //Fuck it friday list.
+    template <class T> class List
+    {
+    public:
+        List(unsigned int size = 1024) { pos = mem = (T*)new char[sizeof(T) * size]; }
+        ~List()                        { delete[] mem; }
+        void Add(T item)               { *pos = item, pos++; }
+        T At(unsigned int index) const { return mem[index]; }
+        unsigned int Size() const      { return pos - mem; }
+        void Clear()                   { pos = mem; }
+
+    private:
+        T* mem; T* pos;
+    };
+
 
     class BspModel
     {
@@ -21,8 +44,6 @@ namespace P3D
         BspModelHeader header;
 
         void Sort(const V3<fp>& p, const AABB<fp>& frustrum, std::vector<const BspModelTriangle *> &out, bool backface_cull) const;
-
-        static BspContext context;
 
         const BspNodeTexture* GetTexture(int n) const
         {
@@ -54,8 +75,11 @@ namespace P3D
 
     private:
 
-        void SortBackToFrontRecursive(const unsigned int node) const;
-        void OutputTris() const;
+        static Stack<unsigned int> stack;
+        static std::vector<unsigned int> node_list;
+
+        void OutputTris(const AABB<P3D::fp> &frustrum, std::vector<const BspModelTriangle *> &out, bool backface_cull) const;
+        void SortBackToFront(const V3<P3D::fp> &p, const AABB<fp>& frustrum) const;
 
         const unsigned char* GetBasePtr() const
         {
