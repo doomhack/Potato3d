@@ -13,7 +13,7 @@ namespace P3D
     public:
         Stack(unsigned int size = 1024) { pos = mem = (T*)new char[sizeof(T) * size]; }
         ~Stack()                        { delete[] mem; }
-        void Push(T item)               { *pos = item, pos++; }
+        void Push(T item)               { *pos = item; pos++; }
         T Pop()                         { pos--; return *pos; }
         bool Empty() const              { return pos == mem; }
         void Clear()                    { pos = mem; }
@@ -28,7 +28,7 @@ namespace P3D
     public:
         List(unsigned int size = 1024) { pos = mem = (T*)new char[sizeof(T) * size]; }
         ~List()                        { delete[] mem; }
-        void Add(T item)               { *pos = item, pos++; }
+        void Add(T item)               { *pos = item; pos++; }
         T At(unsigned int index) const { return mem[index]; }
         unsigned int Size() const      { return pos - mem; }
         void Clear()                   { pos = mem; }
@@ -76,7 +76,7 @@ namespace P3D
     private:
 
         static Stack<unsigned int> stack;
-        static std::vector<unsigned int> node_list;
+        static List<unsigned int> node_list;
 
         void OutputTris(const AABB<P3D::fp> &frustrum, std::vector<const BspModelTriangle *> &out, bool backface_cull) const;
         void SortBackToFront(const V3<P3D::fp> &p, const AABB<fp>& frustrum) const;

@@ -5,12 +5,12 @@
 namespace P3D
 {
     Stack<unsigned int> BspModel::stack;
-    std::vector<unsigned int> BspModel::node_list;
+    List<unsigned int> BspModel::node_list;
 
     void BspModel::Sort(const V3<fp>& p, const AABB<fp>& frustrum, std::vector<const BspModelTriangle *> &out, bool backface_cull) const
     {
         out.clear();
-        node_list.clear();
+        node_list.Clear();
 
         SortBackToFront(p, frustrum);
         OutputTris(frustrum, out, backface_cull);
@@ -39,9 +39,9 @@ namespace P3D
                 if (frustrum.Intersect(n->node_bb))
                 {
                     if (item & BACK_BIT)
-                        node_list.push_back(item & NODE_MASK);
+                        node_list.Add(item & NODE_MASK);
                     else
-                        node_list.push_back((item & NODE_MASK) | BACK_BIT);
+                        node_list.Add((item & NODE_MASK) | BACK_BIT);
                 }
             }
             else
@@ -72,8 +72,10 @@ namespace P3D
 
     void BspModel::OutputTris(const AABB<fp>& frustrum, std::vector<const BspModelTriangle *> &out, bool backface_cull) const
     {
-        for(const unsigned int node : node_list)
+        for(unsigned int i = 0; i < node_list.Size(); i++)
         {
+            const unsigned int node = node_list.At(i);
+
             const BspModelNode* n = GetNode(node & NODE_MASK);
 
             const TriIndexList* front = (node & BACK_BIT) ? &n->back_tris : &n->front_tris;
