@@ -11,7 +11,6 @@ namespace P3D
         out.clear();
 
         context.node_list.clear();
-
         context.point = p;
         context.frustrum = frustrum;
         context.output = &out;
@@ -56,12 +55,12 @@ namespace P3D
     {
         for(const int node : context.node_list)
         {
-            const TriIndexList front = node >= 0 ? GetNode(node)->front_tris : GetNode(-node)->back_tris;
-            const TriIndexList back = node >= 0 ? GetNode(node)->back_tris : GetNode(-node)->front_tris;
+            const TriIndexList* front = node >= 0 ? &GetNode(node)->front_tris : &GetNode(-node)->back_tris;
+            const TriIndexList* back = node >= 0 ? &GetNode(node)->back_tris : &GetNode(-node)->front_tris;
 
-            for(unsigned int i = 0; i < front.count; i++)
+            for(unsigned int i = 0; i < front->count; i++)
             {
-                const BspModelTriangle* tri = GetTriangle(front.offset + i);
+                const BspModelTriangle* tri = GetTriangle(front->offset + i);
 
                 if(context.frustrum.Intersect(tri->tri_bb))
                     context.output->push_back(tri);
@@ -69,9 +68,9 @@ namespace P3D
 
             if(!context.backface_cull)
             {
-                for(unsigned int i = 0; i < back.count; i++)
+                for(unsigned int i = 0; i < back->count; i++)
                 {
-                    const BspModelTriangle* tri = GetTriangle(back.offset + i);
+                    const BspModelTriangle* tri = GetTriangle(back->offset + i);
 
                     if(context.frustrum.Intersect(tri->tri_bb))
                         context.output->push_back(tri);

@@ -55,18 +55,7 @@ namespace P3D
     private:
 
         void SortBackToFrontRecursive(const unsigned int node) const;
-        //void SortFrontToBackRecursive(const BspModelNode* n) const;
         void OutputTris() const;
-
-        bool TriAABBIntersect(const BspModelTriangle* tri, const AABB<fp>& aabb) const
-        {
-            AABB<fp> polybb;
-            polybb.AddPoint(tri->tri.verts[0].pos);
-            polybb.AddPoint(tri->tri.verts[1].pos);
-            polybb.AddPoint(tri->tri.verts[2].pos);
-
-            return (aabb.Intersect(polybb));
-        }
 
         const unsigned char* GetBasePtr() const
         {
