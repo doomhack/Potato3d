@@ -54,7 +54,7 @@ namespace P3D
             }
         }
 
-        static void DrawScanlinePixelHigh(pixel *fb, z_val *zb, const z_val zv, const pixel* texels, const fp u, const fp v, const fp f, const fp l, const pixel fog_color, const unsigned char* fog_light_map = nullptr)
+        static void DrawScanlinePixelHigh(pixel *fb, z_val *zb, const z_val zv, const pixel* texels, const fp u, const fp v, const fp f, const fp l, const pixel, const unsigned char* fog_light_map = nullptr)
         {
             if constexpr (render_flags & ZTest)
             {
@@ -85,7 +85,7 @@ namespace P3D
             *p16 = texel;
         }
 
-        static void DrawScanlinePixelLow(pixel *fb, z_val *zb, const z_val zv, const pixel* texels, const fp u, const fp v, const fp f, const fp l, const pixel fog_color, const unsigned char* fog_light_map = nullptr)
+        static void DrawScanlinePixelLow(pixel *fb, z_val *zb, const z_val zv, const pixel* texels, const fp u, const fp v, const fp f, const fp l, const pixel, const unsigned char* fog_light_map = nullptr)
         {
             if constexpr (render_flags & ZTest)
             {

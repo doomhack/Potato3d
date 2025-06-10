@@ -14,6 +14,8 @@ MainLoop::MainLoop()
     frustrumPoints[1] = P3D::V3<P3D::fp>(halfFrustrumWidth, halfFrustrumHeight, -zFar);
     frustrumPoints[2] = P3D::V3<P3D::fp>(-halfFrustrumWidth, halfFrustrumHeight, -zFar);
     frustrumPoints[3] = P3D::V3<P3D::fp>(halfFrustrumWidth, -halfFrustrumHeight, -zFar);
+
+    triBuffer.reserve(8192);
 }
 
 void MainLoop::Run()
@@ -21,16 +23,22 @@ void MainLoop::Run()
     vid.Setup(&keyState);
     vid.SetPalette(model.GetModel()->GetColorMap());
 
-    //renderDev.SetRenderFlags<P3D::Fog, P3D::PixelShaderGBA8<P3D::Fog>>();
-    renderDev.SetRenderFlags<P3D::NoFlags, P3D::PixelShaderGBA8<P3D::NoFlags>>();
+    //constexpr unsigned int flags = P3D::NoFlags;
+    //constexpr unsigned int flags = P3D::SubdividePerspectiveMapping;
+    //constexpr unsigned int flags = P3D::Fog;
+    //constexpr unsigned int flags = P3D::SubdividePerspectiveMapping | P3D::Fog;
+    constexpr unsigned int flags = P3D::SubdividePerspectiveMapping | P3D::VertexLight | P3D::Fog;
+
+    renderDev.SetRenderFlags<flags, P3D::PixelShaderGBA8<flags>>();
+
 
     renderDev.SetPerspective(vFov, 1.5, zNear, zFar);
 
-    renderDev.SetFogMode(P3D::FogExponential);
-    renderDev.SetFogDensity(1.5);
+    renderDev.SetFogMode(P3D::FogExponential2);
+    renderDev.SetFogDensity(1.33);
 
     //renderDev.SetFogMode(P3D::FogLinear);
-    //renderDev.SetFogDepth(500, 2000);
+    //renderDev.SetFogDepth(750, 1000);
 
 
     renderDev.SetFogLightMap(model.GetModel()->GetFogLightMap());
@@ -92,13 +100,11 @@ void MainLoop::UpdateFrustrumBB()
 
 void MainLoop::RenderModel()
 {
-    static std::vector<const P3D::BspModelTriangle*> tris;
+    model.GetModel()->Sort(camera.GetEyePosition(), viewFrustrumBB, triBuffer, true);
 
-    model.GetModel()->SortBackToFront(camera.GetEyePosition(), viewFrustrumBB, tris, true);
-
-    for(unsigned int i = 0; i < tris.size(); i++)
+    for(unsigned int i = 0; i < triBuffer.size(); i++)
     {
-        const P3D::BspModelTriangle* tri = tris[i];
+        const P3D::BspModelTriangle* tri = triBuffer[i];
 
         if(!FrustrumTestTriangle(tri))
             continue;
@@ -114,13 +120,18 @@ void MainLoop::RenderModel()
             m.type = P3D::Material::Texture;
             m.pixels = model.GetModel()->GetTexturePixels(ntex->texture_pixels_offset);
 
-            const P3D::fp light_levels[3] = {1, 1, 1};
+            const P3D::V3<P3D::fp> lightVector(0.66,0.66,0.33);
+
+            const P3D::fp lightLevel = P3D::fp(0.5) + P3D::pASR(P3D::fp(1) + tri->normal_plane.Normal().DotProduct(lightVector), 2);
+
+            const P3D::fp light_levels[3] = {lightLevel, lightLevel, lightLevel};
 
             const P3D::V2<P3D::fp> uvs[3] = {tri->tri.verts[0].uv, tri->tri.verts[1].uv, tri->tri.verts[2].uv};
 
             renderDev.SetMaterial(m);
 
             renderDev.DrawTriangle(verts, uvs, light_levels);
+            //renderDev.DrawTriangle(verts, uvs);
         }
         else
         {
@@ -131,29 +142,17 @@ void MainLoop::RenderModel()
             renderDev.DrawTriangle(verts);
         }
     }
-
-    tris.clear();
 }
 
 bool MainLoop::FrustrumTestTriangle(const P3D::BspModelTriangle* tri) const
 {
-    if(!frustrumPlanes[P3D::Left].TriangleIsFrontside(tri->tri.verts[0].pos, tri->tri.verts[1].pos, tri->tri.verts[2].pos))
-        return false;
-
-    if(!frustrumPlanes[P3D::Right].TriangleIsFrontside(tri->tri.verts[0].pos, tri->tri.verts[1].pos, tri->tri.verts[2].pos))
-        return false;
-
-    if(!frustrumPlanes[P3D::Top].TriangleIsFrontside(tri->tri.verts[0].pos, tri->tri.verts[1].pos, tri->tri.verts[2].pos))
-        return false;
-
-    if(!frustrumPlanes[P3D::Bottom].TriangleIsFrontside(tri->tri.verts[0].pos, tri->tri.verts[1].pos, tri->tri.verts[2].pos))
-        return false;
-
-    if(!frustrumPlanes[P3D::Near].TriangleIsFrontside(tri->tri.verts[0].pos, tri->tri.verts[1].pos, tri->tri.verts[2].pos))
-        return false;
-
-    if(!frustrumPlanes[P3D::Far].TriangleIsFrontside(tri->tri.verts[0].pos, tri->tri.verts[1].pos, tri->tri.verts[2].pos))
-        return false;
+    for(unsigned int i = P3D::Left; i <= P3D::Near; i++)
+    {
+        if(!frustrumPlanes[i].TriangleIsFrontside(tri->tri.verts[0].pos, tri->tri.verts[1].pos, tri->tri.verts[2].pos))
+        {
+            return false;
+        }
+    }
 
     return true;
 }
@@ -163,21 +162,19 @@ void MainLoop::ResolveCollisions()
     const int bb_size = 100;
     P3D::AABB<P3D::fp> player_box(camera.GetPosition(), bb_size);
 
-    std::vector<const P3D::BspModelTriangle*> tris;
-
-    model.GetModel()->SortFrontToBack(camera.GetPosition(), player_box, tris, true);
+    model.GetModel()->Sort(camera.GetPosition(), player_box, triBuffer, true);
 
     int collision_count = 0;
 
-    for(unsigned int i = 0; i < tris.size(); i++)
+    for(int i = triBuffer.size() - 1; i >= 0; i--)
     {
         P3D::V3<P3D::fp> resolutionVector;
 
-        if(collision.CheckCollision(tris.at(i), camera.GetPosition(), 25, resolutionVector))
+        if(collision.CheckCollision(triBuffer.at(i), camera.GetPosition(), 50, resolutionVector))
         {
             camera.MovePosition(resolutionVector);
 
-            i = 0;
+            i = triBuffer.size() -1;
             collision_count++;
 
             if(collision_count > 5)

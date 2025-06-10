@@ -25,6 +25,8 @@ public:
 protected:
     void paintEvent(QPaintEvent *event) override
     {
+        Q_UNUSED(event)
+
         if(!backBuffer)
             return;
 
@@ -35,6 +37,8 @@ protected:
 
     void closeEvent(QCloseEvent *event) override
     {
+        Q_UNUSED(event)
+
         exit(0);
     }
 

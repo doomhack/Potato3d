@@ -20,16 +20,6 @@ namespace P3D
         V4() {}
         ~V4() {}
 
-        constexpr V4& operator=(const V4& r)
-        {
-            x = r.x;
-            y = r.y;
-            z = r.z;
-            w = r.w;
-
-            return *this;
-        }
-
         constexpr V4 operator+(const V4& r) const
         {
             V4 v(x,y,z,w);
@@ -105,11 +95,9 @@ namespace P3D
         {
             if (w != T(1))
             {
-                T iw = pReciprocal(w);
-
-                x = x * iw;
-                y = y * iw;
-                z = z * iw;
+                x = x / w;
+                y = y / w;
+                z = z / w;
             }
         }
     };

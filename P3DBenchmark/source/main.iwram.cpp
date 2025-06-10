@@ -96,7 +96,6 @@ int main()
     P3D::RenderTarget* render_target = new P3D::RenderTarget(240, 160, I_GetBackBuffer());
     render_target->AttachZBuffer();
 
-
     P3D::RenderDevice* render_device = new P3D::RenderDevice();
     render_device->SetRenderFlags<P3D::RenderFlags::NoFlags, P3D::PixelShaderGBA8<P3D::RenderFlags::NoFlags>>();
     //render_device->SetRenderFlags<P3D::RenderFlags::SubdividePerspectiveMapping, P3D::PixelShaderGBA8<P3D::RenderFlags::SubdividePerspectiveMapping>>();

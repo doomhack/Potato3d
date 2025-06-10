@@ -2,8 +2,11 @@
 
 Camera::Camera()
 {
-    position = P3D::V3<P3D::fp>(8508,13,8563);
-    angle = P3D::V3<P3D::fp>(0,-236,0);
+    position = P3D::V3<P3D::fp>(-2511,1025,-3108);
+    //position = P3D::V3<P3D::fp>(-230,39,6152);
+
+    //position = P3D::V3<P3D::fp>(8508,13,8563);
+    //angle = P3D::V3<P3D::fp>(0,-236,0);
 }
 
 const P3D::V3<P3D::fp>& Camera::GetPosition() const
@@ -24,10 +27,10 @@ const P3D::V3<P3D::fp>& Camera::GetAngle() const
 void Camera::HandleInput(unsigned int keyState)
 {
     if(keyState & KeyLeft)
-        angle.y += 2;
+        angle.y += 5;
 
     if(keyState & KeyRight)
-        angle.y -= 2;
+        angle.y -= 5;
 
     if(keyState & KeyUp)
     {
@@ -35,7 +38,7 @@ void Camera::HandleInput(unsigned int keyState)
 
         float angleYRad = P3D::pD2R(camAngle.y);
 
-        P3D::V3<P3D::fp> d((float)-(std::sin(angleYRad) *10), 0, (float)-(std::cos(angleYRad) *10));
+        P3D::V3<P3D::fp> d((float)-(std::sin(angleYRad) *20), 0, (float)-(std::cos(angleYRad) *20));
 
         position += d;
     }
@@ -46,12 +49,12 @@ void Camera::HandleInput(unsigned int keyState)
 
         float angleYRad = P3D::pD2R(camAngle.y);
 
-        P3D::V3<P3D::fp> d((float)-(std::sin(angleYRad) *10), 0, (float)-(std::cos(angleYRad) *10));
+        P3D::V3<P3D::fp> d((float)-(std::sin(angleYRad) *20), 0, (float)-(std::cos(angleYRad) *20));
 
         position -= d;
     }
 
-    position.y -= 5;
+    position.y -= 10;
 
 }
 

@@ -21,7 +21,7 @@ class Camera
     private:
         P3D::V3<P3D::fp> position = P3D::V3<P3D::fp>(0,50,0);
         P3D::V3<P3D::fp> angle = P3D::V3<P3D::fp>(0,0,0);
-        const P3D::V3<P3D::fp> eyeOffset = P3D::V3<P3D::fp>(0,50,0);
+        const P3D::V3<P3D::fp> eyeOffset = P3D::V3<P3D::fp>(0,100,0);
 };
 
 #endif // CAMERA_H

@@ -13,7 +13,7 @@ bool Collision::CheckCollision(const P3D::BspModelTriangle* tri, const P3D::V3<P
     if(distance < 0 || distance >= radius)
         return false;
 
-    P3D::fp margin = -P3D::fp(radius >> 4);
+    P3D::fp margin = -P3D::fp(P3D::pASR(radius, 4));
 
     if(tri->edge_plane_0_1.DistanceToPoint(point) < margin)
         return false;

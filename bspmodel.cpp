@@ -79,7 +79,6 @@ namespace P3D
             const BspModelNode* n = GetNode(node & NODE_MASK);
 
             const TriIndexList* front = (node & BACK_BIT) ? &n->back_tris : &n->front_tris;
-            const TriIndexList* back = (node & BACK_BIT) ? &n->front_tris : &n->back_tris;
 
             for(unsigned int i = 0; i < front->count; i++)
             {
@@ -91,6 +90,8 @@ namespace P3D
 
             if(!backface_cull)
             {
+                const TriIndexList* back = (node & BACK_BIT) ? &n->front_tris : &n->back_tris;
+
                 for(unsigned int i = 0; i < back->count; i++)
                 {
                     const BspModelTriangle* tri = GetTriangle(back->offset + i);

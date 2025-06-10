@@ -121,7 +121,7 @@ void VideoSystem::UpdateKeys()
     if(key & KEY_UP)
         *keyState |= KeyUp;
     else if(key & KEY_DOWN)
-        *keyState |= KeyUp;
+        *keyState |= KeyDown;
 
     if(key & KEY_LEFT)
         *keyState |= KeyLeft;
@@ -133,7 +133,7 @@ void VideoSystem::UpdateKeys()
     if(key & KEY_UP)
         *keyState &= ~KeyUp;
     else if(key & KEY_DOWN)
-        *keyState &= ~KeyUp;
+        *keyState &= ~KeyDown;
 
     if(key & KEY_LEFT)
         *keyState &= ~KeyLeft;

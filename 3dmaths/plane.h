@@ -7,12 +7,12 @@ namespace P3D
 {
 typedef enum FrustrumPlanes : unsigned int
 {
-    Near = 0,
-    Far = 1,
-    Left = 2,
-    Right = 3,
-    Top = 4,
-    Bottom = 5
+    Left = 0,
+    Right = 1,
+    Top = 2,
+    Bottom = 3,
+    Far = 4,
+    Near = 5,
 } FrustrumPlanes;
 
 template <class T> class Plane

@@ -11,7 +11,7 @@ namespace P3D
     template <class T> class Stack
     {
     public:
-        Stack(unsigned int size = 1024) { pos = mem = (T*)new char[sizeof(T) * size]; }
+        Stack(unsigned int size = 2048) { pos = mem = (T*)new char[sizeof(T) * size]; }
         ~Stack()                        { delete[] mem; }
         void Push(T item)               { *pos = item; pos++; }
         T Pop()                         { pos--; return *pos; }
@@ -26,7 +26,7 @@ namespace P3D
     template <class T> class List
     {
     public:
-        List(unsigned int size = 1024) { pos = mem = (T*)new char[sizeof(T) * size]; }
+        List(unsigned int size = 2048) { pos = mem = (T*)new char[sizeof(T) * size]; }
         ~List()                        { delete[] mem; }
         void Add(T item)               { *pos = item; pos++; }
         T At(unsigned int index) const { return mem[index]; }

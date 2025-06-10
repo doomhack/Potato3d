@@ -33,7 +33,7 @@ private:
     static constexpr P3D::fp vFov = 60;
     static constexpr P3D::fp hFov = 90;
 
-    static constexpr unsigned int frameTicks = 33;
+    static constexpr unsigned int frameTicks = 50;
 
 
     P3D::V3<P3D::fp> frustrumPoints[4]; //Top left and bottom-right frustrum points.
@@ -52,6 +52,7 @@ private:
 
     unsigned short keyState = 0;
 
+    std::vector<const P3D::BspModelTriangle*> triBuffer;
 };
 
 #endif // MAINLOOP_H

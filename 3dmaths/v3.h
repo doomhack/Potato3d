@@ -18,15 +18,6 @@ namespace P3D
         V3() {}
         ~V3() {}
 
-        constexpr V3& operator=(const V3& r)
-        {
-            x = r.x;
-            y = r.y;
-            z = r.z;
-
-            return *this;
-        }
-
         constexpr bool operator==(const V3& r)
         {
             return ((x == r.x) && (y == r.y) && (z == r.z));

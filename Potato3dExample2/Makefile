@@ -32,9 +32,15 @@ MUSIC		:= music
 #---------------------------------------------------------------------------------
 ARCH	:=	-mthumb -mthumb-interwork
 
-CFLAGS	:=	-g -Wall -O2 -fgcse-after-reload -gdwarf-4\
-                -mcpu=arm7tdmi -mtune=arm7tdmi -fno-threadsafe-statics\
-		-ffast-math -ffunction-sections -finline-limit=25\
+CFLAGS	:=	-g -Wall -O2 -gdwarf-4\
+                -mcpu=arm7tdmi -mtune=arm7tdmi -fno-threadsafe-statics -fallow-store-data-races\
+		-ffast-math -ffunction-sections\
+#		-fdeclone-ctor-dtor\
+#		-funswitch-loops -fgcse-las -fgcse-after-reload -flive-range-shrinkage -fira-hoist-pressure\
+#		-fira-loop-pressure -ftree-partial-pre\
+#		-fno-align-functions -fno-align-jumps -fno-align-labels -fno-align-loops\
+#		-fno-schedule-insns\
+#		-finline-limit=5\
 		$(ARCH)
 
 CFLAGS	+=	$(INCLUDE)

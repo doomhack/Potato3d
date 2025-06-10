@@ -15,14 +15,6 @@ namespace P3D
         V2() {}
         ~V2() {}
 
-        constexpr V2& operator=(const V2& r)
-        {
-            x = r.x;
-            y = r.y;
-
-            return *this;
-        }
-
         constexpr V2 operator+(const V2& r) const
         {
             V2 v(x,y);
