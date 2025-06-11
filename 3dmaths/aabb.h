@@ -13,7 +13,7 @@ namespace P3D
         explicit constexpr AABB()
         {
             x1 = y1 = z1 = std::numeric_limits<T>::max();
-            x2 = y2 = z2 = std::numeric_limits<T>::min();
+            x2 = y2 = z2 = std::numeric_limits<T>::lowest();
         }
 
         explicit constexpr AABB(const V3<T>& point)
