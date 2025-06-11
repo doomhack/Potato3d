@@ -20,7 +20,7 @@ namespace Obj2Bsp
         BspAABB()
         {
             x1 = y1 = z1 = std::numeric_limits<float>::max();
-            x2 = y2 = z2 = std::numeric_limits<float>::min();
+            x2 = y2 = z2 = std::numeric_limits<float>::lowest();
         }
 
         void AddTriangle(const Triangle3d& tri)
