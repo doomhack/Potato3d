@@ -40,7 +40,7 @@ CFLAGS	:=	-g -Wall -O2 -gdwarf-4\
 #		-fira-loop-pressure -ftree-partial-pre\
 #		-fno-align-functions -fno-align-jumps -fno-align-labels -fno-align-loops\
 #		-fno-schedule-insns\
-#		-finline-limit=5\
+#               -finline-limit=5\
 		$(ARCH)
 
 CFLAGS	+=	$(INCLUDE)

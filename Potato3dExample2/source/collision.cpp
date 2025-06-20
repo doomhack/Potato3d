@@ -27,7 +27,7 @@ bool Collision::CheckCollision(const P3D::BspModelTriangle* tri, const P3D::V3<P
     //Move in direction of normal.
     P3D::fp penetrationDepth = radius - distance;
 
-    resolutionVector = tri->normal_plane.Normal() * (penetrationDepth + P3D::fp(0.01));
+    resolutionVector = tri->normal_plane.Normal() * (penetrationDepth + P3D::fp(0.05));
 
     return true;
 }

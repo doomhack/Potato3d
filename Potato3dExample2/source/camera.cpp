@@ -2,7 +2,7 @@
 
 Camera::Camera()
 {
-    position = P3D::V3<P3D::fp>(-2511,1025,-3108);
+    position = P3D::V3<P3D::fp>(-2511,1050,-3108);
     //position = P3D::V3<P3D::fp>(-230,39,6152);
 
     //position = P3D::V3<P3D::fp>(8508,13,8563);
@@ -24,7 +24,7 @@ const P3D::V3<P3D::fp>& Camera::GetAngle() const
     return angle;
 }
 
-void Camera::HandleInput(unsigned int keyState)
+void Camera::HandleInput(unsigned int keyState, P3D::fp gravity_velocity)
 {
     if(keyState & KeyLeft)
         angle.y += 5;
@@ -54,7 +54,7 @@ void Camera::HandleInput(unsigned int keyState)
         position -= d;
     }
 
-    position.y -= 10;
+    position.y -= gravity_velocity;
 
 }
 

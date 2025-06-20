@@ -35,6 +35,8 @@ private:
 
     static constexpr unsigned int frameTicks = 50;
 
+    P3D::fp gravity_velocity = 0;
+
 
     P3D::V3<P3D::fp> frustrumPoints[4]; //Top left and bottom-right frustrum points.
 

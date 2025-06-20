@@ -16,7 +16,7 @@ class Camera
         void MovePosition(const P3D::V3<P3D::fp>& delta);
         void SetPosition(const P3D::V3<P3D::fp>& pos);
 
-        void HandleInput(unsigned int keyState);
+        void HandleInput(unsigned int keyState, P3D::fp gravity_velocity);
 
     private:
         P3D::V3<P3D::fp> position = P3D::V3<P3D::fp>(0,50,0);

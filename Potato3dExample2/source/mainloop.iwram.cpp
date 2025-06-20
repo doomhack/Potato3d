@@ -23,11 +23,11 @@ void MainLoop::Run()
     vid.Setup(&keyState);
     vid.SetPalette(model.GetModel()->GetColorMap());
 
-    //constexpr unsigned int flags = P3D::NoFlags;
+    constexpr unsigned int flags = P3D::NoFlags;
     //constexpr unsigned int flags = P3D::SubdividePerspectiveMapping;
     //constexpr unsigned int flags = P3D::Fog;
     //constexpr unsigned int flags = P3D::SubdividePerspectiveMapping | P3D::Fog;
-    constexpr unsigned int flags = P3D::SubdividePerspectiveMapping | P3D::VertexLight | P3D::Fog;
+    //constexpr unsigned int flags = P3D::SubdividePerspectiveMapping | P3D::VertexLight | P3D::Fog;
 
     renderDev.SetRenderFlags<flags, P3D::PixelShaderGBA8<flags>>();
 
@@ -102,6 +102,7 @@ void MainLoop::RenderModel()
 {
     model.GetModel()->Sort(camera.GetEyePosition(), viewFrustrumBB, triBuffer, true);
 
+    //for(int i = triBuffer.size()-1; i >= 0; i--)
     for(unsigned int i = 0; i < triBuffer.size(); i++)
     {
         const P3D::BspModelTriangle* tri = triBuffer[i];
@@ -172,15 +173,25 @@ void MainLoop::ResolveCollisions()
 
         if(collision.CheckCollision(triBuffer.at(i), camera.GetPosition(), 50, resolutionVector))
         {
+            if( (pAbs(resolutionVector.x) + pAbs(resolutionVector.z)) > (pASR(resolutionVector.y,1)))
+            {
+                resolutionVector.y = 0;
+            }
+
             camera.MovePosition(resolutionVector);
 
             i = triBuffer.size() -1;
             collision_count++;
 
             if(collision_count > 5)
-                return;
+                break;
         }
     }
+
+    if(collision_count > 0)
+        gravity_velocity = 0;
+    else
+        gravity_velocity = P3D::pMin(gravity_velocity + 2, P3D::fp(25));
 }
 
 void MainLoop::RunTimeslots()
@@ -192,7 +203,7 @@ void MainLoop::RunTimeslots()
     while(gameTime < realTime)
     {
         vid.UpdateKeys();
-        camera.HandleInput(keyState);
+        camera.HandleInput(keyState, gravity_velocity);
 
         ResolveCollisions();
 
