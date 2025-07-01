@@ -18,7 +18,7 @@ namespace P3D
 
         V4(T x, T y, T z, T w) : x(x), y(y), z(z), w(w) {}
         V4() {}
-        ~V4() {}
+        //~V4() {}
 
         constexpr V4 operator+(const V4& r) const
         {

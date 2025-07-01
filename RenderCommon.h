@@ -65,9 +65,8 @@ namespace P3D
         unsigned int triangles_submitted;
         unsigned int triangles_drawn;
         unsigned int scanlines_drawn;
-        unsigned int span_checks;
-        unsigned int span_count;
         unsigned int triangles_clipped;
+        unsigned int pixels_drawn;
 
         void ResetToZero()
         {
@@ -75,9 +74,8 @@ namespace P3D
             triangles_submitted = 0;
             triangles_drawn = 0;
             scanlines_drawn = 0;
-            span_checks = 0;
-            span_count = 0;
             triangles_clipped = 0;
+            pixels_drawn = 0;
         }
     };
 

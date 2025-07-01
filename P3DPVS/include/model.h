@@ -2,6 +2,6 @@
 #define MODEL_H
 
 const extern unsigned char modeldata[];
-const extern unsigned char pvsdata[];
+
 
 #endif // MODEL_H

@@ -16,8 +16,7 @@ public:
     const P3D::BspModel* GetModel() const;
 private:
     const P3D::BspModel* model = (P3D::BspModel*)&modeldata;
-    const P3D::VisData* vis_data = (P3D::VisData*)&pvsdata;
-
+    P3D::BspModel* readWriteModel = nullptr;
 };
 
 #endif // WORLDMODEL_H

@@ -13,7 +13,7 @@ namespace P3D
 
         V2(T x, T y) : x(x), y(y) {}
         V2() {}
-        ~V2() {}
+        //~V2() {}
 
         constexpr V2 operator+(const V2& r) const
         {

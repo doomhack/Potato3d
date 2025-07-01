@@ -23,8 +23,10 @@ void MainLoop::Run()
     vid.Setup(&keyState);
     vid.SetPalette(model.GetModel()->GetColorMap());
 
-    constexpr unsigned int flags = P3D::NoFlags;
-    //constexpr unsigned int flags = P3D::SubdividePerspectiveMapping;
+    //constexpr unsigned int flags = P3D::ZWrite | P3D::ZTest;
+
+    //constexpr unsigned int flags = P3D::NoFlags;
+    constexpr unsigned int flags = P3D::SubdividePerspectiveMapping;
     //constexpr unsigned int flags = P3D::Fog;
     //constexpr unsigned int flags = P3D::SubdividePerspectiveMapping | P3D::Fog;
     //constexpr unsigned int flags = P3D::SubdividePerspectiveMapping | P3D::VertexLight | P3D::Fog;
@@ -52,6 +54,8 @@ void MainLoop::Run()
         renderDev.SetRenderTarget(vid.GetBackBuffer());
 
         renderDev.ClearColor(background);
+        //renderDev.ClearDepth(std::numeric_limits<P3D::fp>::max());
+
 
         renderDev.PushMatrix();
 
@@ -100,7 +104,7 @@ void MainLoop::UpdateFrustrumBB()
 
 void MainLoop::RenderModel()
 {
-    model.GetModel()->Sort(camera.GetEyePosition(), viewFrustrumBB, triBuffer, true);
+    model.GetModel()->Sort(camera.GetEyePosition(), viewFrustrumBB, triBuffer, true, true);
 
     //for(int i = triBuffer.size()-1; i >= 0; i--)
     for(unsigned int i = 0; i < triBuffer.size(); i++)
@@ -163,7 +167,7 @@ void MainLoop::ResolveCollisions()
     const int bb_size = 100;
     P3D::AABB<P3D::fp> player_box(camera.GetPosition(), bb_size);
 
-    model.GetModel()->Sort(camera.GetPosition(), player_box, triBuffer, true);
+    model.GetModel()->Sort(camera.GetPosition(), player_box, triBuffer, true, false);
 
     int collision_count = 0;
 

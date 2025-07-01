@@ -2,10 +2,8 @@
 
 Camera::Camera()
 {
-//    position = P3D::V3<P3D::fp>(-1331,1053,-1074); //Villa
-    position = P3D::V3<P3D::fp>(-6085,-78,1109); //Facility
-
-    //position = P3D::V3<P3D::fp>(-230,39,6152); //DDHQ2
+    position = P3D::V3<P3D::fp>(-2511,1050,-3108);
+    //position = P3D::V3<P3D::fp>(-230,39,6152);
 
     //position = P3D::V3<P3D::fp>(8508,13,8563);
     //angle = P3D::V3<P3D::fp>(0,-236,0);

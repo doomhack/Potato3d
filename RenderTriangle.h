@@ -758,32 +758,38 @@ namespace P3D
                 const fp du = pASL(delta.u, uv_shift);
                 const fp dv = pASL(delta.v, uv_shift);
 
+                unsigned int pixels_drawn = 0;
+
                 if((size_t)fb & 1)
                 {
-                    TPixelShader::DrawScanlinePixelHigh(fb, zb, z, texture, pASR(u, uv_shift), pASR(v, uv_shift), f, l, fog_color, fog_light_map); fb++, zb++, z += dz, u += du, v+= dv, f += df, l += dl, count--;
+                    pixels_drawn += TPixelShader::DrawScanlinePixelHigh(fb, zb, z, texture, pASR(u, uv_shift), pASR(v, uv_shift), f, l, fog_color, fog_light_map); fb++, zb++, z += dz, u += du, v+= dv, f += df, l += dl, count--;
                 }
 
                 unsigned int q = count >> 3;
 
                 while(q--)
                 {
-                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f + df, l, l + dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2), l += (dl * 2);
-                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f + df, l, l + dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2), l += (dl * 2);
-                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f + df, l, l + dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2), l += (dl * 2);
-                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f + df, l, l + dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2), l += (dl * 2);
+                    pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f + df, l, l + dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2), l += (dl * 2);
+                    pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f + df, l, l + dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2), l += (dl * 2);
+                    pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f + df, l, l + dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2), l += (dl * 2);
+                    pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f + df, l, l + dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2), l += (dl * 2);
                 }
 
                 const unsigned int r = ((count & 7) >> 1);
 
                 switch(r)
                 {
-                case 3: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f + df, l, l + dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2), l += (dl * 2); [[fallthrough]];
-                case 2: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f + df, l, l + dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2), l += (dl * 2); [[fallthrough]];
-                case 1: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f + df, l, l + dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2), l += (dl * 2);
+                case 3: pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f + df, l, l + dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2), l += (dl * 2); [[fallthrough]];
+                case 2: pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f + df, l, l + dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2), l += (dl * 2); [[fallthrough]];
+                case 1: pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f + df, l, l + dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2), l += (dl * 2);
                 }
 
                 if(count & 1)
-                    TPixelShader::DrawScanlinePixelLow(fb, zb, z, texture, pASR(u, uv_shift), pASR(v, uv_shift), f, l, fog_color, fog_light_map);
+                    pixels_drawn += TPixelShader::DrawScanlinePixelLow(fb, zb, z, texture, pASR(u, uv_shift), pASR(v, uv_shift), f, l, fog_color, fog_light_map);
+
+#ifdef RENDER_STATS
+                render_stats->pixels_drawn += pixels_drawn;
+#endif
             }
 
 
@@ -810,32 +816,38 @@ namespace P3D
                 fp l = pos.l_left;
                 const fp dl = delta.l;
 
+                unsigned int pixels_drawn = 0;
+
                 if((size_t)fb & 1)
                 {
-                    TPixelShader::DrawScanlinePixelHigh(fb, zb, z, texture, u * pReciprocal(w), v * pReciprocal(w), f, l, fog_color, fog_light_map); fb++, zb++, z += dz, u += du, v += dv, w += dw, f += df, l += dl, count--;
+                    pixels_drawn += TPixelShader::DrawScanlinePixelHigh(fb, zb, z, texture, u * pReciprocal(w), v * pReciprocal(w), f, l, fog_color, fog_light_map); fb++, zb++, z += dz, u += du, v += dv, w += dw, f += df, l += dl, count--;
                 }
 
                 unsigned int s = count >> 3;
 
                 while(s--)
                 {
-                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u * pReciprocal(w), v * pReciprocal(w), (u+du) * pReciprocal(w+dw), (v+dv) * pReciprocal(w+dw), f, f+df, l, l+dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2), l += (dl * 2);
-                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u * pReciprocal(w), v * pReciprocal(w), (u+du) * pReciprocal(w+dw), (v+dv) * pReciprocal(w+dw), f, f+df, l, l+dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2), l += (dl * 2);
-                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u * pReciprocal(w), v * pReciprocal(w), (u+du) * pReciprocal(w+dw), (v+dv) * pReciprocal(w+dw), f, f+df, l, l+dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2), l += (dl * 2);
-                    TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u * pReciprocal(w), v * pReciprocal(w), (u+du) * pReciprocal(w+dw), (v+dv) * pReciprocal(w+dw), f, f+df, l, l+dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2), l += (dl * 2);
+                    pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u * pReciprocal(w), v * pReciprocal(w), (u+du) * pReciprocal(w+dw), (v+dv) * pReciprocal(w+dw), f, f+df, l, l+dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2), l += (dl * 2);
+                    pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u * pReciprocal(w), v * pReciprocal(w), (u+du) * pReciprocal(w+dw), (v+dv) * pReciprocal(w+dw), f, f+df, l, l+dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2), l += (dl * 2);
+                    pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u * pReciprocal(w), v * pReciprocal(w), (u+du) * pReciprocal(w+dw), (v+dv) * pReciprocal(w+dw), f, f+df, l, l+dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2), l += (dl * 2);
+                    pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u * pReciprocal(w), v * pReciprocal(w), (u+du) * pReciprocal(w+dw), (v+dv) * pReciprocal(w+dw), f, f+df, l, l+dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2), l += (dl * 2);
                 }
 
                 unsigned int t = ((count & 7) >> 1);
 
                 switch(t)
                 {
-                    case 3: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u * pReciprocal(w), v * pReciprocal(w), (u+du) * pReciprocal(w+dw), (v+dv) * pReciprocal(w+dw), f, f+df, l, l+dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2), l += (dl * 2);
-                    case 2: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u * pReciprocal(w), v * pReciprocal(w), (u+du) * pReciprocal(w+dw), (v+dv) * pReciprocal(w+dw), f, f+df, l, l+dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2), l += (dl * 2);
-                    case 1: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u * pReciprocal(w), v * pReciprocal(w), (u+du) * pReciprocal(w+dw), (v+dv) * pReciprocal(w+dw), f, f+df, l, l+dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2), l += (dl * 2);
+                    case 3: pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u * pReciprocal(w), v * pReciprocal(w), (u+du) * pReciprocal(w+dw), (v+dv) * pReciprocal(w+dw), f, f+df, l, l+dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2), l += (dl * 2);
+                    case 2: pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u * pReciprocal(w), v * pReciprocal(w), (u+du) * pReciprocal(w+dw), (v+dv) * pReciprocal(w+dw), f, f+df, l, l+dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2), l += (dl * 2);
+                    case 1: pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u * pReciprocal(w), v * pReciprocal(w), (u+du) * pReciprocal(w+dw), (v+dv) * pReciprocal(w+dw), f, f+df, l, l+dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2), l += (dl * 2);
                 }
 
                 if(count & 1)
-                    TPixelShader::DrawScanlinePixelLow(fb, zb, z, texture, u * pReciprocal(w), v * pReciprocal(w), f, l, fog_color, fog_light_map);
+                    pixels_drawn += TPixelShader::DrawScanlinePixelLow(fb, zb, z, texture, u * pReciprocal(w), v * pReciprocal(w), f, l, fog_color, fog_light_map);
+
+#ifdef RENDER_STATS
+                render_stats->pixels_drawn += pixels_drawn;
+#endif
             }
 
             void no_inline DrawTriangleScanlineFlat(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta,  const pixel color) const
@@ -859,9 +871,12 @@ namespace P3D
                 fp l = pos.l_left;
                 const fp dl = delta.l;
 
+                unsigned int pixels_drawn = 0;
+
+
                 if((size_t)fb & 1)
                 {
-                    TPixelShader::DrawScanlinePixelHigh(fb, zb, z, &color, 0, 0, f, l, fog_color, fog_light_map); fb++, zb++, z += dz, f += df, l += dl, count--;
+                    pixels_drawn += TPixelShader::DrawScanlinePixelHigh(fb, zb, z, &color, 0, 0, f, l, fog_color, fog_light_map); fb++, zb++, z += dz, f += df, l += dl, count--;
                 }
 
                 if constexpr (render_flags & (ZBuffer | Fog | VertexLight))
@@ -870,19 +885,19 @@ namespace P3D
 
                     while(s--)
                     {
-                        TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0, f, f+df, l, l+dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), f += (df * 2), l += (dl * 2);
-                        TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0, f, f+df, l, l+dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), f += (df * 2), l += (dl * 2);
-                        TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0, f, f+df, l, l+dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), f += (df * 2), l += (dl * 2);
-                        TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0, f, f+df, l, l+dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), f += (df * 2), l += (dl * 2);
+                        pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0, f, f+df, l, l+dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), f += (df * 2), l += (dl * 2);
+                        pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0, f, f+df, l, l+dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), f += (df * 2), l += (dl * 2);
+                        pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0, f, f+df, l, l+dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), f += (df * 2), l += (dl * 2);
+                        pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0, f, f+df, l, l+dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), f += (df * 2), l += (dl * 2);
                     }
 
                     const unsigned int t = ((count & 7) >> 1);
 
                     switch(t)
                     {
-                        case 3: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0, f, f+df, l, l+dl, fog_color, fog_light_map); fb+=2; zb+=2, z += (dz * 2), f += (df * 2), l += (dl*2);
-                        case 2: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0, f, f+df, l, l+dl, fog_color, fog_light_map); fb+=2; zb+=2, z += (dz * 2), f += (df * 2), l += (dl*2);
-                        case 1: TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0, f, f+df, l, l+dl, fog_color, fog_light_map); fb+=2; zb+=2, z += (dz * 2), f += (df * 2), l += (dl*2);
+                        case 3: pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0, f, f+df, l, l+dl, fog_color, fog_light_map); fb+=2; zb+=2, z += (dz * 2), f += (df * 2), l += (dl*2);
+                        case 2: pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0, f, f+df, l, l+dl, fog_color, fog_light_map); fb+=2; zb+=2, z += (dz * 2), f += (df * 2), l += (dl*2);
+                        case 1: pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, &color, 0, 0, 0, 0, f, f+df, l, l+dl, fog_color, fog_light_map); fb+=2; zb+=2, z += (dz * 2), f += (df * 2), l += (dl*2);
                     }
                 }
                 else
@@ -890,11 +905,16 @@ namespace P3D
                     if(count >> 1)
                     {
                         FastFill16((unsigned short*)fb, color | color << 8, count >> 1), fb+=count-1;
+                        pixels_drawn += count;
                     }
                 }
 
                 if(count & 1)
-                    TPixelShader::DrawScanlinePixelLow(fb, zb, z, &color, 0, 0, f, l, fog_color, fog_light_map);
+                    pixels_drawn += TPixelShader::DrawScanlinePixelLow(fb, zb, z, &color, 0, 0, f, l, fog_color, fog_light_map);
+
+#ifdef RENDER_STATS
+                render_stats->pixels_drawn += pixels_drawn;
+#endif
             }
 
             constexpr bool no_inline IsTriangleFrontface(const Vertex4d screenSpacePoints[]) const

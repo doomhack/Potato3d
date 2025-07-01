@@ -16,7 +16,7 @@ namespace P3D
 
         V3(T x, T y, T z) : x(x), y(y), z(z) {}
         V3() {}
-        ~V3() {}
+        //~V3() {}
 
         constexpr bool operator==(const V3& r)
         {

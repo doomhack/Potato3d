@@ -1,4 +1,7 @@
 #include "../include/videosystem.h"
+#include <windows.h>
+
+
 
 #ifdef GBA
     #include <gba.h>
@@ -20,13 +23,15 @@
 
 VideoSystem::VideoSystem()
 {
+    SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED);
+
 #ifndef GBA
     timer.start();
 #endif
 
 }
 
-void VideoSystem::Setup(unsigned short* keyState)
+void VideoSystem::Setup()
 {
 #ifdef GBA
     SetMode(MODE_4 | BG2_ENABLE | BIT(5));
@@ -51,13 +56,13 @@ void VideoSystem::Setup(unsigned short* keyState)
     buffers[0] = new P3D::RenderTarget(width, height, image[0]->scanLine(0));
     buffers[1] = new P3D::RenderTarget(width, height, image[1]->scanLine(0));
 
-    //buffers[0]->AttachZBuffer();
-    //buffers[1]->AttachZBuffer();
+    buffers[0]->AttachZBuffer();
+    buffers[1]->AttachZBuffer();
 
     int z = 0;
     application = new QApplication (z, nullptr);
 
-    window = new GameWindow(keyState);
+    window = new GameWindow();
     window->SetBackbuffer(image[0]);
 
     window->setAttribute(Qt::WA_PaintOnScreen);

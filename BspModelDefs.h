@@ -85,4 +85,12 @@ namespace P3D
         TriIndexList front_tris;
         TriIndexList back_tris;
     } BspModelNode;
+
+
+    //PVS Vis data
+    typedef struct VisDataHeader
+    {
+        unsigned int leaf_count; //Number of leaf nodes.
+        unsigned int leaf_index_offset; //Offset in bytes from VisData*
+    } VisDataHeader;
 }

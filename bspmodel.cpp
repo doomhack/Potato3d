@@ -6,14 +6,48 @@ namespace P3D
 {
     Stack<unsigned int> BspModel::stack;
     List<unsigned int> BspModel::node_list;
+    const VisData* BspModel::vis_data = nullptr;
 
-    void BspModel::Sort(const V3<fp>& p, const AABB<fp>& frustrum, std::vector<const BspModelTriangle *> &out, bool backface_cull) const
+    void BspModel::Sort(const V3<fp>& p, const AABB<fp>& frustrum, std::vector<const BspModelTriangle *> &out, bool backface_cull, bool check_pvs) const
     {
         out.clear();
         node_list.Clear();
 
-        SortBackToFront(p, frustrum);
+        unsigned int pvs_node = 0;
+
+        if(check_pvs)
+            pvs_node = GetLeafNodeId(p);
+
+        SortBackToFront(p, frustrum, pvs_node);
         OutputTris(frustrum, out, backface_cull);
+    }
+
+
+    unsigned int BspModel::GetLeafNodeId(const V3<fp>& p) const
+    {
+        unsigned int nid = 0;
+
+        while(true)
+        {
+            const BspModelNode* n = GetNode(nid);
+
+            if(Distance(n->plane, p) >= 0)
+            {
+                if(n->front_node)
+                    nid = n->front_node;
+                else
+                    return (nid * 2);
+            }
+            else
+            {
+                if(n->back_node)
+                    nid = n->back_node;
+                else
+                    return (nid * 2) + 1;
+            }
+        }
+
+        return 0;
     }
 
     constexpr unsigned int BACK_BIT = 1 << 31;
@@ -21,7 +55,7 @@ namespace P3D
 
     constexpr unsigned int NODE_MASK = ~(BACK_BIT | POST_BIT);
 
-    void BspModel::SortBackToFront(const V3<fp>& p, const AABB<fp>& frustrum) const
+    void BspModel::SortBackToFront(const V3<fp>& p, const AABB<fp>& frustrum, unsigned int pvs_node) const
     {
         stack.Push(0);
 
@@ -36,6 +70,9 @@ namespace P3D
 
             if (item & POST_BIT)
             {
+                if(pvs_node && !CheckPvs(pvs_node, item & NODE_MASK))
+                    continue;
+
                 if (frustrum.Intersect(n->node_bb))
                 {
                     if (item & BACK_BIT)
@@ -84,6 +121,9 @@ namespace P3D
             {
                 const BspModelTriangle* tri = GetTriangle(front->offset + i);
 
+#ifdef STORE_PVS
+                *((unsigned int*)&tri->color) = node & NODE_MASK; // Store the node ID in the color field for debugging;
+#endif
                 if(frustrum.Intersect(tri->tri_bb))
                     out.push_back(tri);
             }
@@ -96,10 +136,21 @@ namespace P3D
                 {
                     const BspModelTriangle* tri = GetTriangle(back->offset + i);
 
+#ifdef STORE_PVS
+                    *((unsigned int*)&tri->color) = node & NODE_MASK; // Store the node ID in the color field for debugging;
+#endif
                     if(frustrum.Intersect(tri->tri_bb))
                         out.push_back(tri);
                 }
             }
         }
+    }
+
+    bool BspModel::CheckPvs(unsigned int src_node, unsigned int dst_node) const
+    {
+        if(vis_data)
+            return vis_data->CheckPvs(src_node, dst_node);
+
+        return true;
     }
 }

@@ -109,6 +109,19 @@ namespace P3D
             return true;
         }
 
+        constexpr T GetX1() const {return x1;}
+        constexpr T GetX2() const {return x2;}
+
+        constexpr T GetY1() const {return y1;}
+        constexpr T GetY2() const {return y2;}
+
+        constexpr T GetZ1() const {return z1;}
+        constexpr T GetZ2() const {return z2;}
+
+        constexpr T GetXWidth() const {return x2 - x1;}
+        constexpr T GetYHeight() const {return y2 - y1;}
+        constexpr T GetZDepth() const {return z2 - z1;}
+
     private:
 
         T x1;
