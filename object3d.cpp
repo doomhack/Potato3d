@@ -130,7 +130,7 @@ namespace P3D
 
         CheckCollision2(&t, p, 50);
 */
-        model->SortFrontToBack(cameraPos, player_box, tris, true);
+        model->Sort(cameraPos, player_box, tris, true, false);
 
         int collision_count = 0;
 
@@ -224,7 +224,7 @@ namespace P3D
         static std::vector<const BspModelTriangle*> tris;
 
         //model->SortBackToFront(eyePos, viewFrustrumBB, tris, true);
-        model->SortBackToFront(eyePos, viewFrustrumBB, tris, true);
+        model->Sort(eyePos, viewFrustrumBB, tris, true, false);
 
         for(unsigned int i = 0; i < tris.size(); i++)
         {            

@@ -126,12 +126,14 @@ namespace P3D
 
             if constexpr(render_flags & VertexLight)
             {
-                light = pASL(pClamp(fp(0), light_frac, LIGHT_MAX), LIGHT_SHIFT);
+                //light = pASL(pClamp(fp(0), light_frac, LIGHT_MAX), LIGHT_SHIFT);
+                light = pASL(light_frac, LIGHT_SHIFT);
             }
 
             if constexpr(render_flags & Fog)
             {
-                fog = pASL(pClamp(fp(0), fog_frac, FOG_MAX), FOG_SHIFT);
+                //fog = pASL(pClamp(fp(0), fog_frac, FOG_MAX), FOG_SHIFT);
+                fog = pASL(fog_frac, FOG_SHIFT);
             }
 
             const unsigned int texel = src_color;

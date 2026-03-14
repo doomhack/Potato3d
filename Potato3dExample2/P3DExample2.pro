@@ -29,7 +29,33 @@ HEADERS += \
     include/setup.h \
     include/videosystem.h \
     include/worldmodel.h \
-    include/collision.h
+    include/collision.h \
+    ../3dmaths/divide.h \
+    ../3dmaths/f3dmath.h \
+    ../3dmaths/fp.h \
+    ../3dmaths/m4.h \
+    ../3dmaths/plane.h \
+    ../3dmaths/recip.h \
+    ../3dmaths/utils.h \
+    ../3dmaths/v2.h \
+    ../3dmaths/v3.h \
+    ../3dmaths/v4.h \
+    ../3dmaths/aabb.h \
+    ../BspModelDefs.h \
+    ../Config.h \
+    ../ConfigInternal.h \
+    ../ConfigUser.h \
+    ../PixelShaderDefault.h \
+    ../PixelShaderGBA8.h \
+    ../RenderCommon.h \
+    ../RenderDevice.h \
+    ../RenderTarget.h \
+    ../RenderTriangle.h \
+    ../TextureCache.h \
+    ../Pixel.h \
+    ../bspmodel.h \
+    ../object3d.h \
+    ../potato3d.h
 
 
     # Default rules for deployment.

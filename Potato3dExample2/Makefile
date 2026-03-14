@@ -43,7 +43,7 @@ CFLAGS	:=	-g -Wall -O2 -gdwarf-4\
 #               -finline-limit=5\
 		$(ARCH)
 
-CFLAGS	+=	$(INCLUDE)
+CFLAGS	+=	$(INCLUDE) -DNDEBUG
 
 CXXFLAGS	:=	$(CFLAGS) -fno-rtti -fno-exceptions -std=c++20
 

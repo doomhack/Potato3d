@@ -10,9 +10,9 @@ class Camera
     public:
         Camera();
 
-        const P3D::V3<P3D::fp>& GetPosition() const;
-        const P3D::V3<P3D::fp> GetEyePosition() const;
-        const P3D::V3<P3D::fp>& GetAngle() const;
+        const P3D::V3<P3D::fp>& GetPosition() const { return position; }
+        const P3D::V3<P3D::fp> GetEyePosition() const { return (position + eyeOffset); };
+        const P3D::V3<P3D::fp>& GetAngle() const { return angle; };
         void MovePosition(const P3D::V3<P3D::fp>& delta);
         void SetPosition(const P3D::V3<P3D::fp>& pos);
 

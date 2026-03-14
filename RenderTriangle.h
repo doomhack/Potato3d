@@ -80,7 +80,7 @@ namespace P3D
 
                 if constexpr (render_flags & (SubdividePerspectiveMapping))
                 {
-                    subdivide_spans = (GetZDelta(tri.verts) > SUBDIVIDE_Z_THREASHOLD);
+                    subdivide_spans = (GetZDelta(tri.verts) > SUBDIVIDE_Z_THRESHOLD);
 /*
                     if(!subdivide_spans)
                     {
@@ -230,7 +230,7 @@ namespace P3D
                 fp w2 = clipSpacePoints.verts[2].pos.w;
 
                 if(pAllGTEqZ3(w0 - z_far, w1 - z_far, w2 - z_far))
-                    return 0; //One or more outside far plane. Reject
+                    return 0; //All vx outside far plane. Reject
 
                 if(pAllLTZ3(w0 - z_near, w1 - z_near, w2 - z_near))
                     return 0; //All outside near plane. Reject
@@ -419,7 +419,7 @@ namespace P3D
 
             void no_inline TriangulatePolygon(Vertex4d clipSpacePoints[], const int vxCount) const
             {
-                DrawTriangleEdge(clipSpacePoints);
+                ComputeTriangleEdges(clipSpacePoints);
 
                 const int rounds = vxCount - 3;
 
@@ -427,98 +427,103 @@ namespace P3D
                 {
                     FastCopy32(&clipSpacePoints[i+1], &clipSpacePoints[0], sizeof(Vertex4d));
 
-                    DrawTriangleEdge(&clipSpacePoints[i+1]);
+                    ComputeTriangleEdges(&clipSpacePoints[i+1]);
                 }
             }
 
-            void no_inline DrawTriangleEdge(const Vertex4d points[3]) const
+            void no_inline ComputeTriangleEdges(const Vertex4d points[3]) const
             {
+                TriDrawXDeltaZWUV x_delta{};
+                TriDrawYDeltaZWUV l_y_delta {};
+                TriDrawYDeltaZWUV r_y_delta {};
 
-#ifdef RENDER_STATS
-                render_stats->triangles_drawn++;
-#endif
-
-                TriEdgeTrace pos;
-                TriDrawYDeltaZWUV y_delta_left, y_delta_right;
-                TriDrawXDeltaZWUV x_delta;
+                const int fb_y = current_viewport->height;
 
                 unsigned int vxOrder[3] = {0,1,2};
-
                 GetVertexYOrder(points, vxOrder);
 
-                const Vertex4d& top     = points[vxOrder[0]];
-                const Vertex4d& middle  = points[vxOrder[1]];
-                const Vertex4d& bottom  = points[vxOrder[2]];
+                const Vertex4d& top = points[vxOrder[0]];
+                const Vertex4d& middle = points[vxOrder[1]];
+                const Vertex4d& bottom = points[vxOrder[2]];
 
-                const bool left_is_long = PointOnLineSide2d(top.pos, bottom.pos, middle.pos) > 0;
+                const fp pxc1 = PixelCentre(pClamp(fp(0), top.pos.y, fp(fb_y)));
+                const fp pxc2 = PixelCentre(pClamp(fp(0), middle.pos.y, fp(fb_y)));
+                const fp pxc3 = PixelCentre(pClamp(fp(0), bottom.pos.y, fp(fb_y)));
 
-                if(top.pos.y == middle.pos.y) [[unlikely]]
+                if(pxc1 == pxc3)
+                    return;
+
+                if(top.pos.y == middle.pos.y) //Flat top.
                 {
-                    GetTriangleLerpXDeltas(top, middle, x_delta);
+                    const Vertex4d& l = top.pos.x < middle.pos.x ? top : middle;
+                    const Vertex4d& r = top.pos.x < middle.pos.x ? middle : top;
+                    const Vertex4d& b = bottom;
+
+                     GetTriangleLerpXDeltas(l, r, x_delta);
+                     GetTriangleLerpYDeltas(l, b, l_y_delta);
+                     GetTriangleLerpYDeltas(r, b, r_y_delta);
+
+                     ComputeTrianglePos(l, r, l_y_delta, r_y_delta, x_delta, pxc1, pxc3);
                 }
-                else if(middle.pos.y == bottom.pos.y) [[unlikely]]
+                else if(middle.pos.y == bottom.pos.y) //Flat bottom.
                 {
-                    GetTriangleLerpXDeltas(middle, bottom, x_delta);
+                    const Vertex4d& l = bottom.pos.x < middle.pos.x ? bottom : middle;
+                    const Vertex4d& r = bottom.pos.x < middle.pos.x ? middle : bottom;
+                    const Vertex4d& t = top;
+
+                    GetTriangleLerpXDeltas(l, r, x_delta);
+                    GetTriangleLerpYDeltas(t, l, l_y_delta);
+                    GetTriangleLerpYDeltas(t, r, r_y_delta);
+
+                    ComputeTrianglePos(t, t, l_y_delta, r_y_delta, x_delta, pxc1, pxc3);
                 }
                 else
                 {
-                    fp frac = ((middle.pos.y - top.pos.y) / (bottom.pos.y - top.pos.y));
-
+                    fp splitFrac = ((middle.pos.y - top.pos.y) / (bottom.pos.y - top.pos.y));
                     Vertex4d m;
-                    LerpVertex(m, top, bottom, frac);
+
+                    LerpVertex(m, top, bottom, splitFrac);
+                    const bool left_is_long = PointOnLineSide2d(top.pos, bottom.pos, middle.pos) > 0;
 
                     if(left_is_long)
                     {
                         GetTriangleLerpXDeltas(m, middle, x_delta);
+                        GetTriangleLerpYDeltas(top, bottom, l_y_delta);
+                        GetTriangleLerpYDeltas(top, middle, r_y_delta);
                     }
                     else
                     {
                         GetTriangleLerpXDeltas(middle, m, x_delta);
+                        GetTriangleLerpYDeltas(top, middle, l_y_delta);
+                        GetTriangleLerpYDeltas(top, bottom, r_y_delta);
+                    }
+
+                    ComputeTrianglePos(top, top, l_y_delta, r_y_delta, x_delta, pxc1, pxc2);
+
+                    if(left_is_long)
+                    {
+                        GetTriangleLerpYDeltas(middle, bottom, r_y_delta);
+                        ComputeTrianglePos(m, middle, l_y_delta, r_y_delta, x_delta, pxc2, pxc3);
+                    }
+                    else
+                    {
+                        GetTriangleLerpYDeltas(middle, bottom, l_y_delta);
+                        ComputeTrianglePos(middle, m, l_y_delta, r_y_delta, x_delta, pxc2, pxc3);
                     }
                 }
+            }
 
-                TriDrawYDeltaZWUV& short_y_delta = left_is_long ? y_delta_right : y_delta_left;
-                TriDrawYDeltaZWUV& long_y_delta = left_is_long ? y_delta_left : y_delta_right;
+            void no_inline ComputeTrianglePos(const Vertex4d &l, const Vertex4d &r, const TriDrawYDeltaZWUV &y_delta_left, const TriDrawYDeltaZWUV &y_delta_right, const TriDrawXDeltaZWUV x_delta, const fp y_start, const fp y_end) const
+            {
+                TriEdgeTrace pos{};
 
-                const int fb_y = current_viewport->height;
+                fp step_y_l = y_start - l.pos.y;
+                PreStepYTriangleLeft(step_y_l, l, pos, y_delta_left);
 
-                fp pixelCentreTopY = PixelCentre(pMax(top.pos.y, fp(0)));
-                fp stepY = pixelCentreTopY - top.pos.y;
+                fp step_y_r = y_start - r.pos.y;
+                PreStepYTriangleRight(step_y_r, r, pos, y_delta_right);
 
-                int yStart = pixelCentreTopY;
-                int yEnd = PixelCentre(pMin(middle.pos.y, fp(fb_y)));
-
-                GetTriangleLerpYDeltas(top, bottom, long_y_delta);
-                GetTriangleLerpYDeltas(top, middle, short_y_delta);
-
-                //Draw top half of triangle.
-                PreStepYTriangleLeft(stepY, top, pos, y_delta_left);
-                PreStepYTriangleRight(stepY, top, pos, y_delta_right);
-
-                DrawTriangleSpans(yStart, yEnd, pos, y_delta_left, y_delta_right, x_delta);
-
-                //Draw bottom half.
-                pixelCentreTopY = fp(pMax(yEnd, 0)) + fp(0.5);
-                stepY = pixelCentreTopY - middle.pos.y;
-
-                yStart = pixelCentreTopY;
-                yEnd = PixelCentre(pMin(bottom.pos.y, fp(fb_y)));
-
-                if(yStart == yEnd)
-                    return;
-
-                GetTriangleLerpYDeltas(middle, bottom, short_y_delta);
-
-                if(left_is_long)
-                {
-                    PreStepYTriangleRight(stepY, middle, pos, y_delta_right);
-                }
-                else
-                {
-                    PreStepYTriangleLeft(stepY, middle, pos, y_delta_left);
-                }
-
-                DrawTriangleSpans(yStart, yEnd, pos, y_delta_left, y_delta_right, x_delta);
+                DrawTriangleSpans(y_start, y_end, pos, y_delta_left, y_delta_right, x_delta);
             }
 
             void no_inline PreStepYTriangleLeft(const fp stepY, const Vertex4d& left, TriEdgeTrace& pos, const TriDrawYDeltaZWUV& y_delta_left) const
@@ -557,13 +562,17 @@ namespace P3D
                 pos.x_right = right.pos.x + (stepY * y_delta_right.x);
             }
 
-            void no_inline DrawTriangleSpans(const int yStart, const int yEnd, TriEdgeTrace& pos, const TriDrawYDeltaZWUV& y_delta_left, const TriDrawYDeltaZWUV& y_delta_right, const TriDrawXDeltaZWUV x_delta) const
+            void no_inline DrawTriangleSpans(const int yStart, const int yEnd, TriEdgeTrace& pos, const TriDrawYDeltaZWUV& y_delta_left, const TriDrawYDeltaZWUV& y_delta_right, const TriDrawXDeltaZWUV& x_delta) const
             {
-                pos.fb_ypos = &current_viewport->start[yStart * current_viewport->y_pitch];
+                const unsigned int y_pitch = current_viewport->y_pitch;
+                const unsigned int zy_pitch = current_viewport->z_y_pitch;
+                const bool has_texture = current_texture != nullptr;
+
+                pos.fb_ypos = &current_viewport->start[yStart * y_pitch];
 
                 if constexpr (render_flags & (ZTest | ZWrite))
                 {
-                    pos.zb_ypos = &current_viewport->z_start[yStart * current_viewport->z_y_pitch];
+                    pos.zb_ypos = &current_viewport->z_start[yStart * zy_pitch];
                 }
 
                 for (int y = yStart; y < yEnd; y++)
@@ -572,24 +581,23 @@ namespace P3D
 
                     pos.x_left += y_delta_left.x;
                     pos.x_right += y_delta_right.x;
-                    pos.fb_ypos += current_viewport->y_pitch;
+                    pos.fb_ypos += y_pitch;
 
-                    if constexpr (render_flags & (ZTest | ZWrite))
-                    {
-                        pos.zb_ypos += current_viewport->z_y_pitch;
-                        pos.z_left += y_delta_left.z;
-                    }
-
-                    if(current_texture)
+                    if(has_texture)
                     {
                         pos.u_left += y_delta_left.u;
-
                         pos.v_left += y_delta_left.v;
 
                         if constexpr (render_flags & (FullPerspectiveMapping | SubdividePerspectiveMapping))
                         {
                             pos.w_left += y_delta_left.w;
                         }
+                    }
+
+                    if constexpr (render_flags & (ZTest | ZWrite))
+                    {
+                        pos.zb_ypos += zy_pitch;
+                        pos.z_left += y_delta_left.z;
                     }
 
                     if constexpr (render_flags & Fog)
@@ -604,9 +612,10 @@ namespace P3D
                 }
             }
 
+
             void no_inline DrawSpan(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta) const
             {
-                TriEdgeTrace span_pos;
+                TriEdgeTrace span_pos{};
 
                 const int fb_width = current_viewport->width;
 
@@ -681,52 +690,55 @@ namespace P3D
 #endif
             }
 
-
             void no_inline SubdivideSpan(TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const pixel* texture) const
             {
-                TriDrawXDeltaZWUV delta2;
-
-                fp span_right = pos.x_right;
+                TriDrawXDeltaZWUV delta2{};
+                const fp span_right = pos.x_right;
                 fp u = pos.u_left, v = pos.v_left, w = pos.w_left;
 
                 if constexpr(render_flags & Fog)
-                {
                     delta2.f = delta.f;
-                }
 
                 if constexpr(render_flags & VertexLight)
-                {
                     delta2.l = delta.l;
-                }
+
+                if constexpr(render_flags & ZBuffer)
+                    delta2.z = delta.z;
+
+                fp invw = pReciprocal(w);
+                fp u0 = pos.u_left = u * invw;
+                fp v0 = pos.v_left = v * invw;
 
                 do
                 {
                     pos.x_right = pMin(span_right, pos.x_left + SUBDIVIDE_SPAN_LEN);
 
-                    fp invw_0 = pReciprocal(w);
-                    fp invw_15 = pReciprocal(w += pASL(delta.w, SUBDIVIDE_SPAN_SHIFT));
+                    u += pASL(delta.u, SUBDIVIDE_SPAN_SHIFT);
+                    v += pASL(delta.v, SUBDIVIDE_SPAN_SHIFT);
+                    w += pASL(delta.w, SUBDIVIDE_SPAN_SHIFT);
 
-                    fp u0 = pos.u_left = u * invw_0;
-                    fp u15 = (u += pASL(delta.u, SUBDIVIDE_SPAN_SHIFT)) * invw_15;
-                    delta2.u = pASR(u15-u0, SUBDIVIDE_SPAN_SHIFT);
+                    invw = pReciprocal(w);
 
-                    fp v0 = pos.v_left = v * invw_0;
-                    fp v15 = (v += pASL(delta.v, SUBDIVIDE_SPAN_SHIFT)) * invw_15;
-                    delta2.v = pASR(v15-v0, SUBDIVIDE_SPAN_SHIFT);
+                    const fp u1 = u * invw;
+                    const fp v1 = v * invw;
+
+                    delta2.u = pASR(u1 - u0, SUBDIVIDE_SPAN_SHIFT);
+                    delta2.v = pASR(v1 - v0, SUBDIVIDE_SPAN_SHIFT);
 
                     DrawTriangleScanlineAffine(pos, delta2, texture);
 
                     pos.x_left += SUBDIVIDE_SPAN_LEN;
+                    pos.u_left = u0 = u1;
+                    pos.v_left = v0 = v1;
+
+                    if constexpr(render_flags & ZBuffer)
+                        pos.z_left += pASL(delta.z, SUBDIVIDE_SPAN_SHIFT);
 
                     if constexpr(render_flags & Fog)
-                    {
                         pos.f_left += pASL(delta.f, SUBDIVIDE_SPAN_SHIFT);
-                    }
 
                     if constexpr(render_flags & VertexLight)
-                    {
                         pos.l_left += pASL(delta.l, SUBDIVIDE_SPAN_SHIFT);
-                    }
 
                 } while(pos.x_left < span_right);
             }
@@ -837,8 +849,8 @@ namespace P3D
 
                 switch(t)
                 {
-                    case 3: pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u * pReciprocal(w), v * pReciprocal(w), (u+du) * pReciprocal(w+dw), (v+dv) * pReciprocal(w+dw), f, f+df, l, l+dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2), l += (dl * 2);
-                    case 2: pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u * pReciprocal(w), v * pReciprocal(w), (u+du) * pReciprocal(w+dw), (v+dv) * pReciprocal(w+dw), f, f+df, l, l+dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2), l += (dl * 2);
+                    case 3: pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u * pReciprocal(w), v * pReciprocal(w), (u+du) * pReciprocal(w+dw), (v+dv) * pReciprocal(w+dw), f, f+df, l, l+dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2), l += (dl * 2); [[fallthrough]];
+                    case 2: pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u * pReciprocal(w), v * pReciprocal(w), (u+du) * pReciprocal(w+dw), (v+dv) * pReciprocal(w+dw), f, f+df, l, l+dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2), l += (dl * 2); [[fallthrough]];
                     case 1: pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, u * pReciprocal(w), v * pReciprocal(w), (u+du) * pReciprocal(w+dw), (v+dv) * pReciprocal(w+dw), f, f+df, l, l+dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), w += (dw * 2), f += (df * 2), l += (dl * 2);
                 }
 
@@ -902,10 +914,13 @@ namespace P3D
                 }
                 else
                 {
-                    if(count >> 1)
+                    const unsigned int even_pixels = count & ~1u;
+
+                    if(even_pixels)
                     {
-                        FastFill16((unsigned short*)fb, color | color << 8, count >> 1), fb+=count-1;
-                        pixels_drawn += count;
+                        FastFill16((unsigned short*)fb, color | (color << 8), even_pixels >> 1);
+                        fb += even_pixels;
+                        pixels_drawn += even_pixels;
                     }
                 }
 
@@ -930,7 +945,13 @@ namespace P3D
 
             constexpr void no_inline GetTriangleLerpXDeltas(const Vertex4d& left, const Vertex4d& right, TriDrawXDeltaZWUV& x_delta) const
             {
-                const fp dx = (right.pos.x != left.pos.x) ? (right.pos.x - left.pos.x) : fp(1);
+                const fp dx = (right.pos.x - left.pos.x);
+
+                if(dx == 0)
+                {
+                    x_delta = {};
+                    return;
+                }
 
                 if(current_texture)
                 {
@@ -959,36 +980,43 @@ namespace P3D
                 }
             }
 
-            constexpr void no_inline GetTriangleLerpYDeltas(const Vertex4d& a, const Vertex4d& b, TriDrawYDeltaZWUV& y_delta) const
+            constexpr void no_inline GetTriangleLerpYDeltas(const Vertex4d& top, const Vertex4d& bottom, TriDrawYDeltaZWUV& y_delta) const
             {
-                const fp dy = (a.pos.y != b.pos.y) ? (a.pos.y - b.pos.y) : fp(1);
+                const fp dy = (bottom.pos.y - top.pos.y);
 
-                y_delta.x = (a.pos.x - b.pos.x) / dy;
+                if(dy == 0)
+                {
+                    y_delta = {};
+                    return;
+                }
+
+
+                y_delta.x = (bottom.pos.x - top.pos.x) / dy;
 
                 if(current_texture)
                 {
-                    y_delta.u = (a.uv.x - b.uv.x) / dy;
-                    y_delta.v = (a.uv.y - b.uv.y) / dy;
+                    y_delta.u = (bottom.uv.x - top.uv.x) / dy;
+                    y_delta.v = (bottom.uv.y - top.uv.y) / dy;
 
                     if constexpr (render_flags & (FullPerspectiveMapping | SubdividePerspectiveMapping))
                     {
-                        y_delta.w = (a.pos.w - b.pos.w) / dy;
+                        y_delta.w = (bottom.pos.w - top.pos.w) / dy;
                     }
                 }
 
                 if constexpr (render_flags & (ZTest | ZWrite))
                 {
-                    y_delta.z = (a.pos.z - b.pos.z) / dy;
+                    y_delta.z = (bottom.pos.z - top.pos.z) / dy;
                 }
 
                 if constexpr (render_flags & Fog)
                 {
-                    y_delta.f = (a.fog_factor - b.fog_factor) / dy;
+                    y_delta.f = (bottom.fog_factor - top.fog_factor) / dy;
                 }
 
                 if constexpr (render_flags & VertexLight)
                 {
-                    y_delta.l = (a.light_factor - b.light_factor) / dy;
+                    y_delta.l = (bottom.light_factor - top.light_factor) / dy;
                 }
             }
 
@@ -1039,9 +1067,9 @@ namespace P3D
 
             constexpr fp no_inline PointOnLineSide2d(const V4<fp>& l1, const V4<fp>& l2, const V4<fp>& p) const
             {
-                //Left < 0
-                //Right > 0
-                //On = 0
+                //<0 = Point p is left of line l1 -> l2
+                //0 = Point p is on line l1 -> l2
+                //>0 = Point p is right of line l1 -> l2
 
                 //We shift down to ensure that cross doesn't overflow.
                 const fp dx = pASR(l2.x - l1.x, 8);

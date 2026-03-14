@@ -22,14 +22,14 @@ public:
 
 private:
 
-    void UpdateFrustrumBB();
-    void RenderModel();
+    P3D::AABB<P3D::fp> GetFrustrumBB();
+    void RenderModel(P3D::AABB<P3D::fp>& viewFrustrumBB);
     bool FrustrumTestTriangle(const P3D::BspModelTriangle* tri) const;
     void ResolveCollisions();
     void RunTimeslots();
 
     static constexpr P3D::fp zNear = 10;
-    static constexpr P3D::fp zFar = 1500;
+    static constexpr P3D::fp zFar = 3000;
     static constexpr P3D::fp vFov = 60;
     static constexpr P3D::fp hFov = 90;
 
@@ -41,8 +41,6 @@ private:
     P3D::V3<P3D::fp> frustrumPoints[4]; //Top left and bottom-right frustrum points.
 
     P3D::Plane<P3D::fp> frustrumPlanes[6];
-
-    P3D::AABB<P3D::fp> viewFrustrumBB;
 
     P3D::RenderDevice renderDev;
 

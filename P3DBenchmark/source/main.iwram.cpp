@@ -96,17 +96,14 @@ int main()
     P3D::RenderTarget* render_target = new P3D::RenderTarget(240, 160, I_GetBackBuffer());
     render_target->AttachZBuffer();
 
+    constexpr unsigned int render_flags = P3D::RenderFlags::NoFlags;
+    //constexpr unsigned int render_flags = P3D::RenderFlags::Fog;
+    //constexpr unsigned int render_flags = P3D::RenderFlags::SubdividePerspectiveMapping;
+
     P3D::RenderDevice* render_device = new P3D::RenderDevice();
-    render_device->SetRenderFlags<P3D::RenderFlags::NoFlags, P3D::PixelShaderGBA8<P3D::RenderFlags::NoFlags>>();
-    //render_device->SetRenderFlags<P3D::RenderFlags::SubdividePerspectiveMapping, P3D::PixelShaderGBA8<P3D::RenderFlags::SubdividePerspectiveMapping>>();
-    //render_device->SetRenderFlags<P3D::RenderFlags::FullPerspectiveMapping, P3D::PixelShaderGBA8<P3D::RenderFlags::FullPerspectiveMapping>>();
-    //render_device->SetRenderFlags<P3D::RenderFlags::ZTest | P3D::RenderFlags::ZWrite, P3D::PixelShaderGBA8<P3D::RenderFlags::ZTest | P3D::RenderFlags::ZWrite>>();
-    //render_device->SetRenderFlags<P3D::RenderFlags::Fog, P3D::PixelShaderGBA8<P3D::RenderFlags::Fog>>();
-    //render_device->SetRenderFlags<P3D::RenderFlags::VertexLight | P3D::RenderFlags::Fog, P3D::PixelShaderGBA8<P3D::RenderFlags::VertexLight | P3D::RenderFlags::Fog>>();
-    //render_device->SetRenderFlags<P3D::RenderFlags::VertexLight, P3D::PixelShaderGBA8<P3D::RenderFlags::VertexLight>>();
+    render_device->SetRenderFlags<render_flags, P3D::PixelShaderGBA8<render_flags>>();
 
-
-#if 0
+#if 1
     render_device->SetFogMode(P3D::FogMode::FogLinear);
     render_device->SetFogDepth(500, 1000);
 #else

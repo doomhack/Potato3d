@@ -2,28 +2,13 @@
 
 Camera::Camera()
 {
-//    position = P3D::V3<P3D::fp>(-1331,1053,-1074); //Villa
-    position = P3D::V3<P3D::fp>(-6085,-78,1109); //Facility
+    position = P3D::V3<P3D::fp>(-1331,1053,-1074); //Villa
+    //position = P3D::V3<P3D::fp>(-6085,-78,1109); //Facility
 
     //position = P3D::V3<P3D::fp>(-230,39,6152); //DDHQ2
 
     //position = P3D::V3<P3D::fp>(8508,13,8563);
     //angle = P3D::V3<P3D::fp>(0,-236,0);
-}
-
-const P3D::V3<P3D::fp>& Camera::GetPosition() const
-{
-    return position;
-}
-
-const P3D::V3<P3D::fp> Camera::GetEyePosition() const
-{
-    return (position + eyeOffset);
-}
-
-const P3D::V3<P3D::fp>& Camera::GetAngle() const
-{
-    return angle;
 }
 
 void Camera::HandleInput(unsigned int keyState, P3D::fp gravity_velocity)

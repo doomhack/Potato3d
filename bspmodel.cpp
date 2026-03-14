@@ -19,7 +19,7 @@ namespace P3D
             pvs_node = GetLeafNodeId(p);
 
         SortBackToFront(p, frustrum, pvs_node);
-        OutputTris(frustrum, out, backface_cull);
+        OutputTris(out, backface_cull);
     }
 
 
@@ -50,12 +50,12 @@ namespace P3D
         return 0;
     }
 
-    constexpr unsigned int BACK_BIT = 1 << 31;
-    constexpr unsigned int POST_BIT = 1 << 30;
+    constexpr unsigned int BACK_BIT = 1u << 31;
+    constexpr unsigned int POST_BIT = 1u << 30;
 
     constexpr unsigned int NODE_MASK = ~(BACK_BIT | POST_BIT);
 
-    void BspModel::SortBackToFront(const V3<fp>& p, const AABB<fp>& frustrum, unsigned int pvs_node) const
+    void BspModel::SortBackToFront(const V3<fp>& p, const AABB<fp>& frustrum, const unsigned int pvs_node) const
     {
         stack.Push(0);
 
@@ -73,13 +73,13 @@ namespace P3D
                 if(pvs_node && !CheckPvs(pvs_node, item & NODE_MASK))
                     continue;
 
-                if (frustrum.Intersect(n->node_bb))
-                {
-                    if (item & BACK_BIT)
-                        node_list.Add(item & NODE_MASK);
-                    else
-                        node_list.Add((item & NODE_MASK) | BACK_BIT);
-                }
+                if (!frustrum.Intersect(n->node_bb))
+                    continue;
+
+                if (item & BACK_BIT)
+                    node_list.Add(item & NODE_MASK);
+                else
+                    node_list.Add((item & NODE_MASK) | BACK_BIT);
             }
             else
             {
@@ -107,7 +107,7 @@ namespace P3D
         }
     }
 
-    void BspModel::OutputTris(const AABB<fp>& frustrum, std::vector<const BspModelTriangle *> &out, bool backface_cull) const
+    void BspModel::OutputTris(std::vector<const BspModelTriangle *> &out, const bool backface_cull) const
     {
         for(unsigned int i = 0; i < node_list.Size(); i++)
         {
@@ -124,8 +124,7 @@ namespace P3D
 #ifdef STORE_PVS
                 *((unsigned int*)&tri->color) = node & NODE_MASK; // Store the node ID in the color field for debugging;
 #endif
-                if(frustrum.Intersect(tri->tri_bb))
-                    out.push_back(tri);
+                out.push_back(tri);
             }
 
             if(!backface_cull)
@@ -139,8 +138,7 @@ namespace P3D
 #ifdef STORE_PVS
                     *((unsigned int*)&tri->color) = node & NODE_MASK; // Store the node ID in the color field for debugging;
 #endif
-                    if(frustrum.Intersect(tri->tri_bb))
-                        out.push_back(tri);
+                    out.push_back(tri);
                 }
             }
         }

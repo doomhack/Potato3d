@@ -11,7 +11,6 @@ DEFINES += STORE_PVS
 
 SOURCES += \
         source/bspmodel.redir.iwram.cpp \
-        source/camera.cpp \
         source/collision.cpp \
         source/mainloop.iwram.cpp \
         source/model.cpp \
@@ -24,14 +23,13 @@ SOURCES += \
 
 
 HEADERS += \
-    include/camera.h \
     include/common.h \
+    include/collision.h \
     include/mainloop.h \
     include/model.h \
     include/setup.h \
     include/videosystem.h \
-    include/worldmodel.h \
-    include/collision.h
+    include/worldmodel.h
 
 
     # Default rules for deployment.

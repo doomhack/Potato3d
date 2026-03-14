@@ -21,8 +21,8 @@ SOURCES += \
     ../bspmodel.cpp \
     ../object3d.cpp \
     main.cpp \
-    mainwindow.cpp \
     mainwindow2.cpp
+
 
 HEADERS += \
     ../3dmaths/divide.h \
@@ -51,8 +51,6 @@ HEADERS += \
     ../bspmodel.h \
     ../object3d.h \
     ../potato3d.h \
-    mainwindow.h \
-    mainwindow2.h \
     models/model.h
 
 # Default rules for deployment.
@@ -67,7 +65,7 @@ RESOURCES += \
 #QMAKE_CXXFLAGS += /GH /Gh
 #QMAKE_CFLAGS += /GH /Gh
 
-QMAKE_CXXFLAGS += /GL
-QMAKE_CFLAGS += /GL
+#QMAKE_CXXFLAGS += /GL
+#QMAKE_CFLAGS += /GL
 
-QMAKE_LFLAGS += /LTCG
+#QMAKE_LFLAGS += /LTCG

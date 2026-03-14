@@ -40,13 +40,13 @@ MainWindow2::MainWindow2(QWidget *parent)
 
     render_device->SetPerspective(60, aspectRatio, 10, 1000);
 
-    //render_device->SetRenderFlags<P3D::RenderFlags::ZTest | P3D::RenderFlags::ZWrite, P3D::PixelShaderGBA8<P3D::RenderFlags::ZTest | P3D::RenderFlags::ZWrite>>();
-    //render_device->SetRenderFlags<P3D::NoFlags>();
-    render_device->SetRenderFlags<P3D::FullPerspectiveMapping, P3D::PixelShaderGBA8<P3D::FullPerspectiveMapping>>();
 
-    //render_device->SetRenderFlags<P3D::SubdividePerspectiveMapping>();
+    constexpr unsigned int flags = P3D::NoFlags;
 
-    //render_device->SetRenderFlags<P3D::FullPerspectiveMapping>();
+    render_device->SetRenderFlags<flags, P3D::PixelShaderGBA8<flags>>();
+
+
+
 
     render_device->SetFogColor(0);
 
@@ -202,8 +202,6 @@ void MainWindow2::paintEvent(QPaintEvent *event)
     p.drawText(32,80, QString("Triangles drawn: %1").arg(rs.triangles_drawn));
     p.drawText(32,96, QString("Vertexes transformed: %1").arg(rs.vertex_transformed));
     p.drawText(32,112, QString("Scanlines drawn: %1").arg(rs.scanlines_drawn));
-    p.drawText(32,128, QString("Spans checked: %1").arg(rs.span_checks));
-    p.drawText(32,144, QString("Spans generated: %1").arg(rs.span_count));
     p.drawText(32,160, QString("Triangles clipped: %1").arg(rs.triangles_clipped));
 
 

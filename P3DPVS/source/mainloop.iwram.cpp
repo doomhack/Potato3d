@@ -37,7 +37,6 @@ void MainLoop::Run()
 
     constexpr P3D::fp step = 50;
 
-    unsigned int f = 0;
 
     const P3D::AABB<P3D::fp>& model_aabb = model.GetModel()->GetModelAABB();
 
@@ -62,9 +61,13 @@ void MainLoop::Run()
     y_end = int(((y_end + (step-1)) / step)) * int(step);
     z_end = int(((z_end + (step-1)) / step)) * int(step);
 
-    unsigned int frames = ((unsigned int)((x_end - x_start) / step) * (unsigned int)((y_end - y_start) / step) * (unsigned int)((z_end - z_start) / step) * 4);
+    unsigned int frames = ((unsigned int)((x_end - x_start) / step) * (unsigned int)((y_end - y_start) / step) * (unsigned int)((z_end - z_start) / step));
 
     unsigned int start_time = vid.GetTime();
+
+    unsigned long long f = 0;
+    unsigned long long c = 0;
+
 
     for(P3D::fp x = x_start; x < x_end; x += step)
     {
@@ -72,7 +75,20 @@ void MainLoop::Run()
         {
             for(P3D::fp z = z_start; z < z_end; z += step)
             {
-                camera.SetPosition(P3D::V3<P3D::fp>(x,y,z));
+                position = P3D::V3<P3D::fp>(x,y,z);
+
+                f++;
+
+                if(CheckCollisions(position))
+                {
+                    c++;
+                    continue;
+                }
+
+                if((f % 16) == 0)
+                {
+                    vid.PageFlip();
+                }
 
                 for(int i = 0; i < 4; i++)
                 {
@@ -101,22 +117,11 @@ void MainLoop::Run()
 
                     renderDev.PopMatrix();
 
-                    f++;
-
-                    if((f % 16) == 0)
-                    {
-                        vid.PageFlip();
-                    }
-
-
-
-                    if( (f % 10000) == 0)
+                    if( ((f % 1000) == 0) && i == 0)
                     {
                         unsigned int now = vid.GetTime();
 
-                        unsigned int elapsed = now - start_time;
-
-                        unsigned int fps = (f * 1000) / elapsed;
+                        unsigned int fps = (f * 1000) / (now - start_time);
 
                         unsigned int time_left = (frames - f) / fps;
 
@@ -142,7 +147,7 @@ void MainLoop::Run()
                             suffix = "seconds";
                         }
 
-                        qDebug() << "Frame" << f << "/" << frames << "FPS:" << fps << "Time left:" << time_left << suffix;
+                        qDebug() << "Frame" << f << "/" << frames << "Skipped:" << c << "FPS:" << fps << "Time left:" << time_left << suffix;
                     }
 
                     //_sleep(1000);
@@ -153,6 +158,25 @@ void MainLoop::Run()
     }
 
     StorePVS();
+}
+
+bool MainLoop::CheckCollisions(P3D::V3<P3D::fp> point)
+{
+    const int bb_size = 100;
+
+    P3D::AABB<P3D::fp> player_box(point, bb_size);
+
+    model.GetModel()->Sort(point, player_box, triBuffer, true, false);
+
+    for(int i = triBuffer.size() - 1; i >= 0; i--)
+    {
+        P3D::V3<P3D::fp> resolutionVector;
+
+        if(collision.CheckCollision(triBuffer.at(i), point, 50, resolutionVector))
+            return true;
+    }
+
+    return false;
 }
 
 void MainLoop::UpdateFrustrumBB()
@@ -166,7 +190,7 @@ void MainLoop::UpdateFrustrumBB()
     P3D::V4<P3D::fp> t3 = camMatrix * frustrumPoints[2];
     P3D::V4<P3D::fp> t4 = camMatrix * frustrumPoints[3];
 
-    viewFrustrumBB.AddPoint(camera.GetEyePosition());
+    viewFrustrumBB.AddPoint(position);
 
     viewFrustrumBB.AddPoint(P3D::V3<P3D::fp>(t1.x, t1.y, t1.z));
     viewFrustrumBB.AddPoint(P3D::V3<P3D::fp>(t2.x, t2.y, t2.z));
@@ -176,9 +200,9 @@ void MainLoop::UpdateFrustrumBB()
 
 void MainLoop::RenderModel()
 {
-    const unsigned int current_node = model.GetModel()->GetLeafNodeId(camera.GetEyePosition());
+    const unsigned int current_node = model.GetModel()->GetLeafNodeId(position);
 
-    model.GetModel()->Sort(camera.GetEyePosition(), viewFrustrumBB, triBuffer, true, false);
+    model.GetModel()->Sort(position, viewFrustrumBB, triBuffer, false, false);
 
     for(int i = triBuffer.size()-1; i >= 0; i--)
     {
@@ -188,6 +212,7 @@ void MainLoop::RenderModel()
 
         if(!FrustrumTestTriangle(tri))
             continue;
+
 
         const P3D::BspNodeTexture* ntex = model.GetModel()->GetTexture(tri->texture);
 
@@ -220,7 +245,7 @@ void MainLoop::RenderModel()
         if(p2 >= 65536)
             return;
 
-        if(p2 > (p1+8))
+        if((p2 - p1) > 3)
         {
             unsigned int node = *((unsigned int*)&tri->color);
 
@@ -309,7 +334,7 @@ void MainLoop::StorePVS()
         }
     }
 
-    QString objPath = "C:\\Users\\Zak\\Downloads\\Facility\\Facility.obj";
+    QString objPath = "C:\\Users\\Zak\\Downloads\\Facility\\Villa.obj";
 
     QDir workDir = QDir(QFileInfo(objPath).absolutePath());
     QString baseName = QFileInfo(objPath).fileName().chopped(3);

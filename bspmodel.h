@@ -11,7 +11,7 @@ namespace P3D
     template <class T> class Stack
     {
     public:
-        Stack(unsigned int size = 256)  { pos = mem = (T*)new char[sizeof(T) * size]; this->size = size; }
+        Stack(unsigned int size = 25000)  { pos = mem = (T*)new char[sizeof(T) * size]; this->size = size; }
         ~Stack()                        { delete[] mem; }
         void Push(T item)               { assert(pos < (mem + size)); *pos = item; pos++; }
         T Pop()                         { assert(pos > mem); pos--; return *pos; }
@@ -27,7 +27,7 @@ namespace P3D
     template <class T> class List
     {
     public:
-        List(unsigned int size = 10000) { pos = mem = (T*)new char[sizeof(T) * size]; this->size = size; }
+        List(unsigned int size = 25000) { pos = mem = (T*)new char[sizeof(T) * size]; this->size = size; }
         ~List()                        { delete[] mem; }
         void Add(T item)               { assert(pos < (mem + size)); *pos = item; pos++; }
         T At(unsigned int index) const { assert((index >= 0) && (index < size)); return mem[index]; }
@@ -127,8 +127,8 @@ namespace P3D
         static List<unsigned int> node_list;
         static const VisData* vis_data;
 
-        void OutputTris(const AABB<P3D::fp> &frustrum, std::vector<const BspModelTriangle *> &out, bool backface_cull) const;
-        void SortBackToFront(const V3<P3D::fp> &p, const AABB<fp>& frustrum, unsigned int pvs_node) const;
+        void OutputTris(std::vector<const BspModelTriangle *> &out, const bool backface_cull) const;
+        void SortBackToFront(const V3<P3D::fp> &p, const AABB<fp>& frustrum, const unsigned int pvs_node) const;
 
         bool CheckPvs(unsigned int src_node, unsigned int dst_node) const;
 

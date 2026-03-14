@@ -9,9 +9,8 @@
 #include "../../PixelShaderGBA8.h"
 
 #include "../include/videosystem.h"
-#include "../include/camera.h"
 #include "../include/worldmodel.h"
-#include "../include/collision.h"
+#include "collision.h"
 #include <unordered_set>
 
 class MainLoop
@@ -29,11 +28,15 @@ private:
 
     void StorePVS();
 
-    static constexpr P3D::fp zNear = 1;
+    bool CheckCollisions(P3D::V3<P3D::fp> point);
+
+
+    static constexpr P3D::fp zNear = 10;
     static constexpr P3D::fp zFar = 10000;
     static constexpr P3D::fp vFov = 90;
     static constexpr P3D::fp hFov = 90;
 
+    P3D::V3<P3D::fp> position = P3D::V3<P3D::fp>(-2511,1050,-3108);
 
     P3D::V3<P3D::fp> frustrumPoints[4]; //Top left and bottom-right frustrum points.
 
@@ -43,9 +46,9 @@ private:
 
     P3D::RenderDevice renderDev;
 
-    Camera camera;
     WorldModel model;
     VideoSystem vid;
+    Collision collision;
 
     std::vector<const P3D::BspModelTriangle*> triBuffer;
 

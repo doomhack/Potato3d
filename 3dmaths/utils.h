@@ -105,7 +105,9 @@ namespace P3D
     template <class T>
     constexpr inline T pClamp(const T min, const T v, const T max)
     {
-        return pMin(pMax(min, v), max);
+        if (v < min) return min;
+        if (v > max) return max;
+        return v;
     }
 
     template <class T>

@@ -25,8 +25,8 @@ void MainLoop::Run()
 
     //constexpr unsigned int flags = P3D::ZWrite | P3D::ZTest;
 
-    //constexpr unsigned int flags = P3D::NoFlags;
-    constexpr unsigned int flags = P3D::SubdividePerspectiveMapping;
+    constexpr unsigned int flags = P3D::NoFlags;
+    //constexpr unsigned int flags = P3D::SubdividePerspectiveMapping;
     //constexpr unsigned int flags = P3D::Fog;
     //constexpr unsigned int flags = P3D::SubdividePerspectiveMapping | P3D::Fog;
     //constexpr unsigned int flags = P3D::SubdividePerspectiveMapping | P3D::VertexLight | P3D::Fog;
@@ -65,13 +65,13 @@ void MainLoop::Run()
 
         renderDev.Translate(P3D::V3<P3D::fp>(-camera.GetEyePosition().x, -camera.GetEyePosition().y, -camera.GetEyePosition().z));
 
-        UpdateFrustrumBB();
+        P3D::AABB<P3D::fp> viewFrustrumBB = GetFrustrumBB();
 
         renderDev.BeginFrame();
 
         renderDev.BeginDraw(frustrumPlanes);
 
-        RenderModel();
+        RenderModel(viewFrustrumBB);
 
         renderDev.EndDraw();
 
@@ -83,9 +83,9 @@ void MainLoop::Run()
     }
 }
 
-void MainLoop::UpdateFrustrumBB()
+P3D::AABB<P3D::fp> MainLoop::GetFrustrumBB()
 {
-    viewFrustrumBB = P3D::AABB<P3D::fp>();
+    P3D::AABB<P3D::fp> viewFrustrumBB = P3D::AABB<P3D::fp>();
 
     P3D::M4<P3D::fp> camMatrix = renderDev.GetMatrix().Inverted();
 
@@ -100,9 +100,11 @@ void MainLoop::UpdateFrustrumBB()
     viewFrustrumBB.AddPoint(P3D::V3<P3D::fp>(t2.x, t2.y, t2.z));
     viewFrustrumBB.AddPoint(P3D::V3<P3D::fp>(t3.x, t3.y, t3.z));
     viewFrustrumBB.AddPoint(P3D::V3<P3D::fp>(t4.x, t4.y, t4.z));
+
+    return viewFrustrumBB;
 }
 
-void MainLoop::RenderModel()
+void MainLoop::RenderModel(P3D::AABB<P3D::fp>& viewFrustrumBB)
 {
     model.GetModel()->Sort(camera.GetEyePosition(), viewFrustrumBB, triBuffer, true, true);
 
@@ -167,7 +169,7 @@ void MainLoop::ResolveCollisions()
     const int bb_size = 100;
     P3D::AABB<P3D::fp> player_box(camera.GetPosition(), bb_size);
 
-    model.GetModel()->Sort(camera.GetPosition(), player_box, triBuffer, true, false);
+    model.GetModel()->Sort(camera.GetPosition(), player_box, triBuffer, false, false);
 
     int collision_count = 0;
 

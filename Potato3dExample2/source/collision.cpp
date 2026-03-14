@@ -10,7 +10,7 @@ bool Collision::CheckCollision(const P3D::BspModelTriangle* tri, const P3D::V3<P
     P3D::fp distance = tri->normal_plane.DistanceToPoint(point);
 
     //No collision
-    if(distance < 0 || distance >= radius)
+    if(distance <= -radius || distance >= radius)
         return false;
 
     P3D::fp margin = -P3D::fp(P3D::pASR(radius, 4));
