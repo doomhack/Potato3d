@@ -127,18 +127,18 @@ void MainLoop::RenderModel(P3D::AABB<P3D::fp>& viewFrustrumBB)
             m.type = P3D::Material::Texture;
             m.pixels = model.GetModel()->GetTexturePixels(ntex->texture_pixels_offset);
 
+            const P3D::V2<P3D::fp> uvs[3] = {tri->tri.verts[0].uv, tri->tri.verts[1].uv, tri->tri.verts[2].uv};
+            renderDev.SetMaterial(m);
+/*
             const P3D::V3<P3D::fp> lightVector(0.66,0.66,0.33);
 
             const P3D::fp lightLevel = P3D::fp(0.5) + P3D::pASR(P3D::fp(1) + tri->normal_plane.Normal().DotProduct(lightVector), 2);
 
             const P3D::fp light_levels[3] = {lightLevel, lightLevel, lightLevel};
 
-            const P3D::V2<P3D::fp> uvs[3] = {tri->tri.verts[0].uv, tri->tri.verts[1].uv, tri->tri.verts[2].uv};
-
-            renderDev.SetMaterial(m);
-
             renderDev.DrawTriangle(verts, uvs, light_levels);
-            //renderDev.DrawTriangle(verts, uvs);
+            */
+            renderDev.DrawTriangle(verts, uvs);
         }
         else
         {

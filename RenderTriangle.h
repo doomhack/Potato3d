@@ -433,9 +433,9 @@ namespace P3D
 
             void no_inline ComputeTriangleEdges(const Vertex4d points[3]) const
             {
-                TriDrawXDeltaZWUV x_delta{};
-                TriDrawYDeltaZWUV l_y_delta {};
-                TriDrawYDeltaZWUV r_y_delta {};
+                TriDrawXDeltaZWUV x_delta;
+                TriDrawYDeltaZWUV l_y_delta;
+                TriDrawYDeltaZWUV r_y_delta;
 
                 const int fb_y = current_viewport->height;
 
@@ -463,7 +463,7 @@ namespace P3D
                      GetTriangleLerpYDeltas(l, b, l_y_delta);
                      GetTriangleLerpYDeltas(r, b, r_y_delta);
 
-                     ComputeTrianglePos(l, r, l_y_delta, r_y_delta, x_delta, pxc1, pxc3);
+                     ComputeTrianglePos(l, r, l_y_delta, r_y_delta, x_delta, pxc1, pxc3 - pxc1);
                 }
                 else if(middle.pos.y == bottom.pos.y) //Flat bottom.
                 {
@@ -475,7 +475,7 @@ namespace P3D
                     GetTriangleLerpYDeltas(t, l, l_y_delta);
                     GetTriangleLerpYDeltas(t, r, r_y_delta);
 
-                    ComputeTrianglePos(t, t, l_y_delta, r_y_delta, x_delta, pxc1, pxc3);
+                    ComputeTrianglePos(t, t, l_y_delta, r_y_delta, x_delta, pxc1, pxc3 - pxc1);
                 }
                 else
                 {
@@ -498,24 +498,27 @@ namespace P3D
                         GetTriangleLerpYDeltas(top, bottom, r_y_delta);
                     }
 
-                    ComputeTrianglePos(top, top, l_y_delta, r_y_delta, x_delta, pxc1, pxc2);
+                    ComputeTrianglePos(top, top, l_y_delta, r_y_delta, x_delta, pxc1, pxc2 - pxc1);
 
                     if(left_is_long)
                     {
                         GetTriangleLerpYDeltas(middle, bottom, r_y_delta);
-                        ComputeTrianglePos(m, middle, l_y_delta, r_y_delta, x_delta, pxc2, pxc3);
+                        ComputeTrianglePos(m, middle, l_y_delta, r_y_delta, x_delta, pxc2, pxc3 - pxc2);
                     }
                     else
                     {
                         GetTriangleLerpYDeltas(middle, bottom, l_y_delta);
-                        ComputeTrianglePos(middle, m, l_y_delta, r_y_delta, x_delta, pxc2, pxc3);
+                        ComputeTrianglePos(middle, m, l_y_delta, r_y_delta, x_delta, pxc2, pxc3 - pxc2);
                     }
                 }
             }
 
-            void no_inline ComputeTrianglePos(const Vertex4d &l, const Vertex4d &r, const TriDrawYDeltaZWUV &y_delta_left, const TriDrawYDeltaZWUV &y_delta_right, const TriDrawXDeltaZWUV& x_delta, const fp y_start, const fp y_end) const
+            void no_inline ComputeTrianglePos(const Vertex4d &l, const Vertex4d &r, const TriDrawYDeltaZWUV &y_delta_left, const TriDrawYDeltaZWUV &y_delta_right, const TriDrawXDeltaZWUV& x_delta, const fp y_start, int count) const
             {
-                TriEdgeTrace pos{};
+                TriEdgeTrace pos;
+
+                if(count <= 0)
+                    return;
 
                 fp step_y_l = y_start - l.pos.y;
                 PreStepYTriangleLeft(step_y_l, l, pos, y_delta_left);
@@ -523,7 +526,7 @@ namespace P3D
                 fp step_y_r = y_start - r.pos.y;
                 PreStepYTriangleRight(step_y_r, r, pos, y_delta_right);
 
-                DrawTriangleSpans(y_start, y_end, pos, y_delta_left, y_delta_right, x_delta);
+                DrawTriangleSpans(y_start, count, pos, y_delta_left, y_delta_right, x_delta);
             }
 
             void no_inline PreStepYTriangleLeft(const fp stepY, const Vertex4d& left, TriEdgeTrace& pos, const TriDrawYDeltaZWUV& y_delta_left) const
@@ -562,7 +565,7 @@ namespace P3D
                 pos.x_right = right.pos.x + (stepY * y_delta_right.x);
             }
 
-            void no_inline DrawTriangleSpans(const int yStart, const int yEnd, TriEdgeTrace& pos, const TriDrawYDeltaZWUV& y_delta_left, const TriDrawYDeltaZWUV& y_delta_right, const TriDrawXDeltaZWUV& x_delta) const
+            void no_inline DrawTriangleSpans(const unsigned int yStart, int count, TriEdgeTrace& pos, const TriDrawYDeltaZWUV& y_delta_left, const TriDrawYDeltaZWUV& y_delta_right, const TriDrawXDeltaZWUV& x_delta) const
             {
                 const unsigned int y_pitch = current_viewport->y_pitch;
                 const unsigned int zy_pitch = current_viewport->z_y_pitch;
@@ -575,10 +578,10 @@ namespace P3D
                     pos.zb_ypos = &current_viewport->z_start[yStart * zy_pitch];
                 }
 
-                for (int y = yStart; y < yEnd; y++)
-                {
-                    DrawSpan(pos, x_delta);
+                DrawSpan(pos, x_delta);
 
+                while(--count)
+                {
                     pos.x_left += y_delta_left.x;
                     pos.x_right += y_delta_right.x;
                     pos.fb_ypos += y_pitch;
@@ -609,27 +612,22 @@ namespace P3D
                     {
                         pos.l_left += y_delta_left.l;
                     }
+
+                    DrawSpan(pos, x_delta);
                 }
             }
 
-
             void no_inline DrawSpan(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta) const
             {
-                TriEdgeTrace span_pos{};
+                TriEdgeTrace span_pos;
 
-                const int fb_width = current_viewport->width;
+                const fp x_start = PixelCentre(pMax(pos.x_left, fp(0)));
+                const fp x_end   = PixelCentre(pMin(pos.x_right, fp(current_viewport->width)));
 
-                const fp pixelCentreLeftX = PixelCentre(pMax(pos.x_left, fp(0)));
-                const fp stepX = pixelCentreLeftX - pos.x_left;
-
-                const int x_start = pixelCentreLeftX;
-                const int x_end = PixelCentre(pMin(pos.x_right, fp(fb_width)));
-
-                if(x_start >= x_end) [[unlikely]]
+                if(x_start >= x_end)
                     return;
 
-                if(x_start >= fb_width) [[unlikely]]
-                    return;
+                const fp stepX = x_start - pos.x_left;
 
                 span_pos.x_left = x_start;
                 span_pos.x_right = x_end;
