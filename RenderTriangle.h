@@ -513,7 +513,7 @@ namespace P3D
                 }
             }
 
-            void no_inline ComputeTrianglePos(const Vertex4d &l, const Vertex4d &r, const TriDrawYDeltaZWUV &y_delta_left, const TriDrawYDeltaZWUV &y_delta_right, const TriDrawXDeltaZWUV x_delta, const fp y_start, const fp y_end) const
+            void no_inline ComputeTrianglePos(const Vertex4d &l, const Vertex4d &r, const TriDrawYDeltaZWUV &y_delta_left, const TriDrawYDeltaZWUV &y_delta_right, const TriDrawXDeltaZWUV& x_delta, const fp y_start, const fp y_end) const
             {
                 TriEdgeTrace pos{};
 
