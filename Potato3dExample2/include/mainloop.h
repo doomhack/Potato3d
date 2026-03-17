@@ -23,7 +23,7 @@ public:
 private:
 
     P3D::AABB<P3D::fp> GetFrustrumBB();
-    void RenderModel(P3D::AABB<P3D::fp>& viewFrustrumBB);
+    void RenderModel(const P3D::AABB<P3D::fp> &viewFrustrumBB);
     bool FrustrumTestTriangle(const P3D::BspModelTriangle* tri) const;
     void ResolveCollisions();
     void RunTimeslots();
@@ -49,10 +49,9 @@ private:
     VideoSystem vid;
     Collision collision;
 
-
     unsigned short keyState = 0;
 
-    std::vector<const P3D::BspModelTriangle*> triBuffer;
+    P3D::List<const P3D::BspModelTriangle*> triBuffer;
 };
 
 #endif // MAINLOOP_H

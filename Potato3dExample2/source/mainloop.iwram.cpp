@@ -14,8 +14,6 @@ MainLoop::MainLoop()
     frustrumPoints[1] = P3D::V3<P3D::fp>(halfFrustrumWidth, halfFrustrumHeight, -zFar);
     frustrumPoints[2] = P3D::V3<P3D::fp>(-halfFrustrumWidth, halfFrustrumHeight, -zFar);
     frustrumPoints[3] = P3D::V3<P3D::fp>(halfFrustrumWidth, -halfFrustrumHeight, -zFar);
-
-    triBuffer.reserve(8192);
 }
 
 void MainLoop::Run()
@@ -79,7 +77,7 @@ void MainLoop::Run()
 
         renderDev.PopMatrix();
 
-        vid.PageFlip();
+        vid.PageFlip();        
     }
 }
 
@@ -104,14 +102,14 @@ P3D::AABB<P3D::fp> MainLoop::GetFrustrumBB()
     return viewFrustrumBB;
 }
 
-void MainLoop::RenderModel(P3D::AABB<P3D::fp>& viewFrustrumBB)
+void MainLoop::RenderModel(const P3D::AABB<P3D::fp>& viewFrustrumBB)
 {
     model.GetModel()->Sort(camera.GetEyePosition(), viewFrustrumBB, triBuffer, true, true);
 
     //for(int i = triBuffer.size()-1; i >= 0; i--)
-    for(unsigned int i = 0; i < triBuffer.size(); i++)
+    for(unsigned int i = 0; i < triBuffer.Size(); i++)
     {
-        const P3D::BspModelTriangle* tri = triBuffer[i];
+        const P3D::BspModelTriangle* tri = triBuffer.At(i);
 
         if(!FrustrumTestTriangle(tri))
             continue;
@@ -173,11 +171,11 @@ void MainLoop::ResolveCollisions()
 
     int collision_count = 0;
 
-    for(int i = triBuffer.size() - 1; i >= 0; i--)
+    for(int i = triBuffer.Size() - 1; i >= 0; i--)
     {
         P3D::V3<P3D::fp> resolutionVector;
 
-        if(collision.CheckCollision(triBuffer.at(i), camera.GetPosition(), 50, resolutionVector))
+        if(collision.CheckCollision(triBuffer.At(i), camera.GetPosition(), 50, resolutionVector))
         {
             if( (pAbs(resolutionVector.x) + pAbs(resolutionVector.z)) > (pASR(resolutionVector.y,1)))
             {
@@ -186,7 +184,7 @@ void MainLoop::ResolveCollisions()
 
             camera.MovePosition(resolutionVector);
 
-            i = triBuffer.size() -1;
+            i = triBuffer.Size() -1;
             collision_count++;
 
             if(collision_count > 5)

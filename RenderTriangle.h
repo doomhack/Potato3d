@@ -529,42 +529,6 @@ namespace P3D
                 DrawTriangleSpans(y_start, count, pos, y_delta_left, y_delta_right, x_delta);
             }
 
-            void no_inline PreStepYTriangleLeft(const fp stepY, const Vertex4d& left, TriEdgeTrace& pos, const TriDrawYDeltaZWUV& y_delta_left) const
-            {
-                if(current_texture)
-                {
-                    pos.u_left = left.uv.x + (stepY * y_delta_left.u);
-                    pos.v_left = left.uv.y + (stepY * y_delta_left.v);
-
-                    if constexpr (render_flags & (FullPerspectiveMapping | SubdividePerspectiveMapping))
-                    {
-                        pos.w_left = left.pos.w + (stepY * y_delta_left.w);
-                    }
-                }
-
-                pos.x_left = left.pos.x + (stepY * y_delta_left.x);
-
-                if constexpr (render_flags & (ZTest | ZWrite))
-                {
-                    pos.z_left = left.pos.z + (stepY * y_delta_left.z);
-                }
-
-                if constexpr (render_flags & Fog)
-                {
-                    pos.f_left = left.fog_factor + (stepY * y_delta_left.f);
-                }
-
-                if constexpr (render_flags & VertexLight)
-                {
-                    pos.l_left = left.light_factor + (stepY * y_delta_left.l);
-                }
-            }
-
-            void no_inline PreStepYTriangleRight(const fp stepY, const Vertex4d& right, TriEdgeTrace& pos, const TriDrawYDeltaZWUV& y_delta_right) const
-            {
-                pos.x_right = right.pos.x + (stepY * y_delta_right.x);
-            }
-
             void no_inline DrawTriangleSpans(const unsigned int yStart, int count, TriEdgeTrace& pos, const TriDrawYDeltaZWUV& y_delta_left, const TriDrawYDeltaZWUV& y_delta_right, const TriDrawXDeltaZWUV& x_delta) const
             {
                 const unsigned int y_pitch = current_viewport->y_pitch;
@@ -578,10 +542,13 @@ namespace P3D
                     pos.zb_ypos = &current_viewport->z_start[yStart * zy_pitch];
                 }
 
-                DrawSpan(pos, x_delta);
-
-                while(--count)
+                while(true)
                 {
+                    DrawSpan(pos, x_delta);
+
+                    if(--count == 0)
+                        break;
+
                     pos.x_left += y_delta_left.x;
                     pos.x_right += y_delta_right.x;
                     pos.fb_ypos += y_pitch;
@@ -612,8 +579,6 @@ namespace P3D
                     {
                         pos.l_left += y_delta_left.l;
                     }
-
-                    DrawSpan(pos, x_delta);
                 }
             }
 
@@ -690,7 +655,7 @@ namespace P3D
 
             void no_inline SubdivideSpan(TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const pixel* texture) const
             {
-                TriDrawXDeltaZWUV delta2{};
+                TriDrawXDeltaZWUV delta2;
                 const fp span_right = pos.x_right;
                 fp u = pos.u_left, v = pos.v_left, w = pos.w_left;
 
@@ -801,7 +766,6 @@ namespace P3D
                 render_stats->pixels_drawn += pixels_drawn;
 #endif
             }
-
 
             void no_inline DrawTriangleScanlinePerspectiveCorrect(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const pixel* texture) const
             {
@@ -939,6 +903,42 @@ namespace P3D
                 const fp y2 = (screenSpacePoints[2].pos.y - screenSpacePoints[1].pos.y);
 
                 return ((x1 * y2) >= (y1 * x2));
+            }
+
+            void no_inline PreStepYTriangleLeft(const fp stepY, const Vertex4d& left, TriEdgeTrace& pos, const TriDrawYDeltaZWUV& y_delta_left) const
+            {
+                if(current_texture)
+                {
+                    pos.u_left = left.uv.x + (stepY * y_delta_left.u);
+                    pos.v_left = left.uv.y + (stepY * y_delta_left.v);
+
+                    if constexpr (render_flags & (FullPerspectiveMapping | SubdividePerspectiveMapping))
+                    {
+                        pos.w_left = left.pos.w + (stepY * y_delta_left.w);
+                    }
+                }
+
+                pos.x_left = left.pos.x + (stepY * y_delta_left.x);
+
+                if constexpr (render_flags & (ZTest | ZWrite))
+                {
+                    pos.z_left = left.pos.z + (stepY * y_delta_left.z);
+                }
+
+                if constexpr (render_flags & Fog)
+                {
+                    pos.f_left = left.fog_factor + (stepY * y_delta_left.f);
+                }
+
+                if constexpr (render_flags & VertexLight)
+                {
+                    pos.l_left = left.light_factor + (stepY * y_delta_left.l);
+                }
+            }
+
+            void no_inline PreStepYTriangleRight(const fp stepY, const Vertex4d& right, TriEdgeTrace& pos, const TriDrawYDeltaZWUV& y_delta_right) const
+            {
+                pos.x_right = right.pos.x + (stepY * y_delta_right.x);
             }
 
             constexpr void no_inline GetTriangleLerpXDeltas(const Vertex4d& left, const Vertex4d& right, TriDrawXDeltaZWUV& x_delta) const
