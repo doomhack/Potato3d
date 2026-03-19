@@ -1,6 +1,8 @@
 #include "../include/videosystem.h"
 #include <windows.h>
 
+int z = 0;
+QApplication* VideoSystem::application = new QApplication (z, nullptr);
 
 VideoSystem::VideoSystem()
 {
@@ -9,7 +11,7 @@ VideoSystem::VideoSystem()
     timer.start();
 }
 
-void VideoSystem::Setup()
+void VideoSystem::Setup(bool withGui)
 {
     image[0] = new QImage(width, height, QImage::Format_Indexed8);
     image[1] = new QImage(width, height, QImage::Format_Indexed8);
@@ -23,15 +25,15 @@ void VideoSystem::Setup()
     buffers[0]->AttachZBuffer();
     buffers[1]->AttachZBuffer();
 
-    int z = 0;
-    application = new QApplication (z, nullptr);
+    if(withGui)
+    {
+        window = new GameWindow();
+        window->SetBackbuffer(image[0]);
 
-    window = new GameWindow();
-    window->SetBackbuffer(image[0]);
-
-    window->setAttribute(Qt::WA_PaintOnScreen);
-    window->resize(width * 2, height * 2);
-    window->show();
+        window->setAttribute(Qt::WA_PaintOnScreen);
+        window->resize(width * 2, height * 2);
+        window->show();
+    }
 }
 
 const P3D::RenderTarget* VideoSystem::GetBackBuffer()
@@ -41,9 +43,12 @@ const P3D::RenderTarget* VideoSystem::GetBackBuffer()
 
 void VideoSystem::PageFlip()
 {
-    window->SetBackbuffer(image[currentBuffer]);
-    window->repaint();
-    application->processEvents();
+    if(window)
+    {
+        window->SetBackbuffer(image[currentBuffer]);
+        window->repaint();
+        application->processEvents();
+    }
 
     currentBuffer = 1 - currentBuffer;
 }

@@ -18,7 +18,11 @@ class MainLoop
 public:
     MainLoop();
 
-    void Run();
+    void Run(bool withGui = true, unsigned int slice = 0, unsigned int totalSlices = 1);
+
+    const std::map<unsigned int, std::unordered_set<unsigned int>>& GetPVSData() const;
+    unsigned int GetNodeCount() const { return model.GetModel()->header.node_count; }
+
 
 private:
 
@@ -26,10 +30,7 @@ private:
     void RenderModel();
     bool FrustrumTestTriangle(const P3D::BspModelTriangle* tri) const;
 
-    void StorePVS();
-
     bool CheckCollisions(P3D::V3<P3D::fp> point);
-
 
     static constexpr P3D::fp zNear = 10;
     static constexpr P3D::fp zFar = 10000;
@@ -50,7 +51,7 @@ private:
     VideoSystem vid;
     Collision collision;
 
-    std::vector<const P3D::BspModelTriangle*> triBuffer;
+    P3D::List<const P3D::BspModelTriangle*> triBuffer;
 
     std::map<unsigned int, std::unordered_set<unsigned int>> visData;
 };

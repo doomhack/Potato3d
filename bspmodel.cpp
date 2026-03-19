@@ -4,8 +4,8 @@
 
 namespace P3D
 {
-    Stack<unsigned int> BspModel::stack;
-    List<unsigned int> BspModel::node_list;
+    THREAD_LOCAL Stack<unsigned int> BspModel::stack;
+    THREAD_LOCAL List<unsigned int> BspModel::node_list(16384);
     const VisData* BspModel::vis_data = nullptr;
 
     constexpr unsigned int NO_PVS_NODE = -1;

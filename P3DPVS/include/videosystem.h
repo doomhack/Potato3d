@@ -52,7 +52,7 @@ class VideoSystem
 public:
     explicit VideoSystem();
 
-    void Setup();
+    void Setup(bool withGui);
     const P3D::RenderTarget *GetBackBuffer();
     void PageFlip();
     void SetPalette(const unsigned int pal[]);
@@ -71,7 +71,7 @@ private:
 
 #ifndef GBA
     QImage *image[2];
-    QApplication* application = nullptr;
+    static QApplication* application;
     GameWindow* window = nullptr;
 
     QElapsedTimer timer;

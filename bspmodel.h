@@ -1,7 +1,7 @@
 #ifndef BSPMODEL_H
 #define BSPMODEL_H
 
-#include <vector>
+#include "Config.h"
 #include <cassert>
 #include "BspModelDefs.h"
 
@@ -17,6 +17,7 @@ namespace P3D
         T Pop()                         { assert(pos > mem); pos--; return *pos; }
         bool Empty() const              { return pos == mem; }
         void Clear()                    { pos = mem; }
+        void SetSize(unsigned int size){ delete[] mem; pos = mem = (T*)new char[sizeof(T) * size]; this->size = size;}
 
     private:
         T* mem; T* pos;
@@ -33,6 +34,7 @@ namespace P3D
         T At(unsigned int index) const { assert((index >= 0) && (index < size)); return mem[index]; }
         unsigned int Size() const      { return pos - mem; }
         void Clear()                   { pos = mem; }
+        void SetSize(unsigned int size){ delete[] mem; pos = mem = (T*)new char[sizeof(T) * size]; this->size = size;}
 
     private:
         T* mem; T* pos;
@@ -123,8 +125,8 @@ namespace P3D
 
     private:
 
-        static Stack<unsigned int> stack;
-        static List<unsigned int> node_list;
+        static THREAD_LOCAL Stack<unsigned int> stack;
+        static THREAD_LOCAL List<unsigned int> node_list;
         static const VisData* vis_data;
 
         void OutputTris(List<const BspModelTriangle *> &out, const bool backface_cull) const;

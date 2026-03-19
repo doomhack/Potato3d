@@ -10,6 +10,12 @@ namespace P3D
         #define RENDER_STATS
     #endif
 
+#ifndef __arm__
+    #define THREAD_LOCAL thread_local
+#else
+    #define THREAD_LOCAL
+#endif
+
     //Type of a texture and framebuffer pixel.
 
     typedef uint8_t pixel;

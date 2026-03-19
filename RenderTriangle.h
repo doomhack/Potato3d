@@ -598,6 +598,17 @@ namespace P3D
                 span_pos.x_right = x_end;
                 span_pos.fb_ypos = pos.fb_ypos;
 
+                if(current_texture)
+                {
+                    span_pos.u_left = pos.u_left + (delta.u * stepX);
+                    span_pos.v_left = pos.v_left + (delta.v * stepX);
+
+                    if constexpr (render_flags & (FullPerspectiveMapping | SubdividePerspectiveMapping))
+                    {
+                        span_pos.w_left = pos.w_left + (delta.w * stepX);
+                    }
+                }
+
                 if constexpr (render_flags & (ZTest | ZWrite))
                 {
                     span_pos.zb_ypos = pos.zb_ypos;
@@ -614,43 +625,39 @@ namespace P3D
                     span_pos.l_left = pos.l_left + (delta.l * stepX);
                 }
 
+                DispatchSpan(span_pos, delta);
+            }
+
+            void no_inline DispatchSpan(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta) const
+            {
+#ifdef RENDER_STATS
+                render_stats->scanlines_drawn++;
+#endif
                 if(current_texture)
                 {
-                    span_pos.u_left = pos.u_left + (delta.u * stepX);
-                    span_pos.v_left = pos.v_left + (delta.v * stepX);
-
-                    if constexpr (render_flags & (FullPerspectiveMapping | SubdividePerspectiveMapping))
-                    {
-                        span_pos.w_left = pos.w_left + (delta.w * stepX);
-                    }
-
                     if constexpr (render_flags & FullPerspectiveMapping)
                     {
-                        DrawTriangleScanlinePerspectiveCorrect(span_pos, delta, current_texture);
+                        DrawTriangleScanlinePerspectiveCorrect(pos, delta, current_texture);
                     }
                     else
                     {
                         if constexpr (render_flags & SubdividePerspectiveMapping)
                         {
                             if(subdivide_spans)
-                                SubdivideSpan(span_pos, delta, current_texture);
+                                SubdivideSpan(pos, delta, current_texture);
                             else
-                                DrawTriangleScanlineAffine(span_pos, delta, current_texture);
+                                DrawTriangleScanlineAffine(pos, delta, current_texture);
                         }
                         else
                         {
-                            DrawTriangleScanlineAffine(span_pos, delta, current_texture);
+                            DrawTriangleScanlineAffine(pos, delta, current_texture);
                         }
                     }
                 }
                 else
                 {
-                    DrawTriangleScanlineFlat(span_pos, delta, current_color);
+                    DrawTriangleScanlineFlat(pos, delta, current_color);
                 }
-
-#ifdef RENDER_STATS
-                render_stats->scanlines_drawn++;
-#endif
             }
 
             void no_inline SubdivideSpan(TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta, const pixel* texture) const
