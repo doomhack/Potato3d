@@ -22,8 +22,8 @@ public:
 
 private:
 
-    P3D::AABB<P3D::fp> GetFrustrumBB();
-    void RenderModel(const P3D::AABB<P3D::fp> &viewFrustrumBB);
+    P3D::AABB<short> GetFrustrumBB();
+    void RenderModel(const P3D::AABB<short> &viewFrustrumBB);
     bool FrustrumTestTriangle(const P3D::BspModelTriangle* tri) const;
     void ResolveCollisions();
     void RunTimeslots();

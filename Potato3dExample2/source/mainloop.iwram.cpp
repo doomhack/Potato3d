@@ -63,7 +63,7 @@ void MainLoop::Run()
 
         renderDev.Translate(P3D::V3<P3D::fp>(-camera.GetEyePosition().x, -camera.GetEyePosition().y, -camera.GetEyePosition().z));
 
-        P3D::AABB<P3D::fp> viewFrustrumBB = GetFrustrumBB();
+        P3D::AABB<short> viewFrustrumBB = GetFrustrumBB();
 
         renderDev.BeginFrame();
 
@@ -81,9 +81,9 @@ void MainLoop::Run()
     }
 }
 
-P3D::AABB<P3D::fp> MainLoop::GetFrustrumBB()
+P3D::AABB<short> MainLoop::GetFrustrumBB()
 {
-    P3D::AABB<P3D::fp> viewFrustrumBB = P3D::AABB<P3D::fp>();
+    P3D::AABB<short> viewFrustrumBB = P3D::AABB<short>();
 
     P3D::M4<P3D::fp> camMatrix = renderDev.GetMatrix().Inverted();
 
@@ -92,17 +92,19 @@ P3D::AABB<P3D::fp> MainLoop::GetFrustrumBB()
     P3D::V4<P3D::fp> t3 = camMatrix * frustrumPoints[2];
     P3D::V4<P3D::fp> t4 = camMatrix * frustrumPoints[3];
 
-    viewFrustrumBB.AddPoint(camera.GetEyePosition());
+    P3D::V3<short> c = P3D::V3<short>((int)camera.GetEyePosition().x, (int)camera.GetEyePosition().y, (int)camera.GetEyePosition().z);
 
-    viewFrustrumBB.AddPoint(P3D::V3<P3D::fp>(t1.x, t1.y, t1.z));
-    viewFrustrumBB.AddPoint(P3D::V3<P3D::fp>(t2.x, t2.y, t2.z));
-    viewFrustrumBB.AddPoint(P3D::V3<P3D::fp>(t3.x, t3.y, t3.z));
-    viewFrustrumBB.AddPoint(P3D::V3<P3D::fp>(t4.x, t4.y, t4.z));
+    viewFrustrumBB.AddPoint(c);
+
+    viewFrustrumBB.AddPoint(P3D::V3<short>((int)t1.x, (int)t1.y, (int)t1.z));
+    viewFrustrumBB.AddPoint(P3D::V3<short>((int)t2.x, (int)t2.y, (int)t2.z));
+    viewFrustrumBB.AddPoint(P3D::V3<short>((int)t3.x, (int)t3.y, (int)t3.z));
+    viewFrustrumBB.AddPoint(P3D::V3<short>((int)t4.x, (int)t4.y, (int)t4.z));
 
     return viewFrustrumBB;
 }
 
-void MainLoop::RenderModel(const P3D::AABB<P3D::fp>& viewFrustrumBB)
+void MainLoop::RenderModel(const P3D::AABB<short>& viewFrustrumBB)
 {
     model.GetModel()->Sort(camera.GetEyePosition(), viewFrustrumBB, triBuffer, true, true);
 
@@ -165,7 +167,7 @@ bool MainLoop::FrustrumTestTriangle(const P3D::BspModelTriangle* tri) const
 void MainLoop::ResolveCollisions()
 {
     const int bb_size = 100;
-    P3D::AABB<P3D::fp> player_box(camera.GetPosition(), bb_size);
+    P3D::AABB<short> player_box(P3D::V3<short>((int)camera.GetPosition().x, (int)camera.GetPosition().y, (int)camera.GetPosition().z), bb_size);
 
     model.GetModel()->Sort(camera.GetPosition(), player_box, triBuffer, false, false);
 

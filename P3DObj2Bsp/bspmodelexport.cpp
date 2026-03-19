@@ -43,13 +43,13 @@ namespace Obj2Bsp
             P3D::V3<P3D::fp> normal = P3D::V3<P3D::fp>(nodeList[i]->plane.normal.x(), nodeList[i]->plane.normal.y(), nodeList[i]->plane.normal.z());
             bn.plane = P3D::Plane<P3D::fp>(normal, nodeList[i]->plane.distance);
 
-            bn.node_bb = P3D::AABB<P3D::fp>(nodeList[i]->node_bb.x1, nodeList[i]->node_bb.x2,
-                                            nodeList[i]->node_bb.y1, nodeList[i]->node_bb.y2,
-                                            nodeList[i]->node_bb.z1, nodeList[i]->node_bb.z2);
+            bn.node_bb = P3D::AABB<short>(std::floor(nodeList[i]->node_bb.x1), std::ceil(nodeList[i]->node_bb.x2),
+                                            std::floor(nodeList[i]->node_bb.y1), std::ceil(nodeList[i]->node_bb.y2),
+                                            std::floor(nodeList[i]->node_bb.z1), std::ceil(nodeList[i]->node_bb.z2));
 
-            bn.child_bb = P3D::AABB<P3D::fp>(nodeList[i]->child_node_bb.x1, nodeList[i]->child_node_bb.x2,
-                                             nodeList[i]->child_node_bb.y1, nodeList[i]->child_node_bb.y2,
-                                             nodeList[i]->child_node_bb.z1, nodeList[i]->child_node_bb.z2);
+            bn.child_bb = P3D::AABB<short>(std::floor(nodeList[i]->child_node_bb.x1), std::ceil(nodeList[i]->child_node_bb.x2),
+                                             std::floor(nodeList[i]->child_node_bb.y1), std::ceil(nodeList[i]->child_node_bb.y2),
+                                             std::floor(nodeList[i]->child_node_bb.z1), std::ceil(nodeList[i]->child_node_bb.z2));
 
             bn.front_tris.count = nodeList[i]->front_tris.size() & 0xffff;
             bn.front_tris.offset = modelTriList.length();
@@ -92,8 +92,6 @@ namespace Obj2Bsp
                                             nodeList[i]->front_tris[j]->edge_plane_20.normal.y(),
                                             nodeList[i]->front_tris[j]->edge_plane_20.normal.z());
                 bmt.edge_plane_2_0 = P3D::Plane<P3D::fp>(normal, nodeList[i]->front_tris[j]->edge_plane_20.distance);
-
-                bmt.tri_bb.AddTriangle(bmt.tri.verts[0].pos, bmt.tri.verts[1].pos, bmt.tri.verts[2].pos);
 
                 const Texture* tex = nodeList[i]->front_tris[j]->texture;
 
@@ -166,8 +164,6 @@ namespace Obj2Bsp
                                             nodeList[i]->back_tris[j]->edge_plane_20.normal.y(),
                                             nodeList[i]->back_tris[j]->edge_plane_20.normal.z());
                 bmt.edge_plane_2_0 = P3D::Plane<P3D::fp>(normal, nodeList[i]->back_tris[j]->edge_plane_20.distance);
-
-                bmt.tri_bb.AddTriangle(bmt.tri.verts[0].pos, bmt.tri.verts[1].pos, bmt.tri.verts[2].pos);
 
                 const Texture* tex = nodeList[i]->back_tris[j]->texture;
 

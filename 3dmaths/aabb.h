@@ -134,6 +134,32 @@ namespace P3D
         T z2;
     };
 
+
+    template <> constexpr bool AABB<short>::Intersect(const AABB<short>& other) const
+    {
+        #define aabb_short_hi(x) ((short)(x >> 16))
+        #define aabb_short_lo(x) ((short)(x & 0xffff))
+
+        const int xa = *reinterpret_cast<const int*>(&this->x1);
+        const int ya = *reinterpret_cast<const int*>(&this->y1);
+        const int za = *reinterpret_cast<const int*>(&this->z1);
+
+        const int xb = *reinterpret_cast<const int*>(&other.x1);
+        const int yb = *reinterpret_cast<const int*>(&other.y1);
+        const int zb = *reinterpret_cast<const int*>(&other.z1);
+
+        if (aabb_short_lo(xa) > aabb_short_hi(xb) || aabb_short_hi(xa) < aabb_short_lo(xb))
+            return false;
+
+        if (aabb_short_lo(za) > aabb_short_hi(zb) || aabb_short_hi(za) < aabb_short_lo(zb))
+            return false;
+
+        if (aabb_short_lo(ya) > aabb_short_hi(yb) || aabb_short_hi(ya) < aabb_short_lo(yb))
+            return false;
+
+        return true;
+    }
+
 }
 
 #endif // AABB_H

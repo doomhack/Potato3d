@@ -10,7 +10,7 @@ namespace P3D
 
     constexpr unsigned int NO_PVS_NODE = -1;
 
-    void BspModel::Sort(const V3<fp>& p, const AABB<fp>& frustrum, List<const BspModelTriangle *> &out, bool backface_cull, bool check_pvs) const
+    void BspModel::Sort(const V3<fp>& p, const AABB<short>& frustrum, List<const BspModelTriangle *> &out, bool backface_cull, bool check_pvs) const
     {
         out.Clear();
         node_list.Clear();
@@ -55,8 +55,7 @@ namespace P3D
 
     constexpr unsigned int NODE_MASK = ~(BACK_BIT | POST_BIT);
 
-
-    void BspModel::SortBackToFront(const V3<fp>& p, const AABB<fp>& frustrum, const unsigned int pvs_node) const
+    void BspModel::SortBackToFront(const V3<fp>& p, const AABB<short>& frustrum, const unsigned int pvs_node) const
     {
         stack.Push(0);
 

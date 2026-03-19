@@ -79,7 +79,7 @@ namespace P3D
     public:
         BspModelHeader header;
 
-        void Sort(const V3<fp>& p, const AABB<fp>& frustrum, List<const BspModelTriangle *> &out, bool backface_cull, bool check_pvs) const;
+        void Sort(const V3<fp>& p, const AABB<short>& frustrum, List<const BspModelTriangle *> &out, bool backface_cull, bool check_pvs) const;
 
         unsigned int GetLeafNodeId(const V3<fp>& p) const;
 
@@ -116,7 +116,7 @@ namespace P3D
             vis_data = data;
         }
 
-        const AABB<P3D::fp>& GetModelAABB() const
+        const AABB<short>& GetModelAABB() const
         {
             const BspModelNode* root_node = GetNode(0);
 
@@ -130,7 +130,7 @@ namespace P3D
         static const VisData* vis_data;
 
         void OutputTris(List<const BspModelTriangle *> &out, const bool backface_cull) const;
-        void SortBackToFront(const V3<P3D::fp> &p, const AABB<fp>& frustrum, const unsigned int pvs_node) const;
+        void SortBackToFront(const V3<P3D::fp> &p, const AABB<short>& frustrum, const unsigned int pvs_node) const;
 
         bool CheckPvs(unsigned int src_node, unsigned int dst_node) const;
 

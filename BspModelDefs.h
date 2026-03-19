@@ -49,7 +49,6 @@ namespace P3D
     typedef struct BspModelTriangle
     {
         Triangle3d tri;
-        AABB<fp> tri_bb;
 
         Plane<fp> normal_plane;
         Plane<fp> edge_plane_0_1;
@@ -77,8 +76,8 @@ namespace P3D
     typedef struct BspModelNode
     {
         Plane<fp> plane;
-        AABB<fp> node_bb;
-        AABB<fp> child_bb;
+        AABB<short> node_bb;
+        AABB<short> child_bb;
         unsigned int parent_node;
         unsigned int front_node;
         unsigned int back_node;

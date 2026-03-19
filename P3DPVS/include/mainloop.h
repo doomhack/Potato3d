@@ -43,7 +43,7 @@ private:
 
     P3D::Plane<P3D::fp> frustrumPlanes[6];
 
-    P3D::AABB<P3D::fp> viewFrustrumBB;
+    P3D::AABB<short> viewFrustrumBB;
 
     P3D::RenderDevice renderDev;
 

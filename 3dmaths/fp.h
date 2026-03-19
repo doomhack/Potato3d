@@ -229,7 +229,7 @@ namespace P3D
         constexpr FP& operator>>=(const int r)     {n >>= r;  return *this;}
 
     private:
-        int n;
+        int n = 0;
 
         static constexpr int one = (1 << fracbits);
     };

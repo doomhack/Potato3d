@@ -38,7 +38,7 @@ void MainLoop::Run(bool withGui, unsigned int slice, unsigned int totalSlices)
     constexpr P3D::fp step = 50;
 
 
-    const P3D::AABB<P3D::fp>& model_aabb = model.GetModel()->GetModelAABB();
+    const P3D::AABB<short>& model_aabb = model.GetModel()->GetModelAABB();
 
     P3D::fp x_start = model_aabb.GetX1();
     P3D::fp x_end = model_aabb.GetX2();
@@ -166,7 +166,7 @@ bool MainLoop::CheckCollisions(P3D::V3<P3D::fp> point)
 {
     const int bb_size = 100;
 
-    P3D::AABB<P3D::fp> player_box(point, bb_size);
+    P3D::AABB<short> player_box(P3D::V3<short>((int)point.x, (int)point.y, (int)point.z), bb_size);
 
     model.GetModel()->Sort(point, player_box, triBuffer, true, false);
 
@@ -183,7 +183,7 @@ bool MainLoop::CheckCollisions(P3D::V3<P3D::fp> point)
 
 void MainLoop::UpdateFrustrumBB()
 {
-    viewFrustrumBB = P3D::AABB<P3D::fp>();
+    viewFrustrumBB = P3D::AABB<short>();
 
     P3D::M4<P3D::fp> camMatrix = renderDev.GetMatrix().Inverted();
 
@@ -192,12 +192,14 @@ void MainLoop::UpdateFrustrumBB()
     P3D::V4<P3D::fp> t3 = camMatrix * frustrumPoints[2];
     P3D::V4<P3D::fp> t4 = camMatrix * frustrumPoints[3];
 
-    viewFrustrumBB.AddPoint(position);
+    P3D::V3<short> c = P3D::V3<short>((int)position.x, (int)position.y, (int)position.z);
 
-    viewFrustrumBB.AddPoint(P3D::V3<P3D::fp>(t1.x, t1.y, t1.z));
-    viewFrustrumBB.AddPoint(P3D::V3<P3D::fp>(t2.x, t2.y, t2.z));
-    viewFrustrumBB.AddPoint(P3D::V3<P3D::fp>(t3.x, t3.y, t3.z));
-    viewFrustrumBB.AddPoint(P3D::V3<P3D::fp>(t4.x, t4.y, t4.z));
+    viewFrustrumBB.AddPoint(c);
+
+    viewFrustrumBB.AddPoint(P3D::V3<short>((int)t1.x, (int)t1.y, (int)t1.z));
+    viewFrustrumBB.AddPoint(P3D::V3<short>((int)t2.x, (int)t2.y, (int)t2.z));
+    viewFrustrumBB.AddPoint(P3D::V3<short>((int)t3.x, (int)t3.y, (int)t3.z));
+    viewFrustrumBB.AddPoint(P3D::V3<short>((int)t4.x, (int)t4.y, (int)t4.z));
 }
 
 void MainLoop::RenderModel()
