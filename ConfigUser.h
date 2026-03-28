@@ -47,8 +47,8 @@ namespace P3D
     //inline constexpr fp SUBDIVIDE_Z_THRESHOLD = fp(5);
     inline constexpr fp SUBDIVIDE_Z_THRESHOLD = fp(2);
 
-    //#define no_inline __attribute__((noinline))
-    #define no_inline
+    #define no_inline __attribute__((noinline))
+    //#define no_inline
 
 }
 

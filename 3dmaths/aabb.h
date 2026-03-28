@@ -6,7 +6,6 @@
 
 namespace P3D
 {
-
     template <class T> class AABB
     {
     public:
@@ -134,7 +133,7 @@ namespace P3D
         T z2;
     };
 
-
+/*
     template <> constexpr bool AABB<short>::Intersect(const AABB<short>& other) const
     {
         #define aabb_short_hi(x) ((short)(x >> 16))
@@ -159,7 +158,7 @@ namespace P3D
 
         return true;
     }
-
+*/
 }
 
 #endif // AABB_H

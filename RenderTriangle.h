@@ -349,7 +349,7 @@ namespace P3D
                 return vxCountOut;
             }
 
-            fp GetClipPointForVertex(const Vertex4d& vertex, const ClipPlane clipPlane) const
+            fp no_inline GetClipPointForVertex(const Vertex4d& vertex, const ClipPlane clipPlane) const
             {
                 if(clipPlane == X_W_Left)
                     return -vertex.pos.x;
@@ -1134,7 +1134,7 @@ namespace P3D
                 }
             }
 
-            constexpr fp GetLinearFogFactor(const fp w) const
+            constexpr fp no_inline GetLinearFogFactor(const fp w) const
             {
                 if(w >= fog_params->fog_end)
                     return FOG_MAX;
@@ -1148,7 +1148,7 @@ namespace P3D
                 return pClamp(fp(0), fp(1)-z, FOG_MAX);
             }
 
-            constexpr fp GetExponentialFogFactor(const fp w) const
+            constexpr fp no_inline GetExponentialFogFactor(const fp w) const
             {
                 const fp z = fp(1) - LinearW(w);
 
@@ -1159,7 +1159,7 @@ namespace P3D
                 return pClamp(fp(0), fp(1)-r, FOG_MAX);
             }
 
-            constexpr fp GetExponential2FogFactor(const fp w) const
+            constexpr fp no_inline GetExponential2FogFactor(const fp w) const
             {
                 const fp z = fp(1) - LinearW(w);
 

@@ -19,7 +19,6 @@ DEFINES += _USE_MATH_DEFINES
 SOURCES += \
     ../3dmaths/recip.cpp \
     ../bspmodel.cpp \
-    ../object3d.cpp \
     main.cpp \
     mainwindow2.cpp
 
@@ -49,9 +48,8 @@ HEADERS += \
     ../TextureCache.h \
     ../Pixel.h \
     ../bspmodel.h \
-    ../object3d.h \
     ../potato3d.h \
-    models/model.h
+    mainwindow2.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

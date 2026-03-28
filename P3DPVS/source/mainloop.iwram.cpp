@@ -40,32 +40,26 @@ void MainLoop::Run(bool withGui, unsigned int slice, unsigned int totalSlices)
 
     const P3D::AABB<short>& model_aabb = model.GetModel()->GetModelAABB();
 
-    P3D::fp x_start = model_aabb.GetX1();
-    P3D::fp x_end = model_aabb.GetX2();
+    P3D::fp x_start = model_aabb.GetX1() - (int)step;
+    P3D::fp x_end = model_aabb.GetX2() + (int)(step);
 
-    P3D::fp y_start = model_aabb.GetY1();
-    P3D::fp y_end = model_aabb.GetY2();
+    P3D::fp y_start = model_aabb.GetY1() - (int)step;
+    P3D::fp y_end = model_aabb.GetY2() + (int)(step);
 
-    P3D::fp z_start = model_aabb.GetZ1();
-    P3D::fp z_end = model_aabb.GetZ2();
+    P3D::fp z_start = model_aabb.GetZ1() - (int)step;
+    P3D::fp z_end = model_aabb.GetZ2() + (int)step;
 
-    x_start = int(x_start / step) * int(step);
-    y_start = int(y_start / step) * int(step);
-    z_start = int(z_start / step) * int(step);
-
-    x_start += step / 2;
-    y_start += step / 2;
-    z_start += step / 2;
-
-    x_end = int(((x_end + (step-1)) / step)) * int(step);
-    y_end = int(((y_end + (step-1)) / step)) * int(step);
-    z_end = int(((z_end + (step-1)) / step)) * int(step);
-
-    P3D::fp sx = (x_end - x_start) / P3D::fp(totalSlices);
+    P3D::fp sx = (int)(x_end - x_start) / (int)P3D::fp(totalSlices);
     x_start += sx * P3D::fp(slice);
     x_end = std::min(x_end, x_start + sx);
 
-    unsigned int frames = ((unsigned int)((x_end - x_start) / step) * (unsigned int)((y_end - y_start) / step) * (unsigned int)((z_end - z_start) / step));
+    unsigned int frames=  0;
+
+    for(P3D::fp x = x_start; x < x_end; x += step)
+        for(P3D::fp y = y_start; y < y_end; y += step)
+            for(P3D::fp z = z_start; z < z_end; z += step)
+                frames++;
+
 
     unsigned int start_time = vid.GetTime();
 
@@ -96,6 +90,9 @@ void MainLoop::Run(bool withGui, unsigned int slice, unsigned int totalSlices)
 
                 for(int i = 0; i < 4; i++)
                 {
+                    //vid.PageFlip();
+
+
                     renderDev.SetRenderTarget(vid.GetBackBuffer());
 
                     renderDev.ClearColor(background);
@@ -151,7 +148,7 @@ void MainLoop::Run(bool withGui, unsigned int slice, unsigned int totalSlices)
                             suffix = "seconds";
                         }
 
-                        qDebug() << "Frame" << f << "/" << frames << "Skipped:" << c << "FPS:" << fps << "Time left:" << time_left << suffix;
+                        qDebug() << "Slice:" << slice << "Frame" << f << "/" << frames << "Skipped:" << c << "FPS:" << fps << "Time left:" << time_left << suffix;
                     }
 
                     //_sleep(1000);
@@ -164,7 +161,7 @@ void MainLoop::Run(bool withGui, unsigned int slice, unsigned int totalSlices)
 
 bool MainLoop::CheckCollisions(P3D::V3<P3D::fp> point)
 {
-    const int bb_size = 100;
+    const int bb_size = 250;
 
     P3D::AABB<short> player_box(P3D::V3<short>((int)point.x, (int)point.y, (int)point.z), bb_size);
 
@@ -174,7 +171,7 @@ bool MainLoop::CheckCollisions(P3D::V3<P3D::fp> point)
     {
         P3D::V3<P3D::fp> resolutionVector;
 
-        if(collision.CheckCollision(triBuffer.At(i), point, 50, resolutionVector))
+        if(collision.CheckCollision(triBuffer.At(i), point, 100, resolutionVector))
             return true;
     }
 
@@ -246,12 +243,13 @@ void MainLoop::RenderModel()
 
         const unsigned int p2 = renderDev.GetRenderStats().pixels_drawn;
 
-        if(p2 >= 65536)
-            return;
-
-        if((p2 - p1) > 3)
+        if((p2 - p1) > 4)
         {
             unsigned int node = *((unsigned int*)&tri->color);
+
+            //if(current_node == 29 && node == 2)
+            //    qDebug() << "Should not see me";
+
 
             visData[current_node].insert(node);
         }
