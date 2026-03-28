@@ -503,12 +503,12 @@ namespace P3D
                     if(left_is_long)
                     {
                         GetTriangleLerpYDeltas(middle, bottom, r_y_delta);
-                        ComputeTrianglePos(m, middle, l_y_delta, r_y_delta, x_delta, pxc2, pxc3 - pxc2);
+                        ComputeTrianglePos(top, middle, l_y_delta, r_y_delta, x_delta, pxc2, pxc3 - pxc2);
                     }
                     else
                     {
                         GetTriangleLerpYDeltas(middle, bottom, l_y_delta);
-                        ComputeTrianglePos(middle, m, l_y_delta, r_y_delta, x_delta, pxc2, pxc3 - pxc2);
+                        ComputeTrianglePos(middle, top, l_y_delta, r_y_delta, x_delta, pxc2, pxc3 - pxc2);
                     }
                 }
             }
