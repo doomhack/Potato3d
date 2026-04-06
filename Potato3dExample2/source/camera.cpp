@@ -10,8 +10,9 @@ Camera::Camera()
     //position = P3D::V3<P3D::fp>(8508,13,8563);
     //angle = P3D::V3<P3D::fp>(0,-236,0);
 
-    //position = P3D::V3<P3D::fp>(-350,50,-350); //PVS Test
-    position = P3D::V3<P3D::fp>(-50,100,-250); //PVS Test
+    //position = P3D::V3<P3D::fp>(-50,100,-250); //PVS Test
+
+    position = P3D::V3<P3D::fp>(0,0,0);
 }
 
 void Camera::HandleInput(unsigned int keyState, P3D::fp gravity_velocity)
@@ -28,7 +29,7 @@ void Camera::HandleInput(unsigned int keyState, P3D::fp gravity_velocity)
 
         float angleYRad = P3D::pD2R(camAngle.y);
 
-        P3D::V3<P3D::fp> d((float)-(std::sin(angleYRad) *20), 0, (float)-(std::cos(angleYRad) *20));
+        P3D::V3<P3D::fp> d((float)-(std::sin(angleYRad) * (float)METERS(0.1)), 0, (float)-(std::cos(angleYRad) * (float)METERS(0.1)));
 
         position += d;
     }
@@ -39,7 +40,7 @@ void Camera::HandleInput(unsigned int keyState, P3D::fp gravity_velocity)
 
         float angleYRad = P3D::pD2R(camAngle.y);
 
-        P3D::V3<P3D::fp> d((float)-(std::sin(angleYRad) *20), 0, (float)-(std::cos(angleYRad) *20));
+        P3D::V3<P3D::fp> d((float)-(std::sin(angleYRad) *(float)METERS(0.1)), 0, (float)-(std::cos(angleYRad) *(float)METERS(0.1)));
 
         position -= d;
     }

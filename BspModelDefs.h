@@ -36,7 +36,7 @@ namespace P3D
         unsigned int triangle_offset; //Bytes from BspModel*
 
         unsigned int node_count;
-        unsigned int node_offset;
+        unsigned int node_offset; //Bytes from BspModel*
 
         unsigned int texture_pixels_offset; //Bytes from BspModel*
 
@@ -49,6 +49,7 @@ namespace P3D
     typedef struct BspModelTriangle
     {
         Triangle3d tri;
+        AABB<short> tri_bb;
 
         Plane<fp> normal_plane;
         Plane<fp> edge_plane_0_1;
@@ -78,7 +79,6 @@ namespace P3D
         Plane<fp> plane;
         AABB<short> node_bb;
         AABB<short> child_bb;
-        unsigned int parent_node;
         unsigned int front_node;
         unsigned int back_node;
         TriIndexList front_tris;

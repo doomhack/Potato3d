@@ -129,12 +129,12 @@ namespace P3D
         static THREAD_LOCAL List<unsigned int> node_list;
         static const VisData* vis_data;
 
-        void OutputTris(List<const BspModelTriangle *> &out, const bool backface_cull) const;
+        void OutputTris(List<const BspModelTriangle *> &out, const AABB<short>& frustrum, const bool backface_cull) const;
         void SortBackToFront(const V3<P3D::fp> &p, const AABB<short>& frustrum, const unsigned int pvs_node) const;
 
         bool CheckPvs(unsigned int src_node, unsigned int dst_node) const;
 
-        const unsigned char* GetBasePtr() const
+        constexpr const unsigned char* GetBasePtr() const
         {
             return (const unsigned char*)&header;
         }
@@ -146,17 +146,17 @@ namespace P3D
             return dot - plane.Distance();
         }
 
-        const BspModelTriangle* GetTriangle(unsigned int n) const
+        constexpr const BspModelTriangle* GetTriangle(unsigned int n) const
         {
             return &((const BspModelTriangle*)(GetBasePtr() + header.triangle_offset))[n];
         }
 
-        const BspModelNode* GetNode(unsigned int n) const
+        constexpr const BspModelNode* GetNode(unsigned int n) const
         {
             return &((const BspModelNode*)(GetBasePtr() + header.node_offset))[n];
         }
 
-        unsigned int NodeIndex(const BspModelNode* node) const
+        constexpr unsigned int NodeIndex(const BspModelNode* node) const
         {
             return node - GetNode(0);
         }

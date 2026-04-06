@@ -220,8 +220,8 @@ namespace P3D
 
             unsigned int no_inline ClipTriangle(TransformedTriangle& clipSpacePoints) const
             {
-                fp z_far = z_planes->z_far;
-                fp z_near = z_planes->z_near;
+                const fp z_far = z_planes->z_far;
+                const fp z_near = z_planes->z_near;
                 unsigned int clip = 0;
 
 
@@ -257,15 +257,18 @@ namespace P3D
 
                 unsigned int vxCount = 3;
 
-                if(clip & W_Near)
-                    vxCount = ClipWNear(clipSpacePoints.verts);
-
                 Vertex4d outputVxB[8];
 
                 //As we clip against each frustrum plane, we swap the buffers
                 //so the output of the last clip is used as input to the next.
                 Vertex4d* inBuffer = clipSpacePoints.verts;
                 Vertex4d* outBuffer = outputVxB;
+
+                if(clip & W_Near)
+                {
+                    vxCount = ClipWNear(inBuffer, outBuffer);
+                    std::swap(inBuffer, outBuffer);
+                }
 
                 for(unsigned int i = X_W_Left; i < W_Far; i <<= 1)
                 {
@@ -287,35 +290,44 @@ namespace P3D
                 return vxCount;
             }
 
-            unsigned int no_inline ClipWNear(Vertex4d clipSpacePointsIn[3]) const
+            unsigned int no_inline ClipWNear(const Vertex4d clipSpacePointsIn[3], Vertex4d clipSpacePointsOut[]) const
             {
-                Vertex4d tmpVx[4];
                 unsigned int vxCountOut = 0;
-                fp z_near = z_planes->z_near;
+                const fp z_near = z_planes->z_near;
+
+                fp d1 = clipSpacePointsIn[0].pos.w - z_near;
 
                 for(int i = 0; i < 3; i++)
                 {
-                    int i2 = i < 2 ? i+1 : 0;
+                    int i2 = (i < 2) ? i + 1 : 0;
 
-                    fp w1 = clipSpacePointsIn[i].pos.w;
-                    fp w2 = clipSpacePointsIn[i2].pos.w;
+                    const fp d2 = clipSpacePointsIn[i2].pos.w - z_near;
 
-                    if(w1 >= z_near)
+                    const bool in1 = d1 >= 0;
+                    const bool in2 = d2 >= 0;
+
+                    if(in1)
                     {
-                        FastCopy32(&tmpVx[vxCountOut], &clipSpacePointsIn[i], sizeof(Vertex4d));
+                        FastCopy32(&clipSpacePointsOut[vxCountOut], &clipSpacePointsIn[i], sizeof(Vertex4d));
                         vxCountOut++;
                     }
 
-                    if(!pSameSignBit(w1 - z_near, w2 - z_near))
+                    if (in1 != in2)
                     {
-                        fp frac = (w1 - z_near) / (w1 - w2);
+                        const Vertex4d& vOut = in1 ? clipSpacePointsIn[i2] : clipSpacePointsIn[i];
+                        const Vertex4d& vIn  = in1 ? clipSpacePointsIn[i]  : clipSpacePointsIn[i2];
 
-                        LerpVertex(tmpVx[vxCountOut], clipSpacePointsIn[i], clipSpacePointsIn[i2], frac);
+                        const fp dOut = in1 ? d2 : d1;
+                        const fp dIn  = in1 ? d1 : d2;
+
+                        const fp t = dOut / (dOut - dIn);
+
+                        LerpVertex(clipSpacePointsOut[vxCountOut], vOut, vIn, t);
                         vxCountOut++;
                     }
+
+                    d1 = d2;
                 }
-
-                FastCopy32(clipSpacePointsIn, tmpVx, sizeof(Vertex4d) * vxCountOut);
 
                 return vxCountOut;
             }
@@ -331,17 +343,29 @@ namespace P3D
                     const fp b1 = GetClipPointForVertex(clipSpacePointsIn[i], clipPlane);
                     const fp b2 = GetClipPointForVertex(clipSpacePointsIn[i2], clipPlane);
 
-                    if(ClipW(clipSpacePointsIn[i].pos.w) >= b1)
+                    const fp d1 = ClipW(clipSpacePointsIn[i].pos.w)  - b1;
+                    const fp d2 = ClipW(clipSpacePointsIn[i2].pos.w) - b2;
+
+                    const bool in1 = d1 >= 0;
+                    const bool in2 = d2 >= 0;
+
+                    if(in1)
                     {
                         FastCopy32(&clipSpacePointsOut[vxCountOut], &clipSpacePointsIn[i], sizeof(Vertex4d));
                         vxCountOut++;
                     }
 
-                    fp frac = GetLineIntersectionFrac(ClipW(clipSpacePointsIn[i].pos.w), ClipW(clipSpacePointsIn[i2].pos.w), b1, b2);
-
-                    if(frac >= 0)
+                    if (in1 != in2)
                     {
-                        LerpVertex(clipSpacePointsOut[vxCountOut], clipSpacePointsIn[i], clipSpacePointsIn[i2], frac);
+                        const Vertex4d& vOut = in1 ? clipSpacePointsIn[i2] : clipSpacePointsIn[i];
+                        const Vertex4d& vIn  = in1 ? clipSpacePointsIn[i]  : clipSpacePointsIn[i2];
+
+                        const fp dOut = in1 ? d2 : d1;
+                        const fp dIn  = in1 ? d1 : d2;
+
+                        const fp t = dOut / (dOut - dIn);
+
+                        LerpVertex(clipSpacePointsOut[vxCountOut], vOut, vIn, t);
                         vxCountOut++;
                     }
                 }
@@ -353,12 +377,12 @@ namespace P3D
             {
                 if(clipPlane == X_W_Left)
                     return -vertex.pos.x;
-                else if(clipPlane == X_W_Right)
+                else if (clipPlane == X_W_Right)
                     return vertex.pos.x;
-                else if(clipPlane == Y_W_Top)
+                else if (clipPlane == Y_W_Top)
                     return vertex.pos.y;
-
-                return -vertex.pos.y;
+                else
+                    return -vertex.pos.y;
             }
 
             ClipOperation no_inline GetClipOperation(const Vertex4d vertexes[3], const ClipPlane plane) const
@@ -386,18 +410,6 @@ namespace P3D
                     return Accept;
 
                 return Clip;
-            }
-
-            fp no_inline GetLineIntersectionFrac(const fp a1, const fp a2, const fp b1, const fp b2) const
-            {
-                fp diff1 = a1 - b1;
-                fp diff2 = a2 - b2;
-
-                if(pSameSignBit(diff1, diff2))
-                    return -1;
-
-                fp cp = (diff1 - a2 + b2);
-                return (diff1 / cp);
             }
 
             inline constexpr fp ClipW(const fp w) const
@@ -628,7 +640,7 @@ namespace P3D
                 DispatchSpan(span_pos, delta);
             }
 
-            void no_inline DispatchSpan(const TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta) const
+            void no_inline DispatchSpan(TriEdgeTrace& pos, const TriDrawXDeltaZWUV& delta) const
             {
 #ifdef RENDER_STATS
                 render_stats->scanlines_drawn++;

@@ -1,5 +1,5 @@
-#include "../include/videosystem.h"
 #include <windows.h>
+#include "../include/videosystem.h"
 
 int z = 0;
 QApplication* VideoSystem::application = new QApplication (z, nullptr);

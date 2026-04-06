@@ -176,6 +176,19 @@ namespace Obj2Bsp
         BspAABB child_node_bb; //AABB of this node + children.
     };
 
+    typedef struct BspPlaneStats
+    {
+        unsigned int front;
+        unsigned int back;
+        unsigned int on;
+        unsigned int splits;
+
+        float aabb_volume_front;
+        float aabb_volume_back;
+        float aabb_volume_on;
+        float aabb_overlap;
+    } BspPlaneStats;
+
     class BspBuilder
     {
     public:
@@ -185,7 +198,10 @@ namespace Obj2Bsp
     private:
         BspPlane CalculatePlane(const Triangle3d* triangle);
         BspNode* BuildTreeRecursive(std::vector<BspTriangle*>& triangles);
-        BspPlane CheckPlane(std::vector<BspTriangle*>& triangles, unsigned int index, int& front, int& back, int& onplane);
+        BspPlane CheckPlane(std::vector<BspTriangle*>& triangles, unsigned int index, BspPlaneStats& stats);
+        float BspPlaneScore(const BspPlaneStats& s) const;
+
+
         float Distance(const BspPlane& plane, const QVector3D& pos);
         int Sign(float i);
         void SeperateTriangles(BspPlane& plane, std::vector<BspTriangle*>& triangles, std::vector<BspTriangle*>& front_tris, std::vector<BspTriangle*>& back_tris, std::vector<BspTriangle*>& plane_tris_front, std::vector<BspTriangle *> &plane_tris_back);

@@ -13,10 +13,10 @@ class WorldModel
 public:
     explicit WorldModel();
 
-    const P3D::BspModel* GetModel() const {return model;}
+    constexpr const P3D::BspModel* GetModel() const {return model;}
 private:
-    const P3D::BspModel* model = (P3D::BspModel*)&modeldata;
-    const P3D::VisData* vis_data = (P3D::VisData*)&pvsdata;
+    const P3D::BspModel* model = reinterpret_cast<const P3D::BspModel*>(&modeldata);
+    const P3D::VisData* vis_data = (const P3D::VisData*)&pvsdata;
 
 };
 

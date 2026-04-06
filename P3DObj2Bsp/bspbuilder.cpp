@@ -40,34 +40,84 @@ namespace Obj2Bsp
         return BuildTreeRecursive(triangles);
     }
 
+    float BspBuilder::BspPlaneScore(const BspPlaneStats& s) const
+    {
+
+        constexpr float eps = 1e-6f;
+
+
+        constexpr float wSplits        = 5.0f;
+        constexpr float wCountBalance  = 0.35f;
+        constexpr float wVolumeBalance = 0.50f;
+        constexpr float wOverlap       = 1.25f;
+        constexpr float wOn            = 0.10f;
+
+        if(s.on == 0)
+            return std::numeric_limits<float>::max();
+
+        const float f  = static_cast<float>(s.front);
+        const float b  = static_cast<float>(s.back);
+        const float on = static_cast<float>(s.on);
+        const float sp = static_cast<float>(s.splits);
+
+
+        const float totalCount = f + b + on;
+
+        // Normalize split cost by node size.
+        const float splitPenalty = sp / (totalCount + eps);
+
+        // Count imbalance in [0,1].
+        const float countBalance = std::fabs(f - b) / (f + b + eps);
+
+        // Volume imbalance in [0,1].
+        const float vf = std::max(s.aabb_volume_front, 0.0f);
+        const float vb = std::max(s.aabb_volume_back,  0.0f);
+        const float volumeBalance = std::fabs(vf - vb) / (vf + vb + eps);
+
+        // Penalize overlap between child AABBs.
+        const float overlap = std::max(s.aabb_overlap, 0.0f);
+        const float overlapPenalty = overlap / (vf + vb + eps);
+
+        // Mild coplanar penalty.
+        const float onPenalty = on / (totalCount + eps);
+
+        return
+            wSplits        * splitPenalty +
+            wCountBalance  * countBalance +
+            wVolumeBalance * volumeBalance +
+            wOverlap       * overlapPenalty +
+            wOn            * onPenalty;
+    }
+
     BspNode* BspBuilder::BuildTreeRecursive(std::vector<BspTriangle*>& triangles)
     {
+        BspPlaneStats stats, best_stats;
+
         if(triangles.size() == 0)
             return nullptr;
 
         qDebug() << "Bulding node with" << triangles.size() << "triangles";
 
+        float best_score = 0; //Higher is worse!
 
-        int front = 0, back = 0, on = 0;
+        BspPlane best_plane = CheckPlane(triangles, 0, stats);
 
-        int best_score = 0; //Higher is worse!
-
-        BspPlane best_plane = CheckPlane(triangles, 0, front, back, on);
-
-        best_score = std::abs(back - front) + ((back + front + on) * 10);
+        best_score = BspPlaneScore(stats);
+        best_stats = stats;
 
         const int numTris = triangles.size();
 
         for(unsigned int i = 0; i < numTris; i++)
         {
-            BspPlane plane = CheckPlane(triangles, i, front, back, on);
+            BspPlane plane = CheckPlane(triangles, i, stats);
 
-            int score = std::abs(back - front) + ((back + front + on) * 10);
+            float score = BspPlaneScore(stats);
 
             if (score < best_score)
             {
                 best_plane = plane;
                 best_score = score;
+                best_stats = stats;
             }
         }
 
@@ -628,11 +678,15 @@ namespace Obj2Bsp
         }
     }
 
-    BspPlane BspBuilder::CheckPlane(std::vector<BspTriangle*>& triangles, unsigned int index, int& front, int& back, int& onplane)
+    BspPlane BspBuilder::CheckPlane(std::vector<BspTriangle*>& triangles, unsigned int index, BspPlaneStats& stats)
     {
-        front = 0;
-        back = 0;
-        onplane = 0;
+        stats.front = 0;
+        stats.back = 0;
+        stats.on = 0;
+
+        P3D::AABB<float> front_bb;
+        P3D::AABB<float> back_bb;
+        P3D::AABB<float> on_bb;
 
         BspPlane plane = CalculatePlane(triangles[index]->tri);
 
@@ -653,8 +707,15 @@ namespace Obj2Bsp
             case SplitType( 0, -1, -1):
             case SplitType( 0, -1,  0):
             case SplitType( 0,  0, -1):
-                back++;
+            {
+                back_bb.AddPoint(P3D::V3<float>(triangles[i]->tri->verts[0].pos.x(), triangles[i]->tri->verts[0].pos.y(), triangles[i]->tri->verts[0].pos.z()));
+                back_bb.AddPoint(P3D::V3<float>(triangles[i]->tri->verts[1].pos.x(), triangles[i]->tri->verts[1].pos.y(), triangles[i]->tri->verts[1].pos.z()));
+                back_bb.AddPoint(P3D::V3<float>(triangles[i]->tri->verts[2].pos.x(), triangles[i]->tri->verts[2].pos.y(), triangles[i]->tri->verts[2].pos.z()));
+
+                stats.back++;
                 break;
+            }
+
 
             case SplitType( 0,  0,  1):
             case SplitType( 0,  1,  0):
@@ -663,19 +724,42 @@ namespace Obj2Bsp
             case SplitType( 1,  0,  1):
             case SplitType( 1,  1,  0):
             case SplitType( 1,  1,  1):
-                front++;
+            {
+                front_bb.AddPoint(P3D::V3<float>(triangles[i]->tri->verts[0].pos.x(), triangles[i]->tri->verts[0].pos.y(), triangles[i]->tri->verts[0].pos.z()));
+                front_bb.AddPoint(P3D::V3<float>(triangles[i]->tri->verts[1].pos.x(), triangles[i]->tri->verts[1].pos.y(), triangles[i]->tri->verts[1].pos.z()));
+                front_bb.AddPoint(P3D::V3<float>(triangles[i]->tri->verts[2].pos.x(), triangles[i]->tri->verts[2].pos.y(), triangles[i]->tri->verts[2].pos.z()));
+
+                stats.front++;
                 break;
+            }
 
             case SplitType( 0,  0,  0):
-                onplane++;
+            {
+                on_bb.AddPoint(P3D::V3<float>(triangles[i]->tri->verts[0].pos.x(), triangles[i]->tri->verts[0].pos.y(), triangles[i]->tri->verts[0].pos.z()));
+                on_bb.AddPoint(P3D::V3<float>(triangles[i]->tri->verts[1].pos.x(), triangles[i]->tri->verts[1].pos.y(), triangles[i]->tri->verts[1].pos.z()));
+                on_bb.AddPoint(P3D::V3<float>(triangles[i]->tri->verts[2].pos.x(), triangles[i]->tri->verts[2].pos.y(), triangles[i]->tri->verts[2].pos.z()));
+
+                stats.on++;
                 break;
+            }
 
             case SplitType(-1, -1,  1):
             case SplitType(-1,  1, -1):
             case SplitType( 1, -1, -1):
-                back+= 2;
-                front++;
+            {
+                front_bb.AddPoint(P3D::V3<float>(triangles[i]->tri->verts[0].pos.x(), triangles[i]->tri->verts[0].pos.y(), triangles[i]->tri->verts[0].pos.z()));
+                front_bb.AddPoint(P3D::V3<float>(triangles[i]->tri->verts[1].pos.x(), triangles[i]->tri->verts[1].pos.y(), triangles[i]->tri->verts[1].pos.z()));
+                front_bb.AddPoint(P3D::V3<float>(triangles[i]->tri->verts[2].pos.x(), triangles[i]->tri->verts[2].pos.y(), triangles[i]->tri->verts[2].pos.z()));
+
+                back_bb.AddPoint(P3D::V3<float>(triangles[i]->tri->verts[0].pos.x(), triangles[i]->tri->verts[0].pos.y(), triangles[i]->tri->verts[0].pos.z()));
+                back_bb.AddPoint(P3D::V3<float>(triangles[i]->tri->verts[1].pos.x(), triangles[i]->tri->verts[1].pos.y(), triangles[i]->tri->verts[1].pos.z()));
+                back_bb.AddPoint(P3D::V3<float>(triangles[i]->tri->verts[2].pos.x(), triangles[i]->tri->verts[2].pos.y(), triangles[i]->tri->verts[2].pos.z()));
+
+
+                stats.back+= 2;
+                stats.front++;
                 break;
+            }
 
             case SplitType(-1,  0,  1):
             case SplitType( 1,  0, -1):
@@ -683,18 +767,49 @@ namespace Obj2Bsp
             case SplitType( 1, -1,  0):
             case SplitType( 0, -1,  1):
             case SplitType( 0,  1, -1):
-                back++;
-                front++;
+            {
+                front_bb.AddPoint(P3D::V3<float>(triangles[i]->tri->verts[0].pos.x(), triangles[i]->tri->verts[0].pos.y(), triangles[i]->tri->verts[0].pos.z()));
+                front_bb.AddPoint(P3D::V3<float>(triangles[i]->tri->verts[1].pos.x(), triangles[i]->tri->verts[1].pos.y(), triangles[i]->tri->verts[1].pos.z()));
+                front_bb.AddPoint(P3D::V3<float>(triangles[i]->tri->verts[2].pos.x(), triangles[i]->tri->verts[2].pos.y(), triangles[i]->tri->verts[2].pos.z()));
+
+                back_bb.AddPoint(P3D::V3<float>(triangles[i]->tri->verts[0].pos.x(), triangles[i]->tri->verts[0].pos.y(), triangles[i]->tri->verts[0].pos.z()));
+                back_bb.AddPoint(P3D::V3<float>(triangles[i]->tri->verts[1].pos.x(), triangles[i]->tri->verts[1].pos.y(), triangles[i]->tri->verts[1].pos.z()));
+                back_bb.AddPoint(P3D::V3<float>(triangles[i]->tri->verts[2].pos.x(), triangles[i]->tri->verts[2].pos.y(), triangles[i]->tri->verts[2].pos.z()));
+
+
+                stats.back++;
+                stats.front++;
                 break;
+            }
 
             case SplitType(-1,  1,  1):
             case SplitType( 1, -1,  1):
             case SplitType( 1,  1, -1):
-                back++;
-                front+=2;
+            {
+                front_bb.AddPoint(P3D::V3<float>(triangles[i]->tri->verts[0].pos.x(), triangles[i]->tri->verts[0].pos.y(), triangles[i]->tri->verts[0].pos.z()));
+                front_bb.AddPoint(P3D::V3<float>(triangles[i]->tri->verts[1].pos.x(), triangles[i]->tri->verts[1].pos.y(), triangles[i]->tri->verts[1].pos.z()));
+                front_bb.AddPoint(P3D::V3<float>(triangles[i]->tri->verts[2].pos.x(), triangles[i]->tri->verts[2].pos.y(), triangles[i]->tri->verts[2].pos.z()));
+
+                back_bb.AddPoint(P3D::V3<float>(triangles[i]->tri->verts[0].pos.x(), triangles[i]->tri->verts[0].pos.y(), triangles[i]->tri->verts[0].pos.z()));
+                back_bb.AddPoint(P3D::V3<float>(triangles[i]->tri->verts[1].pos.x(), triangles[i]->tri->verts[1].pos.y(), triangles[i]->tri->verts[1].pos.z()));
+                back_bb.AddPoint(P3D::V3<float>(triangles[i]->tri->verts[2].pos.x(), triangles[i]->tri->verts[2].pos.y(), triangles[i]->tri->verts[2].pos.z()));
+
+
+                stats.back++;
+                stats.front+=2;
                 break;
             }
+
+            }
         }
+
+        stats.splits = (stats.front + stats.back + stats.on) - triangles.size();
+
+        stats.aabb_volume_front = front_bb.GetVolume();
+        stats.aabb_volume_back = back_bb.GetVolume();
+        stats.aabb_volume_on = on_bb.GetVolume();
+
+        stats.aabb_overlap = front_bb.GetIntersection(back_bb).GetVolume();
 
         return plane;
     }

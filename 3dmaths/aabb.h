@@ -15,7 +15,7 @@ namespace P3D
             x2 = y2 = z2 = std::numeric_limits<T>::lowest();
         }
 
-        explicit constexpr AABB(const V3<T>& point)
+        explicit constexpr AABB(const V3<T>& point) : AABB()
         {
             AddPoint(point);
         }
@@ -108,6 +108,15 @@ namespace P3D
             return true;
         }
 
+        constexpr AABB GetIntersection(const AABB& other) const
+        {
+            return AABB(
+                pMax(x1, other.x1), pMin(x2, other.x2),
+                pMax(y1, other.y1), pMin(y2, other.y2),
+                pMax(z1, other.z1), pMin(z2, other.z2)
+            );
+        }
+
         constexpr T GetX1() const {return x1;}
         constexpr T GetX2() const {return x2;}
 
@@ -120,6 +129,16 @@ namespace P3D
         constexpr T GetXWidth() const {return x2 - x1;}
         constexpr T GetYHeight() const {return y2 - y1;}
         constexpr T GetZDepth() const {return z2 - z1;}
+
+        constexpr bool IsEmpty() const {return x1 > x2 || y1 > y2 || z1 > z2;}
+
+        constexpr T GetVolume() const
+        {
+            if(IsEmpty())
+                return T(0);
+
+            return GetXWidth() * GetYHeight() * GetZDepth();
+        }
 
     private:
 

@@ -21,7 +21,7 @@ namespace P3D
             pvs_node = GetLeafNodeId(p);
 
         SortBackToFront(p, frustrum, pvs_node);
-        OutputTris(out, backface_cull);
+        OutputTris(out, frustrum, backface_cull);
     }
 
 
@@ -107,7 +107,7 @@ namespace P3D
         }
     }
 
-    void BspModel::OutputTris(List<const BspModelTriangle *> &out, const bool backface_cull) const
+    void BspModel::OutputTris(List<const BspModelTriangle *> &out, const AABB<short>& frustrum, const bool backface_cull) const
     {
         for(unsigned int i = 0; i < node_list.Size(); i++)
         {
@@ -124,7 +124,8 @@ namespace P3D
 #ifdef STORE_PVS
                 *((unsigned int*)&tri->color) = node & NODE_MASK; // Store the node ID in the color field for debugging;
 #endif
-                out.Add(tri);
+                if(frustrum.Intersect(tri->tri_bb))
+                    out.Add(tri);
             }
 
             if(!backface_cull)
@@ -138,7 +139,8 @@ namespace P3D
 #ifdef STORE_PVS
                     *((unsigned int*)&tri->color) = node & NODE_MASK; // Store the node ID in the color field for debugging;
 #endif
-                    out.Add(tri);
+                    if(frustrum.Intersect(tri->tri_bb))
+                        out.Add(tri);
                 }
             }
         }

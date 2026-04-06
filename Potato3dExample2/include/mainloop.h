@@ -28,8 +28,8 @@ private:
     void ResolveCollisions();
     void RunTimeslots();
 
-    static constexpr P3D::fp zNear = 25;
-    static constexpr P3D::fp zFar = 3000;
+    static constexpr P3D::fp zNear = METERS(0.25);
+    static constexpr P3D::fp zFar = METERS(250);
     static constexpr P3D::fp vFov = 60;
     static constexpr P3D::fp hFov = 90;
 

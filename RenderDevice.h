@@ -29,14 +29,14 @@ namespace P3D
         ~RenderDevice() {}
 
         //Render Target
-        void SetRenderTarget(const RenderTarget *target)
+        void no_inline SetRenderTarget(const RenderTarget *target)
         {
             render_target = target;
 
             SetViewport(0, 0, render_target->GetWidth(), render_target->GetHeight());
         }
 
-        void SetViewport(unsigned int x, unsigned int y, unsigned int width, unsigned int height)
+        void no_inline SetViewport(unsigned int x, unsigned int y, unsigned int width, unsigned int height)
         {
             if(((x + width) > render_target->GetWidth()) || (y + height > render_target->GetHeight()))
             {
@@ -87,7 +87,7 @@ namespace P3D
         }
 
         //Matrix
-        void SetPerspective(const fp vertical_fov, const fp aspect_ratio, const fp z_near, const fp z_far)
+        void no_inline SetPerspective(const fp vertical_fov, const fp aspect_ratio, const fp z_near, const fp z_far)
         {
             projection_matrix.perspective(vertical_fov, aspect_ratio, z_near, z_far);
 
@@ -113,7 +113,7 @@ namespace P3D
             }
         }
 
-        void SetOrthographic(const fp left, const fp right, const fp bottom, const fp top, const fp z_near, const fp z_far)
+        void no_inline SetOrthographic(const fp left, const fp right, const fp bottom, const fp top, const fp z_near, const fp z_far)
         {
             projection_matrix.orthographic(left, right, bottom, top, z_near, z_far);
 
@@ -121,7 +121,7 @@ namespace P3D
             z_planes.z_far = z_far;
         }
 
-        unsigned int PushMatrix()
+        unsigned int no_inline PushMatrix()
         {
             const M4<fp> m = model_view_matrix_stack.back();
 
@@ -130,7 +130,7 @@ namespace P3D
             return (unsigned int)model_view_matrix_stack.size();
         }
 
-        unsigned int PopMatrix()
+        unsigned int no_inline PopMatrix()
         {
             if(model_view_matrix_stack.size() > 1)
             {
@@ -140,46 +140,46 @@ namespace P3D
             return (unsigned int)model_view_matrix_stack.size();
         }
 
-        M4<fp>& GetMatrix()
+        M4<fp>& no_inline GetMatrix()
         {
             return model_view_matrix_stack.back();
         }
 
-        void LoadMatrix(const M4<fp> &matrix)
+        void no_inline LoadMatrix(const M4<fp> &matrix)
         {
             model_view_matrix_stack.pop_back();
 
             model_view_matrix_stack.push_back(matrix);
         }
 
-        void LoadIdentity()
+        void no_inline LoadIdentity()
         {
             model_view_matrix_stack.back().setToIdentity();
         }
 
-        void Translate(const V3<fp>& v)
+        void no_inline Translate(const V3<fp>& v)
         {
             model_view_matrix_stack.back().translate(v);
         }
 
-        void RotateX(const fp angle)
+        void no_inline RotateX(const fp angle)
         {
             model_view_matrix_stack.back().rotateX(angle);
         }
 
-        void RotateY(const fp angle)
+        void no_inline RotateY(const fp angle)
         {
             model_view_matrix_stack.back().rotateY(angle);
         }
 
-        void RotateZ(const fp angle)
+        void no_inline RotateZ(const fp angle)
         {
             model_view_matrix_stack.back().rotateZ(angle);
         }
 
 
         //Clear
-        void ClearColor(const pixel color)
+        void no_inline ClearColor(const pixel color)
         {
             unsigned int c32 = color;
             unsigned int shift = 0;
@@ -203,7 +203,7 @@ namespace P3D
             }
         }
 
-        void ClearDepth(const z_val depth)
+        void no_inline ClearDepth(const z_val depth)
         {
             for(unsigned int y = 0; y < render_target->GetHeight(); y++)
             {
@@ -216,7 +216,7 @@ namespace P3D
             }
         }
 
-        void ClearViewportColor(const pixel color)
+        void no_inline ClearViewportColor(const pixel color)
         {
             unsigned int c32 = color;
             unsigned int shift = 0;
@@ -255,7 +255,7 @@ namespace P3D
             }
         }
 
-        void ClearViewportDepth(const z_val depth)
+        void no_inline ClearViewportDepth(const z_val depth)
         {
             for(unsigned int y = 0; y < viewport.height; y++)
             {
@@ -268,23 +268,23 @@ namespace P3D
             }
         }
 
-        void SetFogColor(const pixel color)
+        void no_inline SetFogColor(const pixel color)
         {
             fog_params.fog_color = color;
         }
 
-        void SetFogMode(FogMode mode)
+        void no_inline SetFogMode(FogMode mode)
         {
             fog_params.mode = mode;
         }
 
-        void SetFogDepth(fp fog_start, fp fog_end)
+        void no_inline SetFogDepth(fp fog_start, fp fog_end)
         {
             fog_params.fog_start = fog_start;
             fog_params.fog_end = fog_end;
         }
 
-        void SetFogDensity(fp density)
+        void no_inline SetFogDensity(fp density)
         {
             fog_params.fog_density = density;
         }
@@ -299,7 +299,7 @@ namespace P3D
 
         void EndFrame() {}
 
-        void BeginDraw(Plane<fp> frustrumPlanes[6] = nullptr)
+        void no_inline BeginDraw(Plane<fp> frustrumPlanes[6] = nullptr)
         {
             UpdateTransformMatrix();
 
@@ -312,7 +312,7 @@ namespace P3D
         void EndDraw() {}
 
         //
-        void SetTextureCache(TextureCacheBase* cache)
+        void no_inline SetTextureCache(TextureCacheBase* cache)
         {
             if(texture_cache)
                 delete texture_cache;
@@ -322,7 +322,7 @@ namespace P3D
             triangle_render->SetTextureCache(texture_cache);
         }
 
-        void SetMaterial(const Material& material, const signed char importance = 0)
+        void no_inline SetMaterial(const Material& material, const signed char importance = 0)
         {
             current_material = &material;
 
@@ -332,13 +332,13 @@ namespace P3D
             }
         }
 
-        void SetFogLightMap(const unsigned char* colorMap)
+        void no_inline SetFogLightMap(const unsigned char* colorMap)
         {
             triangle_render->SetFogLightMap(colorMap);
         }
 
         //Draw Objects.
-        void DrawTriangle(const V3<fp> vertexes[3], const V2<fp> uvs[3] = nullptr, const fp light_levels[3] = nullptr)
+        void no_inline DrawTriangle(const V3<fp> vertexes[3], const V2<fp> uvs[3] = nullptr, const fp light_levels[3] = nullptr)
         {
             TransformVertexes(vertexes, 3);
 
@@ -347,7 +347,7 @@ namespace P3D
             DrawTriangle(indexes, uvs, light_levels);
         }
 
-        void TransformVertexes(const V3<fp>* vertexes, const unsigned int count)
+        void no_inline TransformVertexes(const V3<fp>* vertexes, const unsigned int count)
         {
             if(transformed_vertexes_buffer_count < count)
             {
@@ -366,7 +366,7 @@ namespace P3D
 #endif
         }
 
-        void DrawTriangle(const unsigned int indexes[3], const V2<fp> uvs[3] = nullptr, const fp light_levels[3] = nullptr) const
+        void no_inline DrawTriangle(const unsigned int indexes[3], const V2<fp> uvs[3] = nullptr, const fp light_levels[3] = nullptr) const
         {
             P3D::Internal::TransformedTriangle tri;
 
@@ -400,7 +400,7 @@ namespace P3D
 
     private:
 
-        void UpdateTransformMatrix()
+        void no_inline UpdateTransformMatrix()
         {
             transform_matrix = projection_matrix * model_view_matrix_stack.back();
 

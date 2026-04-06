@@ -9,9 +9,9 @@ std::mutex g_mapMutex;
 
 void StorePVS(const unsigned int node_count);
 
-QString objPath = "C:\\Users\\Zak\\Downloads\\Villa\\Villa.obj";
+//QString objPath = "C:\\Users\\Zak\\Downloads\\Villa\\Villa.obj";
 //QString objPath = "C:\\Users\\Zak\\Downloads\\PVSTest\\PVSTest.obj";
-
+QString objPath = "C:/Users/Zak/Downloads/Temple/temple.obj";
 
 void merge_maps(std::map<unsigned int, std::unordered_set<unsigned int>>& dst,
                 const std::map<unsigned int, std::unordered_set<unsigned int>>& src)

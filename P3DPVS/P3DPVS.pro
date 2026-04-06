@@ -37,7 +37,7 @@ HEADERS += \
     else: unix:!android: target.path = /opt/$${TARGET}/bin
     !isEmpty(target.path): INSTALLS += target
 
-QMAKE_CXXFLAGS += /GL
-QMAKE_CFLAGS += /GL
+#QMAKE_CXXFLAGS += /GL
+#QMAKE_CFLAGS += /GL
 
-QMAKE_LFLAGS += /LTCG
+#QMAKE_LFLAGS += /LTCG

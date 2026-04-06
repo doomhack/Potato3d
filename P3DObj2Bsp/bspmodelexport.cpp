@@ -93,6 +93,10 @@ namespace Obj2Bsp
                                             nodeList[i]->front_tris[j]->edge_plane_20.normal.z());
                 bmt.edge_plane_2_0 = P3D::Plane<P3D::fp>(normal, nodeList[i]->front_tris[j]->edge_plane_20.distance);
 
+                bmt.tri_bb.AddPoint(P3D::V3<short>((int)bmt.tri.verts[0].pos.x, (int)bmt.tri.verts[0].pos.y, (int)bmt.tri.verts[0].pos.z));
+                bmt.tri_bb.AddPoint(P3D::V3<short>((int)bmt.tri.verts[1].pos.x, (int)bmt.tri.verts[1].pos.y, (int)bmt.tri.verts[1].pos.z));
+                bmt.tri_bb.AddPoint(P3D::V3<short>((int)bmt.tri.verts[2].pos.x, (int)bmt.tri.verts[2].pos.y, (int)bmt.tri.verts[2].pos.z));
+
                 const Texture* tex = nodeList[i]->front_tris[j]->texture;
 
                 if(tex)
@@ -165,6 +169,10 @@ namespace Obj2Bsp
                                             nodeList[i]->back_tris[j]->edge_plane_20.normal.z());
                 bmt.edge_plane_2_0 = P3D::Plane<P3D::fp>(normal, nodeList[i]->back_tris[j]->edge_plane_20.distance);
 
+                bmt.tri_bb.AddPoint(P3D::V3<short>((int)bmt.tri.verts[0].pos.x, (int)bmt.tri.verts[0].pos.y, (int)bmt.tri.verts[0].pos.z));
+                bmt.tri_bb.AddPoint(P3D::V3<short>((int)bmt.tri.verts[1].pos.x, (int)bmt.tri.verts[1].pos.y, (int)bmt.tri.verts[1].pos.z));
+                bmt.tri_bb.AddPoint(P3D::V3<short>((int)bmt.tri.verts[2].pos.x, (int)bmt.tri.verts[2].pos.y, (int)bmt.tri.verts[2].pos.z));
+
                 const Texture* tex = nodeList[i]->back_tris[j]->texture;
 
                 if(tex)
@@ -197,7 +205,6 @@ namespace Obj2Bsp
 
             bn.front_node = 0;
             bn.back_node = 0;
-            bn.parent_node = 0;
 
             if(nodeList[i]->front)
             {
@@ -208,11 +215,6 @@ namespace Obj2Bsp
             {
                 bn.back_node = nodeList.indexOf(nodeList[i]->back);
             }
-
-            if(nodeList[i]->parent)
-                bn.parent_node = nodeList.indexOf(nodeList[i]->parent);
-            else
-                bn.parent_node = -1;
 
             modelNodeList.append(bn);
         }

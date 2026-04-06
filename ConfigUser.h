@@ -47,6 +47,10 @@ namespace P3D
     //inline constexpr fp SUBDIVIDE_Z_THRESHOLD = fp(5);
     inline constexpr fp SUBDIVIDE_Z_THRESHOLD = fp(2);
 
+    inline constexpr fp METERS_TO_WORLD_UNITS = fp(10);
+
+    #define METERS(x) ((P3D::fp(x) * P3D::METERS_TO_WORLD_UNITS))
+
     #define no_inline __attribute__((noinline))
     //#define no_inline
 

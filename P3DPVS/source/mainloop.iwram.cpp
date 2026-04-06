@@ -247,8 +247,8 @@ void MainLoop::RenderModel()
         {
             unsigned int node = *((unsigned int*)&tri->color);
 
-            //if(current_node == 29 && node == 2)
-            //    qDebug() << "Should not see me";
+            if(current_node == 29 && m.type == P3D::Material::Color)
+                qDebug() << "Should not see me";
 
 
             visData[current_node].insert(node);

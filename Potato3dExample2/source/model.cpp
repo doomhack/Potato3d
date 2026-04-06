@@ -14,7 +14,12 @@
 //#include "C:/Users/Zak/Downloads/DDHQ2/ddhq2.pvs.cpp"
 
 
-#include "C:/Users/Zak/Downloads/PVSTest/PVSTest.cpp"
-#include "C:/Users/Zak/Downloads/PVSTest/PVSTest.pvs.cpp"
+//#include "C:/Users/Zak/Downloads/PVSTest/PVSTest.cpp"
+//#include "C:/Users/Zak/Downloads/PVSTest/PVSTest.pvs.cpp"
 
-//const extern unsigned char pvsdata[1] = {0};
+//#include "C:/Users/Zak/Downloads/Temple/temple.cpp"
+//#include "C:/Users/Zak/Downloads/Temple/temple.pvs.cpp"
+
+#include "C:/Users/Zak/Downloads/PVSTest2/PVSTest2.cpp"
+
+const extern unsigned char pvsdata[1] = {0};

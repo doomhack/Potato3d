@@ -38,7 +38,7 @@ namespace P3D
     }
 
     template<unsigned int fracbits>
-    constexpr FP<fracbits> pRound(const FP<fracbits> val)
+    constexpr inline int pRound(const FP<fracbits> val)
     {
         return val + (FP<fracbits>(1) >> 1);
     }
@@ -121,6 +121,7 @@ namespace P3D
     {
         return (a & b & c) < 0;
     }
+
 
     template <class T>
     constexpr inline bool pAllGTEqZ3(const T a, const T b, const T c)

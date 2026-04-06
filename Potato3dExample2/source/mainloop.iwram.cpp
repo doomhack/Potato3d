@@ -106,7 +106,7 @@ P3D::AABB<short> MainLoop::GetFrustrumBB()
 
 void MainLoop::RenderModel(const P3D::AABB<short>& viewFrustrumBB)
 {
-    model.GetModel()->Sort(camera.GetEyePosition(), viewFrustrumBB, triBuffer, true, true);
+    model.GetModel()->Sort(camera.GetEyePosition(), viewFrustrumBB, triBuffer, true, false);
 
     //for(int i = triBuffer.size()-1; i >= 0; i--)
     for(unsigned int i = 0; i < triBuffer.Size(); i++)
@@ -166,7 +166,7 @@ bool MainLoop::FrustrumTestTriangle(const P3D::BspModelTriangle* tri) const
 
 void MainLoop::ResolveCollisions()
 {
-    const int bb_size = 100;
+    const int bb_size = METERS(2);
     P3D::AABB<short> player_box(P3D::V3<short>((int)camera.GetPosition().x, (int)camera.GetPosition().y, (int)camera.GetPosition().z), bb_size);
 
     model.GetModel()->Sort(camera.GetPosition(), player_box, triBuffer, false, false);
@@ -177,7 +177,7 @@ void MainLoop::ResolveCollisions()
     {
         P3D::V3<P3D::fp> resolutionVector;
 
-        if(collision.CheckCollision(triBuffer.At(i), camera.GetPosition(), 50, resolutionVector))
+        if(collision.CheckCollision(triBuffer.At(i), camera.GetPosition(), METERS(0.5), resolutionVector))
         {
             if( (pAbs(resolutionVector.x) + pAbs(resolutionVector.z)) > (pASR(resolutionVector.y,1)))
             {
@@ -197,7 +197,7 @@ void MainLoop::ResolveCollisions()
     if(collision_count > 0)
         gravity_velocity = 0;
     else
-        gravity_velocity = P3D::pMin(gravity_velocity + 2, P3D::fp(25));
+        gravity_velocity = P3D::pMin(gravity_velocity + METERS(0.025), METERS(1));
 }
 
 void MainLoop::RunTimeslots()
