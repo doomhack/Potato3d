@@ -336,15 +336,13 @@ namespace P3D
             {
                 unsigned int vxCountOut = 0;
 
+                fp d1 = ClipW(clipSpacePointsIn[0].pos.w) - GetClipPointForVertex(clipSpacePointsIn[0], clipPlane);
+
                 for(int i = 0; i < vxCount; i++)
                 {
                     int i2 = (i < (vxCount-1)) ? i+1 : 0;
 
-                    const fp b1 = GetClipPointForVertex(clipSpacePointsIn[i], clipPlane);
-                    const fp b2 = GetClipPointForVertex(clipSpacePointsIn[i2], clipPlane);
-
-                    const fp d1 = ClipW(clipSpacePointsIn[i].pos.w)  - b1;
-                    const fp d2 = ClipW(clipSpacePointsIn[i2].pos.w) - b2;
+                    const fp d2 = ClipW(clipSpacePointsIn[i2].pos.w) - GetClipPointForVertex(clipSpacePointsIn[i2], clipPlane);
 
                     const bool in1 = d1 >= 0;
                     const bool in2 = d2 >= 0;
@@ -368,6 +366,8 @@ namespace P3D
                         LerpVertex(clipSpacePointsOut[vxCountOut], vOut, vIn, t);
                         vxCountOut++;
                     }
+
+                    d1 = d2;
                 }
 
                 return vxCountOut;
