@@ -32,7 +32,7 @@ MUSIC		:= music
 #---------------------------------------------------------------------------------
 ARCH	:=	-mthumb -mthumb-interwork
 
-CFLAGS	:=	-g -Wall -O2 -gdwarf-4\
+CFLAGS	:=	-g -Wall -O2\
                 -mcpu=arm7tdmi -mtune=arm7tdmi -fno-threadsafe-statics -fallow-store-data-races\
 		-ffast-math -ffunction-sections\
 #		-fdeclone-ctor-dtor\
@@ -43,7 +43,7 @@ CFLAGS	:=	-g -Wall -O2 -gdwarf-4\
 #               -finline-limit=5\
 		$(ARCH)
 
-CFLAGS	+=	$(INCLUDE)
+CFLAGS	+=	$(INCLUDE) -DNDEBUG -DGBA
 
 CXXFLAGS	:=	$(CFLAGS) -fno-rtti -fno-exceptions -std=c++20
 

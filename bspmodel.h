@@ -111,6 +111,21 @@ namespace P3D
             return ((const unsigned char*)(GetBasePtr() + header.fog_lightmap_offset));
         }
 
+        unsigned int GetSkyboxWidth() const
+        {
+            return header.skybox_width;
+        }
+
+        unsigned int GetSkyboxHeight() const
+        {
+            return header.skybox_height;
+        }
+
+        const pixel* GetSkyboxPixels() const
+        {
+            return &((const pixel*)(GetBasePtr() + header.skybox_pixels_offset))[0];
+        }
+
         void SetVisData(const VisData* data) const
         {
             vis_data = data;
@@ -134,7 +149,7 @@ namespace P3D
 
         bool CheckPvs(unsigned int src_node, unsigned int dst_node) const;
 
-        constexpr const unsigned char* GetBasePtr() const
+        const unsigned char* GetBasePtr() const
         {
             return (const unsigned char*)&header;
         }
@@ -146,17 +161,17 @@ namespace P3D
             return dot - plane.Distance();
         }
 
-        constexpr const BspModelTriangle* GetTriangle(unsigned int n) const
+        const BspModelTriangle* GetTriangle(unsigned int n) const
         {
             return &((const BspModelTriangle*)(GetBasePtr() + header.triangle_offset))[n];
         }
 
-        constexpr const BspModelNode* GetNode(unsigned int n) const
+        const BspModelNode* GetNode(unsigned int n) const
         {
             return &((const BspModelNode*)(GetBasePtr() + header.node_offset))[n];
         }
 
-        constexpr unsigned int NodeIndex(const BspModelNode* node) const
+        unsigned int NodeIndex(const BspModelNode* node) const
         {
             return node - GetNode(0);
         }

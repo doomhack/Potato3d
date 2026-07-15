@@ -12,7 +12,8 @@ INCLUDEPATH += "C:\devkitPro\libgba\include"
 
 SOURCES += \
     source/main.iwram.cpp \
-    source/recip.cpp
+    source/recip.cpp \
+    source/texturecachegba.cpp
 
 
 
@@ -23,4 +24,7 @@ SOURCES += \
 
 DISTFILES += \
     Makefile
+
+HEADERS += \
+    include/texturecachegba.h
 

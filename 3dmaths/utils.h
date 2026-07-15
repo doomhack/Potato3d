@@ -1,6 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <algorithm>
 #include <cstdint>
 #include <cmath>
 #include <cstring>
@@ -149,49 +150,54 @@ namespace P3D
 
     inline void FastCopy32(void* dest, const void* src, const unsigned int len)
     {
-    #ifdef __arm__
+    #if defined(GBA) && !defined(PROFILING)
         const int words = len >> 2;
 
         DMA3COPY(src, dest, DMA_DST_INC | DMA_SRC_INC | DMA32 | DMA_IMMEDIATE | words)
     #else
-        memcpy(dest, src, len & 0xfffffffc);
+
+        unsigned int* d = reinterpret_cast<unsigned int*>(reinterpret_cast<std::uintptr_t>(dest) & ~std::uintptr_t(3));
+        unsigned int* s = reinterpret_cast<unsigned int*>(reinterpret_cast<std::uintptr_t>(src) & ~std::uintptr_t(3));
+
+        std::copy(s, &s[len >> 2], d);
     #endif
     }
 
     inline void FastCopy16(void* dest, const void* src, const unsigned int len)
     {
-    #ifdef __arm__
+    #if defined(GBA) && !defined(PROFILING)
         const int words = len >> 1;
 
         DMA3COPY(src, dest, DMA_DST_INC | DMA_SRC_INC | DMA16 | DMA_IMMEDIATE | words)
     #else
-        memcpy(dest, src, len & 0xfffffffe);
+
+        unsigned int* d = reinterpret_cast<unsigned int*>(reinterpret_cast<std::uintptr_t>(dest) & ~std::uintptr_t(1));
+        unsigned int* s = reinterpret_cast<unsigned int*>(reinterpret_cast<std::uintptr_t>(src) & ~std::uintptr_t(1));
+
+        std::copy(s, &s[len >> 1], d);
     #endif
     }
 
     inline void FastFill32(unsigned int* dest, const unsigned int value, unsigned int words)
     {
-#ifndef __arm__
-        while(words--)
-        {
-            *dest++ = value;
-        }
-#else
+    #if defined(GBA) && !defined(PROFILING)
         volatile unsigned int v = value;
 
         DMA3COPY(&v, dest, DMA_SRC_FIXED | DMA_DST_INC | DMA32 | DMA_IMMEDIATE | words)
-#endif
+    #else
+        std::fill(dest, &dest[words], value);
+    #endif
     }
 
     inline void FastFill16(unsigned short* dest, const unsigned short value, unsigned int words)
     {
-#ifndef __arm__
-        std::wmemset((wchar_t*)dest, value, words);
-#else
+    #if defined(GBA) && !defined(PROFILING)
         volatile unsigned short v = value;
 
         DMA3COPY(&v, dest, DMA_SRC_FIXED | DMA_DST_INC | DMA16 | DMA_IMMEDIATE | words)
-#endif
+    #else
+        std::fill(dest, &dest[words], value);
+    #endif
     }
 
     template <class T>

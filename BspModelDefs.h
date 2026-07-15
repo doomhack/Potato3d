@@ -44,6 +44,10 @@ namespace P3D
 
         unsigned int fog_lightmap_offset; //Bytes from BspModel*
 
+        unsigned int skybox_pixels_offset; //Bytes from BspModel*
+        unsigned int skybox_width;
+        unsigned int skybox_height;
+
     } BspModelHeader;
 
     typedef struct BspModelTriangle

@@ -27,6 +27,7 @@ private:
     bool FrustrumTestTriangle(const P3D::BspModelTriangle* tri) const;
     void ResolveCollisions();
     void RunTimeslots();
+    void DrawSkybox();
 
     static constexpr P3D::fp zNear = METERS(0.25);
     static constexpr P3D::fp zFar = METERS(250);

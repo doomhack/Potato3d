@@ -16,6 +16,7 @@ SOURCES += \
         source/main.cpp \
         source/recip.redir.cpp \
         source/setup.cpp \
+        source/texturecachegba.cpp \
         source/videosystem.cpp \
         source/worldmodel.cpp
 
@@ -55,7 +56,8 @@ HEADERS += \
     ../Pixel.h \
     ../bspmodel.h \
     ../object3d.h \
-    ../potato3d.h
+    ../potato3d.h \
+    include/texturecachegba.h
 
 
     # Default rules for deployment.

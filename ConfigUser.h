@@ -51,8 +51,11 @@ namespace P3D
 
     #define METERS(x) ((P3D::fp(x) * P3D::METERS_TO_WORLD_UNITS))
 
-    #define no_inline __attribute__((noinline))
-    //#define no_inline
+    #ifdef PROFILING
+        #define no_inline __attribute__((noinline))
+    #else
+        #define no_inline
+    #endif
 
 }
 

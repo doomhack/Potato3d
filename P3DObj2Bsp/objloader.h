@@ -34,12 +34,19 @@ namespace Obj2Bsp
         bool alpha;
     };
 
+    class Skybox
+    {
+    public:
+        QByteArray pixels;
+        unsigned short width;
+        unsigned short height;
+    };
+
     class Mesh3d
     {
     public:
         QRgb color = 0;
         Texture* texture = nullptr;
-
         QList<Triangle3d*> tris;
     };
 
@@ -48,6 +55,7 @@ namespace Obj2Bsp
     public:
         QVector3D pos = QVector3D(0,0,0);
         QList<Mesh3d*> mesh;
+        Skybox* skybox;
         unsigned int vertex_id_count = 0;
         unsigned int colormap[256];
         unsigned char foglightmap[256][16][16];
@@ -69,11 +77,11 @@ namespace Obj2Bsp
         void ParseMaterials(QString mtlText, QDir texturePath, QMap<QString, Texture*>& textures, QMap<QString, QRgb>& textureColors);
         QImage GetMegaTexture(QMap<QString, Texture*>& textures);
 
-        QImage QuantizeMegaTexture(QImage megaTexture, QByteArray& fogLightMap);
+        QImage QuantizeMegaTexture(QImage megaTexture, QByteArray& fogLightMap, QImage& skyboxTexture);
 
-        QImage nQuantCppImage(QImage imageIn);
+        QImage nQuantCppImage(QImage imageIn, QImage &skyboxTexture);
 
-        QImage GetImageWithFogAndLightmap(QImage imageIn);
+        QImage GetImageWithFogAndLightmap(QImage imageIn, QImage &skyboxTexture);
 
         QColor blendColor(QColor color1, QColor color2, double frac);
 

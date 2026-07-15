@@ -9,7 +9,7 @@ namespace P3D
     {
         public:
 
-        static unsigned int DrawScanlinePixelPair(pixel* fb, z_val *zb, const z_val zv1, const z_val zv2, const pixel* texels, const fp u1, const fp v1, const fp u2, const fp v2, const fp f1, const fp f2, const fp l1, const fp l2, const pixel fog_color, const unsigned char* fog_light_map = nullptr)
+        static unsigned int DrawScanlinePixelPair(pixel* fb, z_val *zb, const z_val zv1, const z_val zv2, const pixel* texels, const unsigned int u1, const unsigned int v1, const unsigned int u2, const unsigned int v2, const fp f1, const fp f2, const fp l1, const fp l2, const pixel fog_color, const unsigned char* fog_light_map = nullptr)
         {
             if constexpr (render_flags & ZTest)
             {
@@ -30,11 +30,11 @@ namespace P3D
                 }
             }
 
-            const unsigned int tx = (int)u1 & TEX_MASK;
-            const unsigned int ty = ((int)v1 & TEX_MASK) << TEX_SHIFT;
+            const unsigned int tx = u1;
+            const unsigned int ty = v1 << TEX_SHIFT;
 
-            const unsigned int tx2 = (int)u2 & TEX_MASK;
-            const unsigned int ty2 = ((int)v2 & TEX_MASK) << TEX_SHIFT;
+            const unsigned int tx2 = u2;
+            const unsigned int ty2 = v2 << TEX_SHIFT;
 
             pixel p1 = texels[(ty + tx)], p2 = texels[(ty2 + tx2)];
 
@@ -54,7 +54,7 @@ namespace P3D
             return 2;
         }
 
-        static unsigned int DrawScanlinePixelHigh(pixel *fb, z_val *zb, const z_val zv, const pixel* texels, const fp u, const fp v, const fp f, const fp l, const pixel, const unsigned char* fog_light_map = nullptr)
+        static unsigned int DrawScanlinePixelHigh(pixel *fb, z_val *zb, const z_val zv, const pixel* texels, const unsigned int u, const unsigned int v, const fp f, const fp l, const pixel, const unsigned char* fog_light_map = nullptr)
         {
             if constexpr (render_flags & ZTest)
             {
@@ -67,8 +67,8 @@ namespace P3D
                 *zb = zv;
             }
 
-            const unsigned int tx = (int)u & TEX_MASK;
-            const unsigned int ty = ((int)v & TEX_MASK) << TEX_SHIFT;
+            const unsigned int tx = u;
+            const unsigned int ty = v << TEX_SHIFT;
 
             pixel p1 = texels[(ty + tx)];
 
@@ -87,7 +87,7 @@ namespace P3D
             return 1;
         }
 
-        static unsigned int DrawScanlinePixelLow(pixel *fb, z_val *zb, const z_val zv, const pixel* texels, const fp u, const fp v, const fp f, const fp l, const pixel, const unsigned char* fog_light_map = nullptr)
+        static unsigned int DrawScanlinePixelLow(pixel *fb, z_val *zb, const z_val zv, const pixel* texels, const unsigned int u, const unsigned int v, const fp f, const fp l, const pixel, const unsigned char* fog_light_map = nullptr)
         {
             if constexpr (render_flags & ZTest)
             {
@@ -100,8 +100,8 @@ namespace P3D
                 *zb = zv;
             }
 
-            const unsigned int tx = (int)u & TEX_MASK;
-            const unsigned int ty = ((int)v & TEX_MASK) << TEX_SHIFT;
+            const unsigned int tx = u;
+            const unsigned int ty = v << TEX_SHIFT;
 
             pixel p1 = texels[(ty + tx)];
 

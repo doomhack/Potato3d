@@ -12,7 +12,10 @@ Camera::Camera()
 
     //position = P3D::V3<P3D::fp>(-50,100,-250); //PVS Test
 
-    position = P3D::V3<P3D::fp>(0,0,0);
+    //position = P3D::V3<P3D::fp>(0,0,0);
+
+    position = P3D::V3<P3D::fp>(METERS(-1150),METERS(50),0); //island
+
 }
 
 void Camera::HandleInput(unsigned int keyState, P3D::fp gravity_velocity)

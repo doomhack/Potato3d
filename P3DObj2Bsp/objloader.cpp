@@ -38,6 +38,10 @@ namespace Obj2Bsp
 
         ParseMaterials(mtlFileText, QDir(QFileInfo(filePath).absolutePath()), textureMap, textureColors);
 
+        QString skyboxPath = QDir(QFileInfo(filePath).absolutePath()).filePath("skybox.png");
+
+        QImage skyboxTexture = QImage(skyboxPath);
+
         QImage megaTexture = GetMegaTexture(textureMap);
 
         QByteArray fogLightMap;
@@ -51,7 +55,7 @@ namespace Obj2Bsp
 
             qDebug() << "Quantizing textures...";
 
-            megaTexture = QuantizeMegaTexture(megaTexture, fogLightMap);
+            megaTexture = QuantizeMegaTexture(megaTexture, fogLightMap, skyboxTexture);
 
             for(int i = 0; i < megaTexture.colorTable().length(); i++)
                 model->colormap[i] = megaTexture.colorTable().at(i);
@@ -61,9 +65,22 @@ namespace Obj2Bsp
         else
         {
             megaTexture = megaTexture.convertToFormat(textureFormat);
+            skyboxTexture = skyboxTexture.convertToFormat(textureFormat);
         }
 
         CopyTextureDataToTextures(megaTexture, textureMap);
+
+        if(!skyboxTexture.isNull())
+        {
+            model->skybox = new Skybox();
+            model->skybox->width = skyboxTexture.width();
+            model->skybox->height = skyboxTexture.height();
+            model->skybox->pixels = QByteArray((const char*)skyboxTexture.constScanLine(0), skyboxTexture.sizeInBytes());
+        }
+        else
+        {
+            model->skybox = nullptr;
+        }
 
         ParseGeometry(objFileText, textureMap, textureColors);
 
@@ -308,18 +325,18 @@ namespace Obj2Bsp
         return allTexImage;
     }
 
-    QImage ObjLoader::QuantizeMegaTexture(QImage megaTexture, QByteArray &fogLightMap)
-    {
+    QImage ObjLoader::QuantizeMegaTexture(QImage megaTexture, QByteArray &fogLightMap, QImage& skyboxTexture)
+    {        
         if(FOG_LEVELS > 1 || LIGHT_LEVELS > 1)
         {
-            QImage flTexture = GetImageWithFogAndLightmap(megaTexture);
+            QImage flTexture = GetImageWithFogAndLightmap(megaTexture, skyboxTexture);
 
             fogLightMap = GenerateFogAndLightTables(flTexture);
 
             return flTexture.copy(0, 0, megaTexture.width(), megaTexture.height());
         }
 
-        return nQuantCppImage(megaTexture);
+        return nQuantCppImage(megaTexture, skyboxTexture);
     }
 
     QByteArray ObjLoader::GenerateFogAndLightTables(QImage imageIn)
@@ -343,7 +360,7 @@ namespace Obj2Bsp
                 {
                     double fFrac = FOG_LEVELS > 1 ? (double(f) / double(FOG_LEVELS-1)) : 0;
                     //Blend C with fog.
-                    QColor clf = blendColor(cl, QColor::fromRgb(0x799ED7), fFrac);
+                    QColor clf = blendColor(cl, QColor::fromRgb(FOG_COLOR), fFrac);
 
                     int bestColor = 0;
                     double bestMatch = std::numeric_limits<double>::max();
@@ -367,7 +384,7 @@ namespace Obj2Bsp
         return QByteArray((const char*)fogLightMap, LIGHT_LEVELS * FOG_LEVELS * 256);
     }
 
-    QImage ObjLoader::GetImageWithFogAndLightmap(QImage imageIn)
+    QImage ObjLoader::GetImageWithFogAndLightmap(QImage imageIn, QImage& skyboxTexture)
     {
         qDebug() << "Building fog and lightmap...";
 
@@ -407,7 +424,7 @@ namespace Obj2Bsp
         }
 
 
-        QImage quantizedImage = nQuantCppImage(flTex);
+        QImage quantizedImage = nQuantCppImage(flTex, skyboxTexture);
 
         return quantizedImage;
     }
@@ -425,7 +442,7 @@ namespace Obj2Bsp
         }
     }
 
-    QImage ObjLoader::nQuantCppImage(QImage imageIn)
+    QImage ObjLoader::nQuantCppImage(QImage imageIn, QImage& skyboxTexture)
     {
         qDebug() << "Running nQuantCpp...";
 
@@ -441,7 +458,18 @@ namespace Obj2Bsp
         nQuantTemp.close();
         nQuantResource.close();
 
-        imageIn.save(temp.filePath("megaTex.png"));
+        QImage imageSave = imageIn;
+
+        if(!skyboxTexture.isNull())
+        {
+            QImage imageWithSkybox = QImage(std::max(imageIn.width(), skyboxTexture.width()) , imageIn.height() + skyboxTexture.height(), QImage::Format_RGB32);
+            QPainter painter(&imageWithSkybox);
+            painter.drawImage(0,0,imageIn);
+            painter.drawImage(0, imageIn.height(), skyboxTexture);
+            imageSave = imageWithSkybox;
+        }
+
+        imageSave.save(temp.filePath("megaTex.png"));
 
         QProcess p;
         p.setProgram(temp.filePath("nQuantCpp.exe"));
@@ -457,7 +485,12 @@ namespace Obj2Bsp
 
         QImage quantizedImage = QImage(temp.filePath(filename)).convertToFormat(QImage::Format_Indexed8);
 
-        return quantizedImage;
+        if(!skyboxTexture.isNull())
+        {
+            skyboxTexture = quantizedImage.copy(0, quantizedImage.height() - skyboxTexture.height(), skyboxTexture.width(), skyboxTexture.height());
+        }
+
+        return quantizedImage.copy(0, 0, imageIn.width(), imageIn.height());
     }
 
     QColor ObjLoader::blendColor(QColor color1, QColor color2, double frac)

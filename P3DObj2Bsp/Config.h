@@ -17,7 +17,8 @@ namespace Obj2Bsp
     inline constexpr int LIGHT_LEVELS = 8;
     inline constexpr int FOG_LEVELS = 16;
 
-    inline constexpr int FOG_COLOR = 0x799ED7;
+    //inline constexpr int FOG_COLOR = 0x799ED7;
+    inline constexpr int FOG_COLOR = 0xc3cfc3;
 
     inline constexpr const char QUANT_ALGO[] = "PNN"; //PNN, DIV, NEU, WU
 }

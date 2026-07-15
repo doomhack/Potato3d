@@ -1,11 +1,6 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#include <cstdint>
-#ifdef __arm__
-    #define GBA
-#endif
-
 typedef enum Keys : unsigned int
 {
     KeyLeft = 1,

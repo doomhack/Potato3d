@@ -15,6 +15,7 @@
 #include "../../RenderDevice.h"
 #include "../../RenderTarget.h"
 #include "../../PixelShaderGBA8.h"
+#include "../include/texturecachegba.h"
 
 #define DCNT_PAGE 0x0010
 
@@ -102,6 +103,8 @@ int main()
 
     P3D::RenderDevice* render_device = new P3D::RenderDevice();
     render_device->SetRenderFlags<render_flags, P3D::PixelShaderGBA8<render_flags>>();
+
+    render_device->SetTextureCache(new TextureCacheGBA());
 
 #if 1
     render_device->SetFogMode(P3D::FogMode::FogLinear);

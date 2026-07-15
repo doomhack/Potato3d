@@ -256,6 +256,20 @@ namespace Obj2Bsp
         bmh.fog_lightmap_offset = buffer.pos();
         buffer.write((const char*)model->foglightmap, 256 * FOG_LEVELS * LIGHT_LEVELS);
 
+        if(model->skybox)
+        {
+            bmh.skybox_width = model->skybox->width;
+            bmh.skybox_height = model->skybox->height;
+            bmh.skybox_pixels_offset = buffer.pos();
+            buffer.write(model->skybox->pixels.data(), model->skybox->pixels.length());
+        }
+        else
+        {
+            bmh.skybox_width = 0;
+            bmh.skybox_height = 0;
+            bmh.skybox_pixels_offset = 0;
+        }
+
         //Now overwrite the header with offsets.
         P3D::BspModelHeader* hdr = (P3D::BspModelHeader*)bytes.data();
 

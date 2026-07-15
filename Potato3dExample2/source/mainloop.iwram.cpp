@@ -1,5 +1,6 @@
 #include "../include/mainloop.h"
 #include "../include/videosystem.h"
+#include "../include/texturecachegba.h"
 
 
 MainLoop::MainLoop()
@@ -23,14 +24,15 @@ void MainLoop::Run()
 
     //constexpr unsigned int flags = P3D::ZWrite | P3D::ZTest;
 
-    constexpr unsigned int flags = P3D::NoFlags;
+    //constexpr unsigned int flags = P3D::NoFlags;
     //constexpr unsigned int flags = P3D::SubdividePerspectiveMapping;
     //constexpr unsigned int flags = P3D::Fog;
-    //constexpr unsigned int flags = P3D::SubdividePerspectiveMapping | P3D::Fog;
+    constexpr unsigned int flags = P3D::SubdividePerspectiveMapping | P3D::Fog;
     //constexpr unsigned int flags = P3D::SubdividePerspectiveMapping | P3D::VertexLight | P3D::Fog;
 
     renderDev.SetRenderFlags<flags, P3D::PixelShaderGBA8<flags>>();
 
+    renderDev.SetTextureCache(new TextureCacheGBA());
 
     renderDev.SetPerspective(vFov, 1.5, zNear, zFar);
 
@@ -51,7 +53,10 @@ void MainLoop::Run()
 
         renderDev.SetRenderTarget(vid.GetBackBuffer());
 
-        renderDev.ClearColor(background);
+        if(model.GetModel()->GetSkyboxWidth() > 0)
+            DrawSkybox();
+        else
+            renderDev.ClearColor(background);
         //renderDev.ClearDepth(std::numeric_limits<P3D::fp>::max());
 
 
@@ -77,7 +82,7 @@ void MainLoop::Run()
 
         renderDev.PopMatrix();
 
-        vid.PageFlip();        
+        vid.PageFlip();
     }
 }
 
@@ -216,3 +221,44 @@ void MainLoop::RunTimeslots()
         gameTime += frameTicks;
     }
 }
+
+void MainLoop::DrawSkybox()
+{
+    const P3D::fp cameraAngleY = -camera.GetAngle().y;
+
+    const P3D::RenderTarget* bb = vid.GetBackBuffer();
+
+    const P3D::pixel* skyboxPixels = model.GetModel()->GetSkyboxPixels();
+    const unsigned int skyboxWidth = model.GetModel()->GetSkyboxWidth();
+
+    const unsigned int screenWidth = bb->GetWidth();
+    const unsigned int screenHeight = bb->GetHeight();
+
+    // Convert camera yaw in degrees to horizontal skybox pixel offset.
+    int xOffset = static_cast<int>((cameraAngleY / P3D::fp(360.0f)) * P3D::fp(skyboxWidth));
+
+    // Wrap offset safely into [0, skyboxWidth)
+    xOffset %= static_cast<int>(skyboxWidth);
+
+    if (xOffset < 0)
+        xOffset += skyboxWidth;
+
+    for (unsigned int y = 0; y < screenHeight; y++)
+    {
+        P3D::pixel* dest = bb->GetColorBuffer() + y * bb->GetColorBufferYPitch();
+
+        const P3D::pixel* srcRow = skyboxPixels + (y * skyboxWidth);
+
+        unsigned int srcX = static_cast<unsigned int>(xOffset);
+
+        unsigned int firstCopy = std::min(screenWidth, skyboxWidth - srcX);
+
+        P3D::FastCopy32(dest, srcRow + srcX, firstCopy + 3);
+
+        if (firstCopy < screenWidth)
+        {
+            P3D::FastCopy32(dest + firstCopy, srcRow, (screenWidth - firstCopy) + 3);
+        }
+    }
+}
+

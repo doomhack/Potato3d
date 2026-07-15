@@ -29,7 +29,10 @@ int main(int argc, char *argv[])
     //QString objPath = "C:\\Users\\Zak\\Documents\\GitProjects\\Potato3d\\Potato3dExample\\models\\d2\\driver2_small.obj";
 
     //QString objPath = "C:\\Users\\Zak\\Downloads\\PVSTest\\PVSTest.obj";
-    QString objPath = "C:\\Users\\Zak\\Downloads\\PVSTest2\\PVSTest2.obj";
+    //QString objPath = "C:\\Users\\Zak\\Downloads\\PVSTest2\\PVSTest2.obj";
+    //QString objPath = "C:\\Users\\Zak\\Downloads\\HL2\\HL2.obj";
+    QString objPath = "C:\\Users\\Zak\\Downloads\\island\\island.obj";
+
 
     bool result = loader.LoadObjFile(objPath);
 

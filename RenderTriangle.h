@@ -2,6 +2,7 @@
 #define RENDERTRIANGLE_H
 
 #include <algorithm>
+#include <type_traits>
 #include "RenderCommon.h"
 #include "TextureCache.h"
 
@@ -70,17 +71,10 @@ namespace P3D
                 render_stats->triangles_submitted++;
 #endif
 
-                if(material.type == Material::Texture)
-                    current_texture = tex_cache->GetTexture(material.pixels);
-                else
-                {
-                    current_texture = nullptr;
-                    current_color = material.color;
-                }
-
                 if constexpr (render_flags & (SubdividePerspectiveMapping))
                 {
                     subdivide_spans = (GetZDelta(tri.verts) > SUBDIVIDE_Z_THRESHOLD);
+
 /*
                     if(!subdivide_spans)
                     {
@@ -102,6 +96,14 @@ namespace P3D
 
                 if(!CullTriangle(tri.verts))
                     return;
+
+                if(material.type == Material::Texture)
+                    current_texture = tex_cache->GetTexture(material.pixels);
+                else
+                {
+                    current_texture = nullptr;
+                    current_color = material.color;
+                }
 
                 for(unsigned int i = 0; i < vxCount; i++)
                 {
@@ -747,39 +749,40 @@ namespace P3D
                 //Should be fracbits.
                 constexpr int uv_shift = 16-TEX_SHIFT;
 
-                fp u = pASL(pos.u_left, uv_shift);
-                fp v = pASL(pos.v_left, uv_shift);
-                const fp du = pASL(delta.u, uv_shift);
-                const fp dv = pASL(delta.v, uv_shift);
+                unsigned int u = pos.u_left.toFPInt() << uv_shift;
+                unsigned int v = pos.v_left.toFPInt() << uv_shift;
+
+                unsigned int du = delta.u.toFPInt() << uv_shift;
+                unsigned int dv = delta.v.toFPInt() << uv_shift;
 
                 unsigned int pixels_drawn = 0;
 
                 if((size_t)fb & 1)
                 {
-                    pixels_drawn += TPixelShader::DrawScanlinePixelHigh(fb, zb, z, texture, pASR(u, uv_shift), pASR(v, uv_shift), f, l, fog_color, fog_light_map); fb++, zb++, z += dz, u += du, v+= dv, f += df, l += dl, count--;
+                    pixels_drawn += TPixelShader::DrawScanlinePixelHigh(fb, zb, z, texture, pASR(u, uv_shift + 16), pASR(v, uv_shift + 16), f, l, fog_color, fog_light_map); fb++, zb++, z += dz, u += du, v+= dv, f += df, l += dl, count--;
                 }
 
                 unsigned int q = count >> 3;
 
                 while(q--)
                 {
-                    pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f + df, l, l + dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2), l += (dl * 2);
-                    pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f + df, l, l + dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2), l += (dl * 2);
-                    pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f + df, l, l + dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2), l += (dl * 2);
-                    pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f + df, l, l + dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2), l += (dl * 2);
+                    pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift + 16), pASR(v, uv_shift + 16), pASR((u+du), uv_shift + 16), pASR((v+dv), uv_shift + 16), f, f + df, l, l + dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2), l += (dl * 2);
+                    pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift + 16), pASR(v, uv_shift + 16), pASR((u+du), uv_shift + 16), pASR((v+dv), uv_shift + 16), f, f + df, l, l + dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2), l += (dl * 2);
+                    pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift + 16), pASR(v, uv_shift + 16), pASR((u+du), uv_shift + 16), pASR((v+dv), uv_shift + 16), f, f + df, l, l + dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2), l += (dl * 2);
+                    pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift + 16), pASR(v, uv_shift + 16), pASR((u+du), uv_shift + 16), pASR((v+dv), uv_shift + 16), f, f + df, l, l + dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2), l += (dl * 2);
                 }
 
                 const unsigned int r = ((count & 7) >> 1);
 
                 switch(r)
                 {
-                case 3: pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f + df, l, l + dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2), l += (dl * 2); [[fallthrough]];
-                case 2: pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f + df, l, l + dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2), l += (dl * 2); [[fallthrough]];
-                case 1: pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift), pASR(v, uv_shift), pASR((u+du), uv_shift), pASR((v+dv), uv_shift), f, f + df, l, l + dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2), l += (dl * 2);
+                    case 3: pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift + 16), pASR(v, uv_shift + 16), pASR((u+du), uv_shift + 16), pASR((v+dv), uv_shift + 16), f, f + df, l, l + dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2), l += (dl * 2); [[fallthrough]];
+                    case 2: pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift + 16), pASR(v, uv_shift + 16), pASR((u+du), uv_shift + 16), pASR((v+dv), uv_shift + 16), f, f + df, l, l + dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2), l += (dl * 2); [[fallthrough]];
+                    case 1: pixels_drawn += TPixelShader::DrawScanlinePixelPair(fb, zb, z, z+dz, texture, pASR(u, uv_shift + 16), pASR(v, uv_shift + 16), pASR((u+du), uv_shift + 16), pASR((v+dv), uv_shift + 16), f, f + df, l, l + dl, fog_color, fog_light_map); fb+=2, zb+=2, z += (dz * 2), u += (du * 2), v += (dv * 2), f += (df * 2), l += (dl * 2);
                 }
 
                 if(count & 1)
-                    pixels_drawn += TPixelShader::DrawScanlinePixelLow(fb, zb, z, texture, pASR(u, uv_shift), pASR(v, uv_shift), f, l, fog_color, fog_light_map);
+                    pixels_drawn += TPixelShader::DrawScanlinePixelLow(fb, zb, z, texture, pASR(u, uv_shift + 16), pASR(v, uv_shift + 16), f, l, fog_color, fog_light_map);
 
 #ifdef RENDER_STATS
                 render_stats->pixels_drawn += pixels_drawn;
@@ -966,7 +969,7 @@ namespace P3D
 
                 if(dx == 0)
                 {
-                    x_delta = {};
+                    FastFill32((unsigned int*)&x_delta, 0, sizeof(TriDrawXDeltaZWUV) / 4);
                     return;
                 }
 
@@ -1003,10 +1006,9 @@ namespace P3D
 
                 if(dy == 0)
                 {
-                    y_delta = {};
+                    FastFill32((unsigned int*)&y_delta, 0, sizeof(TriDrawYDeltaZWUV) / 4);
                     return;
                 }
-
 
                 y_delta.x = (bottom.pos.x - top.pos.x) / dy;
 
@@ -1108,8 +1110,6 @@ namespace P3D
             constexpr fp LinearW(const fp w) const
             {
                 const fp near = z_planes->z_near;
-                const fp far = z_planes->z_far;
-
                 return fp(1) - ((w - near) * z_planes->z_ratio_3);
             }
 
